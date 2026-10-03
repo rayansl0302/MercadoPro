@@ -90,3 +90,4 @@ tests/Testing
 painel/**/node_modules/
 painel/web/dist/
 .env
+saida-instalador/
