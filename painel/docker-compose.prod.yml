@@ -1,0 +1,48 @@
+# Produção (VPS). Só precisa deste arquivo e de um .env ao lado (copie de .env.prod.example).
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d
+# O Watchtower baixa sozinho a imagem nova quando ela é publicada (a cada push no GitHub): sem deploy manual.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: painel
+      POSTGRES_PASSWORD: ${DB_SENHA:?defina DB_SENHA no .env}
+      POSTGRES_DB: painel
+    volumes:
+      - dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U painel -d painel"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    image: ghcr.io/rayansl0302/mercadopro-painel:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://painel:${DB_SENHA}@db:5432/painel
+      PORT: "3000"
+      NODE_ENV: production
+      COOKIE_SEGURO: "true"
+      EXIGIR_2FA: "true"
+    ports:
+      - "127.0.0.1:3000:3000"   # o proxy HTTPS (Caddy/Nginx) do servidor aponta para cá
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  atualizador:
+    image: nickfedor/watchtower
+    restart: unless-stopped
+    environment:
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_POLL_INTERVAL: "300"
+      WATCHTOWER_CLEANUP: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  dados:
