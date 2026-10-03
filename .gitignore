@@ -92,3 +92,6 @@ painel/**/node_modules/
 painel/web/dist/
 .env
 saida-instalador/
+
+# DLLs do cliente PostgreSQL (libpq + dependências) que o pacote do Windows precisa
+!libs-externas/postgres-win64/*.dll

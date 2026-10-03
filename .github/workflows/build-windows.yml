@@ -105,6 +105,12 @@ jobs:
           mkdir -p dist/sqldrivers
           cp "$QT_ROOT_DIR/plugins/sqldrivers/qsqlite.dll" dist/sqldrivers/ || echo "qsqlite.dll nao encontrado no Qt"
           cp "$QT_ROOT_DIR/plugins/sqldrivers/qsqlpsql.dll" dist/sqldrivers/ || echo "qsqlpsql.dll nao encontrado no Qt"
+          # o driver acima precisa da libpq e das DLLs dela (OpenSSL, libintl, libiconv, winpthread; libxml2 é da ACBr) ao lado do .exe;
+          # sem elas o Qt não carrega o driver e o programa diz "Banco de dados indisponível"
+          cp libs-externas/postgres-win64/*.dll dist/
+          for f in libpq.dll libssl-3-x64.dll libcrypto-3-x64.dll libintl-9.dll libiconv-2.dll libwinpthread-1.dll libxml2.dll libiconv.dll sqldrivers/qsqlpsql.dll; do
+            test -f "dist/$f" || { echo "ERRO: dist/$f ausente (PostgreSQL não funcionaria)"; exit 1; }
+          done
           cp instalador/acbr/ACBrNFe64.dll dist/
           cp instalador/acbr/ACBrMail64.dll dist/
           cp instalador/acbr/ACBrConsultaCNPJ64.dll dist/
