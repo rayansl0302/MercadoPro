@@ -30,7 +30,7 @@ function Login({ onEntrou }) {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <form onSubmit={entrar} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
-        <h1 className="text-xl font-semibold text-marca">QEstoqueLoja</h1>
+        <img src="/logo.png" alt="MercadoPro" className="mb-1 h-12 w-auto" />
         <p className="mb-5 text-sm text-slate-500">Painel de gestão</p>
         <label className="mb-3 block text-sm">E-mail<input className={c} type="email" autoComplete="username" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} required /></label>
         <label className="mb-3 block text-sm">Senha<input className={c} type="password" autoComplete="current-password" value={f.senha} onChange={(e) => setF({ ...f, senha: e.target.value })} required /></label>
@@ -94,7 +94,7 @@ function App() {
   return (
     <div className="min-h-screen lg:flex">
       <nav className={`${aberto ? 'block' : 'hidden'} fixed inset-0 z-40 overflow-y-auto bg-white p-4 lg:static lg:block lg:w-56 lg:shrink-0 lg:border-r lg:border-slate-200`}>
-        <div className="mb-4 hidden text-lg font-semibold text-marca lg:block">QEstoqueLoja</div>
+        <img src="/logo.png" alt="MercadoPro" className="mb-4 hidden h-10 w-auto lg:block" />
         <ul className="space-y-1">
           {MENU.map(([id, nome]) => (
             <li key={id}><button onClick={() => ir(id)} className={`w-full rounded-lg px-3 py-2 text-left text-sm ${pagina === id ? 'bg-marca-claro font-medium text-marca-escuro' : 'hover:bg-slate-100'}`}>{nome}</button></li>

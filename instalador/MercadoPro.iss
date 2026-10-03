@@ -24,6 +24,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 UninstallDisplayIcon={app}\QEstoqueLoja.exe
+SetupIconFile=..\Imagens\QEstoqueLOja\ICONEQe48ico.ico
 ; programa aberto: o instalador pede para fechar e atualiza os arquivos
 CloseApplications=yes
 RestartApplications=no
