@@ -25,7 +25,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 WizardImageFile=wizard-lateral.png,wizard-lateral-2x.png
 WizardSmallImageFile=wizard-icone.png,wizard-icone-2x.png
-UninstallDisplayIcon={app}\QEstoqueLoja.exe
+UninstallDisplayIcon={app}\MercadoPro.ico
 SetupIconFile=..\Imagens\QEstoqueLOja\ICONEQe48ico.ico
 ; programa aberto: o instalador pede para fechar e atualiza os arquivos
 CloseApplications=yes
@@ -45,12 +45,13 @@ Source: "..\dist\*"; DestDir: "{app}"; Excludes: "LEIA-ME.txt"; Flags: ignorever
 Source: "acbr\ACBrNFe64.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "acbr\ACBrMail64.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "acbr\ACBrConsultaCNPJ64.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Imagens\QEstoqueLOja\ICONEQe48ico.ico"; DestDir: "{app}"; DestName: "MercadoPro.ico"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\MercadoPro"; Filename: "{app}\QEstoqueLoja.exe"
+Name: "{group}\MercadoPro"; Filename: "{app}\QEstoqueLoja.exe"; IconFilename: "{app}\MercadoPro.ico"
 Name: "{group}\Desinstalar o MercadoPro"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\MercadoPro"; Filename: "{app}\QEstoqueLoja.exe"; Tasks: desktopicon
-Name: "{autodesktop}\MercadoPro PDV"; Filename: "{app}\QEstoqueLoja.exe"; Parameters: "--pdv"; Tasks: pdvicon
+Name: "{autodesktop}\MercadoPro"; Filename: "{app}\QEstoqueLoja.exe"; IconFilename: "{app}\MercadoPro.ico"; Tasks: desktopicon
+Name: "{autodesktop}\MercadoPro PDV"; Filename: "{app}\QEstoqueLoja.exe"; Parameters: "--pdv"; IconFilename: "{app}\MercadoPro.ico"; Tasks: pdvicon
 
 [Run]
 Filename: "{app}\QEstoqueLoja.exe"; Description: "Abrir o MercadoPro agora"; Flags: nowait postinstall skipifsilent
@@ -188,5 +189,14 @@ begin
     WizardForm.StatusLabel.Caption := 'Atualizando o MercadoPro...'
   else if CurPageID = wpFinished then
     WizardForm.FinishedHeadingLabel.Caption := 'Atualização concluída';
+end;
+
+procedure SHChangeNotify(wEventId: Integer; uFlags: Cardinal; dwItem1, dwItem2: Integer);
+  external 'SHChangeNotify@shell32.dll stdcall';
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    SHChangeNotify($08000000, $0000, 0, 0);
 end;
 
