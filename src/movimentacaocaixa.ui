@@ -18,8 +18,8 @@
 QLabel#Lbl_Caixa { color: rgb(100, 116, 139); }
 QLineEdit { min-height: 32px; font: 12pt &quot;Segoe UI&quot;; }
 QPushButton { min-height: 36px; padding: 0 18px; font: 600 10pt &quot;Segoe UI&quot;; border-radius: 6px; }
-QPushButton#Btn_Confirmar { background-color: rgb(43, 132, 191); color: white; }
-QPushButton#Btn_Confirmar:hover { background-color: rgb(13, 92, 161); }</string>
+QPushButton#Btn_Confirmar { background-color: rgb(23, 150, 58); color: white; }
+QPushButton#Btn_Confirmar:hover { background-color: rgb(16, 122, 46); }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">

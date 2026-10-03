@@ -76,7 +76,8 @@ $semRuntime = $runtime | Where-Object { -not $temNaPasta.ContainsKey($_) }
 
 # arquivos essenciais
 $essenciais = @('QEstoqueLoja.exe', 'Qt6Core.dll', 'Qt6Gui.dll', 'Qt6Widgets.dll', 'Qt6Sql.dll', 'Qt6Qml.dll',
-                'QtRPT.dll', 'quazip1-qt6.dll', 'zint.dll', 'zlib1.dll', 'platforms\qwindows.dll', 'sqldrivers\qsqlpsql.dll')
+                'QtRPT.dll', 'quazip1-qt6.dll', 'zint.dll', 'zlib1.dll', 'platforms\qwindows.dll',
+                'sqldrivers\qsqlite.dll', 'sqldrivers\qsqlpsql.dll')
 $semEssencial = $essenciais | Where-Object { -not (Test-Path (Join-Path $raiz $_)) }
 
 Write-Host "Arquivos verificados: $($arquivos.Count)"

@@ -78,7 +78,7 @@ EmpresaDialog::EmpresaDialog(std::function<bool(const QString &)> gate, const QS
     resize(620, 460);
 
     auto *lblTitulo = new QLabel(titulo.isEmpty() ? QStringLiteral("Escolher empresa") : titulo);
-    lblTitulo->setStyleSheet("font-size: 17pt; font-weight: 700; color: #16324F;");
+    lblTitulo->setStyleSheet("font-size: 17pt; font-weight: 700; color: #142D45;");
     auto *lblInfo = new QLabel("As vendas, contas a pagar e notas feitas a partir de agora ficam no CNPJ escolhido, "
                                "até você trocar de empresa.");
     lblInfo->setWordWrap(true);
@@ -102,17 +102,17 @@ EmpresaDialog::EmpresaDialog(std::function<bool(const QString &)> gate, const QS
     auto *btnNova = new QPushButton("Cadastrar empresa...");
     btnNova->setIcon(Icones::icone("plus", QColor(Qt::white), 18));
     btnEditar = new QPushButton("Editar...");
-    btnEditar->setIcon(Icones::icone("pencil", QColor("#1E3A5F"), 18));
-    btnEditar->setStyleSheet("QPushButton { background: white; color: #1E3A5F; border: 1px solid #C9D3DF; }"
-                             "QPushButton:hover { background: #EAF3FB; border-color: #2B84BF; }"
+    btnEditar->setIcon(Icones::icone("pencil", QColor("#142D45"), 18));
+    btnEditar->setStyleSheet("QPushButton { background: white; color: #142D45; border: 1px solid #C9D3DF; }"
+                             "QPushButton:hover { background: #EAF6EC; border-color: #17963A; }"
                              "QPushButton:disabled { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; }");
     btnDesativar = new QPushButton("Desativar");
     btnDesativar->setStyleSheet("QPushButton { background: white; color: #B91C1C; border: 1px solid #FCA5A5; }"
                                 "QPushButton:hover { background: #FEF2F2; }"
                                 "QPushButton:disabled { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; }");
     auto *btnFechar = new QPushButton("Fechar");
-    btnFechar->setStyleSheet("QPushButton { background: white; color: #1E3A5F; border: 1px solid #C9D3DF; }"
-                             "QPushButton:hover { background: #EAF3FB; }");
+    btnFechar->setStyleSheet("QPushButton { background: white; color: #142D45; border: 1px solid #C9D3DF; }"
+                             "QPushButton:hover { background: #EAF6EC; }");
     btnUsar = new QPushButton("Usar esta empresa");
     btnUsar->setDefault(true);
     btnUsar->setIcon(Icones::icone("check", QColor(Qt::white), 18));
@@ -165,7 +165,7 @@ void EmpresaDialog::recarregar()
         botao->setMinimumSize(250, 96);
         botao->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         botao->setIconSize(QSize(34, 34));
-        botao->setIcon(Icones::icone("building-2", QColor("#2B84BF"), 34));
+        botao->setIcon(Icones::icone("building-2", QColor("#17963A"), 34));
         const QString cnpj = e.cnpj.isEmpty() ? QStringLiteral("CNPJ não informado") : e.cnpjFormatado();
         botao->setText(QStringLiteral("%1\n%2%3").arg(e.apelido, cnpj,
                                                        !e.ativa ? QStringLiteral("\nDesativada")
@@ -173,10 +173,10 @@ void EmpresaDialog::recarregar()
         if (!e.ativa)
             botao->setIcon(Icones::icone("building-2", QColor("#94A3B8"), 34));
         botao->setStyleSheet(
-            "QToolButton { background: white; color: #1E3A5F; border: 1px solid #D5DEE9; border-radius: 12px;"
+            "QToolButton { background: white; color: #142D45; border: 1px solid #D5DEE9; border-radius: 12px;"
             " font-weight: 700; padding: 8px 12px; text-align: left; }"
-            "QToolButton:hover { background: #EAF3FB; border: 2px solid #2B84BF; }"
-            "QToolButton:checked { background: #D3E8F8; border: 2px solid #2B84BF; color: #0B2540; }");
+            "QToolButton:hover { background: #EAF6EC; border: 2px solid #17963A; }"
+            "QToolButton:checked { background: #D4F0DA; border: 2px solid #17963A; color: #142D45; }");
         const qlonglong id = e.id;
         connect(botao, &QToolButton::clicked, this, [this, id]() { selecionar(id); });
         cartoes.append(botao);

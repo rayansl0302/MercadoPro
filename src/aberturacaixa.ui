@@ -18,8 +18,8 @@
 QLabel#Lbl_Terminal, QLabel#Lbl_Sugerido { color: rgb(100, 116, 139); }
 QLineEdit, QComboBox { min-height: 32px; font: 11pt &quot;Segoe UI&quot;; }
 QPushButton { min-height: 36px; padding: 0 18px; font: 600 10pt &quot;Segoe UI&quot;; border-radius: 6px; }
-QPushButton#Btn_Abrir { background-color: rgb(43, 132, 191); color: white; }
-QPushButton#Btn_Abrir:hover { background-color: rgb(13, 92, 161); }
+QPushButton#Btn_Abrir { background-color: rgb(23, 150, 58); color: white; }
+QPushButton#Btn_Abrir:hover { background-color: rgb(16, 122, 46); }
 QPushButton#Btn_Abrir:disabled { background-color: rgb(190, 200, 212); }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

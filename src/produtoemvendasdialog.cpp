@@ -25,7 +25,7 @@ ProdutoEmVendasDialog::ProdutoEmVendasDialog(const QString &descricaoProduto,
     resize(860, 520);
 
     auto *titulo = new QLabel("Este produto não pode ser apagado");
-    titulo->setStyleSheet("font-size: 16pt; font-weight: 700; color: #16324F;");
+    titulo->setStyleSheet("font-size: 16pt; font-weight: 700; color: #142D45;");
 
     auto *explica = new QLabel(QStringLiteral(
         "<b>%1</b> aparece em <b>%2</b> venda(s) abaixo, e o histórico dessas vendas depende dele.<br>"
@@ -76,8 +76,8 @@ ProdutoEmVendasDialog::ProdutoEmVendasDialog(const QString &descricaoProduto,
         abrirVendas();
     });
     auto *btnFechar = new QPushButton("Fechar");
-    btnFechar->setStyleSheet("QPushButton { background: white; color: #1E3A5F; border: 1px solid #C9D3DF; }"
-                             "QPushButton:hover { background: #EAF3FB; }");
+    btnFechar->setStyleSheet("QPushButton { background: white; color: #142D45; border: 1px solid #C9D3DF; }"
+                             "QPushButton:hover { background: #EAF6EC; }");
     connect(btnFechar, &QPushButton::clicked, this, &QDialog::accept);
 
     auto *botoes = new QHBoxLayout;

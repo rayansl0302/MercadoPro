@@ -34,7 +34,7 @@ QToolButton *novoCartao(const QString &cor)
     b->setStyleSheet(QStringLiteral(
         "QToolButton { background: white; color: %1; border: 2px solid %1; border-radius: 10px; font-weight: 700;"
         " padding: 6px 12px; text-align: left; }"
-        "QToolButton:hover { background: #F3F6FA; }").arg(cor));
+        "QToolButton:hover { background: #F2F7F4; }").arg(cor));
     return b;
 }
 
@@ -44,7 +44,7 @@ QPushButton *botaoSecundario(const QString &texto, const QString &icone, const Q
     b->setIcon(Icones::icone(icone, QColor(cor), 18));
     b->setStyleSheet(QStringLiteral(
         "QPushButton { background: white; color: %1; border: 1px solid #C9D3DF; }"
-        "QPushButton:hover { background: #EAF3FB; border-color: #2B84BF; }"
+        "QPushButton:hover { background: #EAF6EC; border-color: #17963A; }"
         "QPushButton:disabled { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; }").arg(cor));
     return b;
 }
@@ -74,11 +74,11 @@ void ContasPagarJanela::definirStatus(const QString &status)
 void ContasPagarJanela::montar()
 {
     auto *titulo = new QLabel("Contas a pagar");
-    titulo->setStyleSheet("font-size: 18pt; font-weight: 700; color: #16324F;");
+    titulo->setStyleSheet("font-size: 18pt; font-weight: 700; color: #142D45;");
 
     cartaoVencidas = novoCartao("#B91C1C");
     cartaoHoje = novoCartao("#B45309");
-    cartaoSemana = novoCartao("#1E40AF");
+    cartaoSemana = novoCartao("#107A2E");
     cartaoAberto = novoCartao("#475569");
     connect(cartaoVencidas, &QToolButton::clicked, this, [this]() { definirStatus("VENCIDA"); });
     connect(cartaoHoje, &QToolButton::clicked, this, [this]() {
@@ -183,17 +183,17 @@ void ContasPagarJanela::montar()
     });
 
     lblTotais = new QLabel;
-    lblTotais->setStyleSheet("color: #1E3A5F; font-weight: 700;");
+    lblTotais->setStyleSheet("color: #142D45; font-weight: 700;");
 
     // ações
     auto *btnNova = new QPushButton("Nova conta");
     btnNova->setIcon(Icones::icone("plus", QColor(Qt::white), 18));
     btnBaixar = new QPushButton("Baixar (pagar)");
     btnBaixar->setIcon(Icones::icone("circle-check", QColor(Qt::white), 18));
-    btnEditar = botaoSecundario("Editar", "pencil", "#1E3A5F");
+    btnEditar = botaoSecundario("Editar", "pencil", "#142D45");
     btnEstornar = botaoSecundario("Estornar pagamento", "undo-2", "#B45309");
     btnCancelar = botaoSecundario("Cancelar conta", "ban", "#B91C1C");
-    auto *btnFechar = botaoSecundario("Fechar", "x", "#1E3A5F");
+    auto *btnFechar = botaoSecundario("Fechar", "x", "#142D45");
 
     connect(btnNova, &QPushButton::clicked, this, &ContasPagarJanela::novaConta);
     connect(btnBaixar, &QPushButton::clicked, this, &ContasPagarJanela::baixar);
@@ -299,7 +299,7 @@ void ContasPagarJanela::recarregar()
                 cor = QColor("#B45309");
             } else {
                 situacao = QStringLiteral("Vence em %1 dia(s)").arg(dias);
-                cor = dias <= 7 ? QColor("#1E40AF") : QColor("#475569");
+                cor = dias <= 7 ? QColor("#107A2E") : QColor("#475569");
             }
             totalLista += c.valor;
         }

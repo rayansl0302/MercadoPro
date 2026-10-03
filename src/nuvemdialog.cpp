@@ -26,7 +26,7 @@ NuvemDialog::NuvemDialog(QWidget *parent)
     const NuvemConfig cfg = NuvemConfig::carregar();
 
     auto *titulo = new QLabel("Nuvem (painel online)");
-    titulo->setStyleSheet("font-size: 18pt; font-weight: 700; color: #16324F;");
+    titulo->setStyleSheet("font-size: 18pt; font-weight: 700; color: #142D45;");
     auto *explica = new QLabel("Envia os dados da loja para o painel de gestão e executa os pedidos feitos por lá "
                                "(como baixar uma conta a pagar). Fica desligada até você ativar. Só um computador "
                                "da loja deve sincronizar: o que fica ligado durante o expediente.");
@@ -67,13 +67,13 @@ NuvemDialog::NuvemDialog(QWidget *parent)
     btnSincronizar->setIcon(Icones::icone("repeat", QColor(Qt::white), 18));
     auto *btnSalvar = new QPushButton("Salvar");
     auto *btnFechar = new QPushButton("Fechar");
-    btnFechar->setStyleSheet("QPushButton { background: white; color: #1E3A5F; border: 1px solid #C9D3DF; }"
-                             "QPushButton:hover { background: #EAF3FB; }");
+    btnFechar->setStyleSheet("QPushButton { background: white; color: #142D45; border: 1px solid #C9D3DF; }"
+                             "QPushButton:hover { background: #EAF6EC; }");
 
     lblStatus = new QLabel;
     lblStatus->setWordWrap(true);
     lblStatus->setTextFormat(Qt::RichText);
-    lblStatus->setStyleSheet("background: #EAF3FB; color: #174F75; border-radius: 8px; padding: 8px 12px;");
+    lblStatus->setStyleSheet("background: #EAF6EC; color: #107A2E; border-radius: 8px; padding: 8px 12px;");
     lblResultado = new QLabel;
     lblResultado->setWordWrap(true);
 

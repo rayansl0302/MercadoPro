@@ -190,7 +190,7 @@ LancarDividaDialog::LancarDividaDialog(qlonglong idClienteFixo, QWidget *parent)
     edObs = new QPlainTextEdit;
     edObs->setMaximumHeight(60);
 
-    lblSituacao = faixa("#174F75", "#EAF3FB");
+    lblSituacao = faixa("#107A2E", "#EAF6EC");
     lblAviso = new QLabel;
     lblAviso->setWordWrap(true);
     lblAviso->setStyleSheet("color: #B91C1C;");
@@ -258,7 +258,7 @@ void LancarDividaDialog::atualizarSituacao()
     lblSituacao->setText(texto);
     lblSituacao->setStyleSheet(excede
         ? "background: #FEF2F2; color: #B91C1C; border-radius: 8px; padding: 8px 10px;"
-        : "background: #EAF3FB; color: #174F75; border-radius: 8px; padding: 8px 10px;");
+        : "background: #EAF6EC; color: #107A2E; border-radius: 8px; padding: 8px 10px;");
 }
 
 void LancarDividaDialog::confirmar()
@@ -300,7 +300,7 @@ ReceberPagamentoDialog::ReceberPagamentoDialog(qlonglong idCliente, qlonglong id
         escopo = QStringLiteral("Abate só da dívida \"%1\".").arg(d.descricao.toHtmlEscaped());
     }
 
-    auto *resumo = faixa("#174F75", "#EAF3FB");
+    auto *resumo = faixa("#107A2E", "#EAF6EC");
     resumo->setTextFormat(Qt::RichText);
     resumo->setText(QStringLiteral("<b>%1</b><br>Saldo a receber: <b>%2</b><br>%3")
                         .arg(cli.nome.toHtmlEscaped(), dinheiro(maximo), escopo));
@@ -363,7 +363,7 @@ CreditoClienteDialog::CreditoClienteDialog(qlonglong id, const GateGerente &g, Q
 
     auto *titulo = new QLabel(QStringLiteral("<b>%1</b>").arg(c.nome.toHtmlEscaped()));
     titulo->setTextFormat(Qt::RichText);
-    titulo->setStyleSheet("font-size: 13pt; color: #16324F;");
+    titulo->setStyleSheet("font-size: 13pt; color: #142D45;");
 
     chLimite = new QCheckBox("Este cliente tem limite de crédito");
     chLimite->setChecked(c.temLimite);

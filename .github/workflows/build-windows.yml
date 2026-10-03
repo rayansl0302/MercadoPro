@@ -103,6 +103,7 @@ jobs:
           test -f dist/quazip1-qt6.dll || { echo "ERRO: quazip1-qt6.dll ausente no pacote"; exit 1; }
           # driver do PostgreSQL do Qt (o programa usa PostgreSQL em rede); precisa ser o mesmo Qt do .exe
           mkdir -p dist/sqldrivers
+          cp "$QT_ROOT_DIR/plugins/sqldrivers/qsqlite.dll" dist/sqldrivers/ || echo "qsqlite.dll nao encontrado no Qt"
           cp "$QT_ROOT_DIR/plugins/sqldrivers/qsqlpsql.dll" dist/sqldrivers/ || echo "qsqlpsql.dll nao encontrado no Qt"
           # identificação da versão (o script de atualização mostra este arquivo)
           echo "commit ${GITHUB_SHA} - branch ${GITHUB_REF_NAME} - compilado em $(date -u +%Y-%m-%d\ %H:%M) UTC" > dist/VERSAO.txt

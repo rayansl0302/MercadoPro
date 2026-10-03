@@ -22,21 +22,21 @@
   <property name="styleSheet">
    <string notr="true">
 #Clientes {
-  background-color: #f3f6fa;
-  background-color: #f3f6fa;
+  background-color: #F2F7F4;
+  background-color: #F2F7F4;
 }
 QPushButton {
-  background-color: rgb(43, 132, 191);
+  background-color: rgb(23, 150, 58);
   color: rgb(255, 255, 255);
   font-size: 13px;
   border-radius: 10px;
 }
 QPushButton:hover {
-  background-color: rgb(13, 92, 161);
+  background-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
   color: rgb(255, 255, 255);
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
   font-size: 13px;
   border-radius: 10px;
 }
@@ -56,11 +56,11 @@ QGroupBox {
 }
 QTableView {
   background-color: #ffffff;
-  alternate-background-color: #dce9f5;
+  alternate-background-color: #DDF1E1;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   gridline-color: #e2e8f0;
-  selection-background-color: rgb(43, 132, 191);
+  selection-background-color: rgb(23, 150, 58);
   selection-color: #ffffff;
   outline: none;
 }
@@ -98,7 +98,7 @@ QLineEdit {
   color: rgb(45, 55, 75);
 }
 QLineEdit:focus {
-  border-color: rgb(43, 132, 191);
+  border-color: rgb(23, 150, 58);
 }
    </string>
   </property>
@@ -136,27 +136,27 @@ QLineEdit:focus {
       <string notr="true">
 QFrame {
   background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
-    stop:0 rgb(38, 62, 92), stop:1 rgb(24, 42, 66));
-  border-bottom: 2px solid rgb(43, 132, 191);
+    stop:0 rgb(29, 56, 74), stop:1 rgb(20, 45, 69));
+  border-bottom: 2px solid rgb(23, 150, 58);
 }
 QPushButton {
   background-color: transparent;
   font: 600 10pt &quot;Segoe UI&quot;;
-  color: rgb(195, 215, 235);
+  color: rgb(197, 222, 208);
   border: none;
   border-radius: 7px;
   padding: 4px 12px;
 }
 QPushButton:hover {
-  background-color: rgba(43, 132, 191, 150);
+  background-color: rgba(23, 150, 58, 150);
   color: white;
 }
 QPushButton:pressed {
-  background-color: rgba(153, 193, 241, 100);
+  background-color: rgba(143, 217, 163, 100);
   color: white;
 }
 QLabel {
-  color: rgb(195, 215, 235);
+  color: rgb(197, 222, 208);
   background-color: transparent;
   border: none;
 }

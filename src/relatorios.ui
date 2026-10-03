@@ -22,21 +22,21 @@
   <property name="styleSheet">
    <string notr="true">
 #relatorios {
-  background-color: #f3f6fa;
-  background-color: #f3f6fa;
+  background-color: #F2F7F4;
+  background-color: #F2F7F4;
 }
 QPushButton {
-  background-color: rgb(43, 132, 191);
+  background-color: rgb(23, 150, 58);
   color: rgb(255, 255, 255);
   font-size: 13px;
   border-radius: 10px;
 }
 QPushButton:hover {
-  background-color: rgb(13, 92, 161);
+  background-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
   color: rgb(255, 255, 255);
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
 }
    </string>
   </property>
@@ -74,34 +74,34 @@ QPushButton:pressed {
       <string notr="true">
 QFrame {
   background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
-    stop:0 rgb(38, 62, 92), stop:1 rgb(24, 42, 66));
-  border-bottom: 2px solid rgb(43, 132, 191);
+    stop:0 rgb(29, 56, 74), stop:1 rgb(20, 45, 69));
+  border-bottom: 2px solid rgb(23, 150, 58);
 }
 QPushButton {
   background-color: transparent;
   font: 600 10pt &quot;Segoe UI&quot;;
-  color: rgb(195, 215, 235);
+  color: rgb(197, 222, 208);
   border: none;
   border-radius: 7px;
   padding: 4px 12px;
 }
 QPushButton:hover {
-  background-color: rgba(43, 132, 191, 150);
+  background-color: rgba(23, 150, 58, 150);
   color: white;
 }
 QPushButton:pressed {
-  background-color: rgba(153, 193, 241, 100);
+  background-color: rgba(143, 217, 163, 100);
   color: white;
 }
 QLabel {
-  color: rgb(195, 215, 235);
+  color: rgb(197, 222, 208);
   background-color: transparent;
   border: none;
 }
 QComboBox {
-  background-color: rgba(43, 132, 191, 80);
-  color: rgb(220, 235, 250);
-  border: 1px solid rgba(43, 132, 191, 150);
+  background-color: rgba(23, 150, 58, 80);
+  color: rgb(221, 241, 225);
+  border: 1px solid rgba(23, 150, 58, 150);
   border-radius: 6px;
   padding: 4px 10px;
   font: 600 10pt &quot;Segoe UI&quot;;
@@ -110,9 +110,9 @@ QComboBox::drop-down {
   border: none;
 }
 QComboBox QAbstractItemView {
-  background-color: rgb(38, 62, 92);
-  color: rgb(220, 235, 250);
-  selection-background-color: rgb(43, 132, 191);
+  background-color: rgb(29, 56, 74);
+  color: rgb(221, 241, 225);
+  selection-background-color: rgb(23, 150, 58);
 }
       </string>
      </property>
@@ -148,7 +148,7 @@ QComboBox QAbstractItemView {
          </sizepolicy>
         </property>
         <property name="styleSheet">
-         <string notr="true">font: 700 10pt &quot;Segoe UI&quot;; color: rgba(195,215,235,160);</string>
+         <string notr="true">font: 700 10pt &quot;Segoe UI&quot;; color: rgba(197, 222, 208,160);</string>
         </property>
         <property name="text">
          <string>Tipo:</string>

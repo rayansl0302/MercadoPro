@@ -20,17 +20,17 @@
    <string>Inserir Produto</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">#InserirProduto { background-color: #f3f6fa; }
-#label_11 { font-size: 20pt; font-weight: 700; color: #16324f; }
+   <string notr="true">#InserirProduto { background-color: #F2F7F4; }
+#label_11 { font-size: 20pt; font-weight: 700; color: #142D45; }
 #Lbl_Subtitulo { color: #5b6b7f; }
-#Lbl_DicaPreco { font-weight: 400; color: #5b6b7f; background: #eaf3fb; border-radius: 8px; padding: 8px 10px; }
+#Lbl_DicaPreco { font-weight: 400; color: #5b6b7f; background: #EAF6EC; border-radius: 8px; padding: 8px 10px; }
 #Lbl_NcmDesc { font-weight: 400; color: #475569; }
-QGroupBox QLabel { color: #1e3a5f; font-weight: 600; background: transparent; }
+QGroupBox QLabel { color: #142D45; font-weight: 600; background: transparent; }
 QGroupBox { background-color: white; border: 1px solid #d5dee9; border-radius: 10px; margin-top: 16px; padding: 16px 14px 12px 14px; font-weight: 700; }
-QGroupBox::title { subcontrol-origin: margin; left: 14px; padding: 0 6px; color: #1e3a5f; background-color: #f3f6fa; }
+QGroupBox::title { subcontrol-origin: margin; left: 14px; padding: 0 6px; color: #142D45; background-color: #F2F7F4; }
 QLineEdit, QComboBox { min-height: 28px; }
 QTabWidget::pane { background: transparent; border: none; top: 0px; }
-QCheckBox#Check_Nf { font-weight: 700; color: #1e3a5f; spacing: 8px; padding: 8px 4px; }</string>
+QCheckBox#Check_Nf { font-weight: 700; color: #142D45; spacing: 8px; padding: 8px 4px; }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_raiz">
    <property name="spacing">
@@ -431,8 +431,8 @@ QCheckBox#Check_Nf { font-weight: 700; color: #1e3a5f; spacing: 8px; padding: 8p
         </size>
        </property>
        <property name="styleSheet">
-        <string notr="true">QPushButton { background: white; color: #1e3a5f; border: 1px solid #c9d3df; }
-QPushButton:hover { background: #eaf3fb; border-color: #2b84bf; }</string>
+        <string notr="true">QPushButton { background: white; color: #142D45; border: 1px solid #c9d3df; }
+QPushButton:hover { background: #EAF6EC; border-color: #17963A; }</string>
        </property>
        <property name="text">
         <string>Cancelar</string>

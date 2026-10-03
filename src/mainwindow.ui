@@ -43,17 +43,17 @@
   background-color: #eef2f7;
 }
 QPushButton {
-  background-color: rgb(43, 132, 191);
+  background-color: rgb(23, 150, 58);
   color: rgb(255, 255, 255);
   font-size: 13px;
   border-radius: 10px;
 }
 QPushButton:hover {
-  background-color: rgb(13, 92, 161);
+  background-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
   color: rgb(255, 255, 255);
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
   font-size: 13px;
   border-radius: 10px;
 }
@@ -68,20 +68,20 @@ QTableView {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   gridline-color: #e2e8f0;
-  selection-background-color: #d3e8f8;
-  selection-color: #0b2540;
+  selection-background-color: #D4F0DA;
+  selection-color: #142D45;
   outline: none;
 }
 QTableView::item { padding: 4px 6px; border: none; }
-QTableView::item:hover { background-color: #eaf3fb; }
-QTableView::item:selected { background-color: #d3e8f8; color: #0b2540; }
+QTableView::item:hover { background-color: #EAF6EC; }
+QTableView::item:selected { background-color: #D4F0DA; color: #142D45; }
 QTableView::item:focus { border: none; outline: none; }
 QHeaderView::section {
-  background-color: #eaf0f7;
-  color: #1e3a5f;
+  background-color: #EAF3EC;
+  color: #142D45;
   font-weight: 700;
   border: none;
-  border-bottom: 2px solid #2b84bf;
+  border-bottom: 2px solid #17963A;
   border-right: 1px solid #e2e8f0;
   padding: 6px 8px;
 }
@@ -135,23 +135,23 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
        <string notr="true">
 QFrame {
   background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
-    stop:0 rgb(38, 62, 92), stop:1 rgb(24, 42, 66));
-  border-bottom: 2px solid rgb(43, 132, 191);
+    stop:0 rgb(29, 56, 74), stop:1 rgb(20, 45, 69));
+  border-bottom: 2px solid rgb(23, 150, 58);
 }
 QPushButton {
   background-color: transparent;
   font: 600 10pt &quot;Segoe UI&quot;;
-  color: rgb(195, 215, 235);
+  color: rgb(197, 222, 208);
   border: none;
   border-radius: 7px;
   padding: 4px 6px;
 }
 QPushButton:hover {
-  background-color: rgba(43, 132, 191, 150);
+  background-color: rgba(23, 150, 58, 150);
   color: white;
 }
 QPushButton:pressed {
-  background-color: rgba(153, 193, 241, 100);
+  background-color: rgba(143, 217, 163, 100);
   color: white;
 }
        </string>
@@ -197,7 +197,7 @@ QPushButton:pressed {
                </size>
               </property>
               <property name="styleSheet">
-               <string notr="true">border-right: 2px solid rgba(43, 132, 191, 180);</string>
+               <string notr="true">border-right: 2px solid rgba(23, 150, 58, 180);</string>
               </property>
               <property name="text">
                <string/>
@@ -349,10 +349,10 @@ Produto</string>
                 <property name="styleSheet">
                  <string notr="true">
 #Btn_Venda:hover {
-  background-color: rgb(03, 75, 119);
+  background-color: rgb(11, 92, 34);
 }
 #Btn_Venda:pressed {
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
 }
                  </string>
                 </property>
@@ -390,10 +390,10 @@ Produto</string>
                 <property name="styleSheet">
                  <string notr="true">
 #Btn_PDV:hover {
-  background-color: rgb(03, 75, 119);
+  background-color: rgb(11, 92, 34);
 }
 #Btn_PDV:pressed {
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
 }
                  </string>
                 </property>
@@ -434,10 +434,10 @@ Produto</string>
                 <property name="styleSheet">
                  <string notr="true">
 #Btn_Relatorios:hover {
-  background-color: rgb(03, 75, 119);
+  background-color: rgb(11, 92, 34);
 }
 #Btn_Relatorios:pressed {
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
 }
                  </string>
                 </property>
@@ -475,10 +475,10 @@ Produto</string>
                 <property name="styleSheet">
                  <string notr="true">
 #Btn_Orcamento:hover {
-  background-color: rgb(03, 75, 119);
+  background-color: rgb(11, 92, 34);
 }
 #Btn_Orcamento:pressed {
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
 }
                  </string>
                 </property>
@@ -600,7 +600,7 @@ QLineEdit {
   color: rgb(45, 55, 75);
 }
 QLineEdit:focus {
-  border-color: rgb(43, 132, 191);
+  border-color: rgb(23, 150, 58);
   border-right: none;
 }
            </string>
@@ -633,19 +633,19 @@ QLineEdit:focus {
           <property name="styleSheet">
            <string notr="true">
 QPushButton {
-  background-color: rgb(43, 132, 191);
-  border: 1px solid rgb(43, 132, 191);
+  background-color: rgb(23, 150, 58);
+  border: 1px solid rgb(23, 150, 58);
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }
 QPushButton:hover {
-  background-color: rgb(13, 92, 161);
-  border-color: rgb(13, 92, 161);
+  background-color: rgb(16, 122, 46);
+  border-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
 }
            </string>
           </property>

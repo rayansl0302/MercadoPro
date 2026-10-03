@@ -25,7 +25,7 @@ QPushButton *botaoSecundario(const QString &texto, const QString &icone, const Q
     b->setIcon(Icones::icone(icone, QColor(cor), 18));
     b->setStyleSheet(QStringLiteral(
         "QPushButton { background: white; color: %1; border: 1px solid #C9D3DF; }"
-        "QPushButton:hover { background: #EAF3FB; border-color: #2B84BF; }"
+        "QPushButton:hover { background: #EAF6EC; border-color: #17963A; }"
         "QPushButton:disabled { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; }").arg(cor));
     return b;
 }
@@ -41,11 +41,11 @@ ExtratoClienteDialog::ExtratoClienteDialog(qlonglong id, GateGerente g, QWidget 
     resize(1120, 640);
 
     lblCliente = new QLabel;
-    lblCliente->setStyleSheet("font-size: 18pt; font-weight: 700; color: #16324F;");
+    lblCliente->setStyleSheet("font-size: 18pt; font-weight: 700; color: #142D45;");
     lblResumo = new QLabel;
     lblResumo->setTextFormat(Qt::RichText);
     lblResumo->setWordWrap(true);
-    lblResumo->setStyleSheet("background: #EAF3FB; color: #174F75; border-radius: 8px; padding: 8px 12px;");
+    lblResumo->setStyleSheet("background: #EAF6EC; color: #107A2E; border-radius: 8px; padding: 8px 12px;");
 
     tabela = new QTableWidget(0, kColunas);
     tabela->setHorizontalHeaderLabels({"Data", "Tipo", "Descrição", "Valor", "Saldo depois", "Operador", "Empresa"});
@@ -63,12 +63,12 @@ ExtratoClienteDialog::ExtratoClienteDialog(qlonglong id, GateGerente g, QWidget 
     btnLancar->setIcon(Icones::icone("plus", QColor(Qt::white), 18));
     btnReceber = new QPushButton("Receber pagamento");
     btnReceber->setIcon(Icones::icone("circle-check", QColor(Qt::white), 18));
-    btnReceberDivida = botaoSecundario("Receber desta dívida", "wallet", "#1E3A5F");
+    btnReceberDivida = botaoSecundario("Receber desta dívida", "wallet", "#142D45");
     btnEstornar = botaoSecundario("Estornar pagamento", "undo-2", "#B45309");
     btnCancelar = botaoSecundario("Cancelar lançamento", "ban", "#B91C1C");
-    auto *btnCredito = botaoSecundario("Dados de crédito", "settings", "#1E3A5F");
+    auto *btnCredito = botaoSecundario("Dados de crédito", "settings", "#142D45");
     auto *btnCobrar = botaoSecundario("Cobrar no WhatsApp", "mail", "#15803D");
-    auto *btnFechar = botaoSecundario("Fechar", "x", "#1E3A5F");
+    auto *btnFechar = botaoSecundario("Fechar", "x", "#142D45");
 
     connect(btnLancar, &QPushButton::clicked, this, [this]() {
         if (lancarDividaComTela(this, gate, idCliente))
@@ -152,7 +152,7 @@ void ExtratoClienteDialog::recarregar()
     lblResumo->setText(resumo);
     lblResumo->setStyleSheet(lim.excede || (lim.temLimite && lim.devido > lim.limite + 0.004)
         ? "background: #FEF2F2; color: #B91C1C; border-radius: 8px; padding: 8px 12px;"
-        : "background: #EAF3FB; color: #174F75; border-radius: 8px; padding: 8px 12px;");
+        : "background: #EAF6EC; color: #107A2E; border-radius: 8px; padding: 8px 12px;");
 
     const qlonglong selecionadaId = selecionada().idPagamento;
     linhas = servico.extrato(idCliente);

@@ -60,6 +60,8 @@
 
 
         QApplication a(argc, argv);
+        QCoreApplication::setApplicationName(QStringLiteral("QEstoqueLoja"));
+        a.setWindowIcon(QIcon(QStringLiteral(":/QEstoqueLOja/ICONEjanela.ico")));
 
         // Força estilo independente do sistema
         QApplication::setStyle(QStyleFactory::create("Fusion"));

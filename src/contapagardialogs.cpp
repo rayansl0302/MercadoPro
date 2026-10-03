@@ -97,7 +97,7 @@ NovaContaDialog::NovaContaDialog(const ContaPagarDTO &conta, QWidget *parent)
     auto *lblEmpresa = new QLabel(edicao ? QString() : QStringLiteral("Esta conta será lançada na empresa <b>%1</b>.")
                                                            .arg(empresa.apelido));
     lblEmpresa->setTextFormat(Qt::RichText);
-    lblEmpresa->setStyleSheet("color: #1E3A5F;");
+    lblEmpresa->setStyleSheet("color: #142D45;");
     lblEmpresa->setVisible(!edicao);
 
     auto *form = new QFormLayout;
@@ -113,7 +113,7 @@ NovaContaDialog::NovaContaDialog(const ContaPagarDTO &conta, QWidget *parent)
 
     lblPrevia = new QLabel;
     lblPrevia->setWordWrap(true);
-    lblPrevia->setStyleSheet("background: #EAF3FB; color: #174F75; border-radius: 8px; padding: 8px 10px;");
+    lblPrevia->setStyleSheet("background: #EAF6EC; color: #107A2E; border-radius: 8px; padding: 8px 10px;");
     lblAviso = new QLabel;
     lblAviso->setWordWrap(true);
     lblAviso->setStyleSheet("color: #B91C1C;");
@@ -219,7 +219,7 @@ BaixaContaDialog::BaixaContaDialog(const ContaPagarDTO &conta, QWidget *parent)
                                        conta.dataVencimento().toString("dd/MM/yyyy"), dinheiro(conta.valor)));
     resumo->setTextFormat(Qt::RichText);
     resumo->setWordWrap(true);
-    resumo->setStyleSheet("background: #EAF3FB; color: #174F75; border-radius: 8px; padding: 8px 10px;");
+    resumo->setStyleSheet("background: #EAF6EC; color: #107A2E; border-radius: 8px; padding: 8px 10px;");
 
     spValor = campoDinheiro();
     spValor->setValue(conta.valor);

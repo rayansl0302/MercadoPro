@@ -182,7 +182,7 @@ venda::venda(QWidget *parent) :
     DelegateLockCol *delegateLockCol3 = new DelegateLockCol(4, this);
     ui->Tview_ProdutosSelecionados->setItemDelegateForColumn(4, delegateLockCol3);
 
-    ui->Tview_Produtos->horizontalHeader()->setStyleSheet("background-color: rgb(33, 105, 149)");
+    ui->Tview_Produtos->horizontalHeader()->setStyleSheet("background-color: rgb(16, 122, 46)");
 
     modeloSelecionados->setHorizontalHeaderItem(0, new QStandardItem("ID Produto"));
     modeloSelecionados->setHorizontalHeaderItem(1, new QStandardItem("Quantidade Vendida"));
@@ -385,8 +385,8 @@ void venda::irParaPagina(int pagina)
     if (pagina == 1)
         pulouCliente = false;
 
-    const QString styleAtivo   = "background-color: rgb(43,132,191); color: white; border-radius: 14px; font: 700 9pt \"Ubuntu\"; padding: 2px 12px;";
-    const QString styleInativo = "background-color: rgba(195,215,235,60); color: rgba(195,215,235,160); border-radius: 14px; font: 700 9pt \"Ubuntu\"; padding: 2px 12px;";
+    const QString styleAtivo   = "background-color: rgb(23, 150, 58); color: white; border-radius: 14px; font: 700 9pt \"Ubuntu\"; padding: 2px 12px;";
+    const QString styleInativo = "background-color: rgba(197, 222, 208,60); color: rgba(197, 222, 208,160); border-radius: 14px; font: 700 9pt \"Ubuntu\"; padding: 2px 12px;";
 
     ui->Lbl_Step1->setStyleSheet(pagina == 0 ? styleAtivo : styleInativo);
     ui->Lbl_Step2->setStyleSheet(pagina == 1 ? styleAtivo : styleInativo);

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, hojeIso, somaDias } from './api.js';
 
 export function Cartao({ titulo, valor, detalhe, tom = 'normal', onClick }) {
-  const cor = { normal: 'text-slate-900', ruim: 'text-red-700', bom: 'text-emerald-700', alerta: 'text-amber-700' }[tom];
+  const cor = { normal: 'text-marinho', ruim: 'text-red-700', bom: 'text-emerald-700', alerta: 'text-amber-700' }[tom];
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag onClick={onClick} className={`rounded-xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-200 ${onClick ? 'hover:ring-marca' : ''}`}>

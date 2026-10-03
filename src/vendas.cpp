@@ -57,8 +57,8 @@ Vendas::Vendas(QWidget *parent, int idCliente) :
 
     // esconder id produto_vendido
 
-    ui->Tview_Vendas2->horizontalHeader()->setStyleSheet("background-color: rgb(33, 105, 149)");
-    ui->Tview_ProdutosVendidos->horizontalHeader()->setStyleSheet("background-color: rgb(33, 105, 149)");
+    ui->Tview_Vendas2->horizontalHeader()->setStyleSheet("background-color: rgb(16, 122, 46)");
+    ui->Tview_ProdutosVendidos->horizontalHeader()->setStyleSheet("background-color: rgb(16, 122, 46)");
     atualizarTabelas();
 
     // Selecionar a primeira linha das tabelas

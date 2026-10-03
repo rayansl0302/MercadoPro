@@ -18,8 +18,8 @@
 QLabel#Lbl_Cabecalho, QLabel#Lbl_Tolerancia { color: rgb(100, 116, 139); }
 QLineEdit { min-height: 30px; }
 QPushButton { min-height: 36px; padding: 0 16px; }
-QPushButton#Btn_Fechar { background-color: rgb(43, 132, 191); color: white; border-radius: 6px; }
-QPushButton#Btn_Fechar:hover { background-color: rgb(13, 92, 161); }
+QPushButton#Btn_Fechar { background-color: rgb(23, 150, 58); color: white; border-radius: 6px; }
+QPushButton#Btn_Fechar:hover { background-color: rgb(16, 122, 46); }
 QPushButton#Btn_Fechar:disabled { background-color: rgb(190, 200, 212); }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

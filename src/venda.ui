@@ -25,20 +25,20 @@
   <property name="styleSheet">
    <string notr="true">
 #venda {
-  background-color: #f3f6fa;
+  background-color: #F2F7F4;
 }
 QPushButton {
-  background-color: rgb(43, 132, 191);
+  background-color: rgb(23, 150, 58);
   color: rgb(255, 255, 255);
   font-size: 13px;
   border-radius: 10px;
 }
 QPushButton:hover {
-  background-color: rgb(13, 92, 161);
+  background-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
   color: rgb(255, 255, 255);
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
   font-size: 13px;
   border-radius: 10px;
 }
@@ -52,11 +52,11 @@ QGroupBox {
 }
 QTableView {
   background-color: #ffffff;
-  alternate-background-color: #dce9f5;
+  alternate-background-color: #DDF1E1;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   gridline-color: #e2e8f0;
-  selection-background-color: rgb(43, 132, 191);
+  selection-background-color: rgb(23, 150, 58);
   selection-color: #ffffff;
   outline: none;
 }
@@ -91,7 +91,7 @@ QLineEdit {
   color: rgb(45, 55, 75);
 }
 QLineEdit:focus {
-  border-color: rgb(43, 132, 191);
+  border-color: rgb(23, 150, 58);
 }
    </string>
   </property>
@@ -129,11 +129,11 @@ QLineEdit:focus {
       <string notr="true">
 QFrame {
   background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
-    stop:0 rgb(38, 62, 92), stop:1 rgb(24, 42, 66));
-  border-bottom: 2px solid rgb(43, 132, 191);
+    stop:0 rgb(29, 56, 74), stop:1 rgb(20, 45, 69));
+  border-bottom: 2px solid rgb(23, 150, 58);
 }
 QLabel {
-  color: rgb(195, 215, 235);
+  color: rgb(197, 222, 208);
   background-color: transparent;
   border: none;
 }
@@ -180,7 +180,7 @@ QLabel {
         <item>
          <widget class="QLabel" name="Lbl_Step1">
           <property name="styleSheet">
-           <string notr="true">background-color: rgb(43,132,191); color: white; border-radius: 14px; font: 700 9pt &quot;Ubuntu&quot;; padding: 2px 12px;</string>
+           <string notr="true">background-color: rgb(23, 150, 58); color: white; border-radius: 14px; font: 700 9pt &quot;Ubuntu&quot;; padding: 2px 12px;</string>
           </property>
           <property name="text">
            <string>1 · Produtos</string>
@@ -200,7 +200,7 @@ QLabel {
         <item>
          <widget class="QLabel" name="Lbl_Step2">
           <property name="styleSheet">
-           <string notr="true">background-color: rgba(195,215,235,60); color: rgba(195,215,235,160); border-radius: 14px; font: 700 9pt &quot;Ubuntu&quot;; padding: 2px 12px;</string>
+           <string notr="true">background-color: rgba(197, 222, 208,60); color: rgba(197, 222, 208,160); border-radius: 14px; font: 700 9pt &quot;Ubuntu&quot;; padding: 2px 12px;</string>
           </property>
           <property name="text">
            <string>2 · Cliente</string>
@@ -220,7 +220,7 @@ QLabel {
         <item>
          <widget class="QLabel" name="Lbl_Step3">
           <property name="styleSheet">
-           <string notr="true">background-color: rgba(195,215,235,60); color: rgba(195,215,235,160); border-radius: 14px; font: 700 9pt &quot;Ubuntu&quot;; padding: 2px 12px;</string>
+           <string notr="true">background-color: rgba(197, 222, 208,60); color: rgba(197, 222, 208,160); border-radius: 14px; font: 700 9pt &quot;Ubuntu&quot;; padding: 2px 12px;</string>
           </property>
           <property name="text">
            <string>3 · Pagamento</string>
@@ -240,7 +240,7 @@ QLabel {
         <item>
          <widget class="QLabel" name="Lbl_Step4">
           <property name="styleSheet">
-           <string notr="true">background-color: rgba(195,215,235,60); color: rgba(195,215,235,160); border-radius: 14px; font: 700 9pt &quot;Ubuntu&quot;; padding: 2px 12px;</string>
+           <string notr="true">background-color: rgba(197, 222, 208,60); color: rgba(197, 222, 208,160); border-radius: 14px; font: 700 9pt &quot;Ubuntu&quot;; padding: 2px 12px;</string>
           </property>
           <property name="text">
            <string>4 · Nota Fiscal</string>
@@ -512,7 +512,7 @@ Esc     Cancelar</string>
           <string>Operador da sessão atual</string>
          </property>
          <property name="styleSheet">
-          <string notr="true">font: 600 10pt &quot;Segoe UI&quot;; color: rgb(40,60,80); background-color: transparent; border: none;</string>
+          <string notr="true">font: 600 10pt &quot;Segoe UI&quot;; color: rgb(29, 56, 74); background-color: transparent; border: none;</string>
          </property>
          <property name="text">
           <string>Operador: —</string>
@@ -632,7 +632,7 @@ Esc     Cancelar</string>
            <item>
             <widget class="QLabel" name="lbl_cliente_titulo">
              <property name="styleSheet">
-              <string notr="true">font: 700 16pt &quot;Ubuntu&quot;; color: rgb(40,60,80);</string>
+              <string notr="true">font: 700 16pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74);</string>
              </property>
              <property name="text">
               <string>Quem está comprando?</string>
@@ -770,7 +770,7 @@ QLabel { background-color: transparent; border: none; }
               <item>
                <widget class="QLabel" name="Lbl_ResumoTotalCliente">
                 <property name="styleSheet">
-                 <string notr="true">font: 700 12pt &quot;Ubuntu&quot;; color: rgb(33,105,149);</string>
+                 <string notr="true">font: 700 12pt &quot;Ubuntu&quot;; color: rgb(16, 122, 46);</string>
                 </property>
                 <property name="text">
                  <string>R$ 0,00</string>
@@ -849,7 +849,7 @@ QLabel { background-color: transparent; border: none; }</string>
           <item>
            <widget class="QLabel" name="lbl_pag_titulo">
             <property name="styleSheet">
-             <string notr="true">font: 700 16pt &quot;Ubuntu&quot;; color: rgb(40,60,80);</string>
+             <string notr="true">font: 700 16pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74);</string>
             </property>
             <property name="text">
              <string>Como vai pagar? (Alt+1 Dinheiro · Alt+2 Débito · Alt+3 Crédito · Alt+4 Pix)</string>
@@ -920,7 +920,7 @@ QComboBox QAbstractItemView { font-size: 18px; }</string>
              <item>
               <widget class="QLabel" name="label_2">
                <property name="styleSheet">
-                <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(40,60,80);</string>
+                <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74);</string>
                </property>
                <property name="text"><string>Quantia recebida (R$)</string></property>
               </widget>
@@ -947,7 +947,7 @@ QComboBox QAbstractItemView { font-size: 18px; }</string>
               <item>
                <widget class="QLabel" name="lbl_desconto">
                 <property name="styleSheet">
-                 <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(40,60,80);</string>
+                 <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74);</string>
                 </property>
                 <property name="text"><string>Desconto (R$)</string></property>
                </widget>
@@ -970,7 +970,7 @@ QComboBox QAbstractItemView { font-size: 18px; }</string>
             <item alignment="Qt::AlignmentFlag::AlignBottom">
              <widget class="QCheckBox" name="CheckPorcentagem">
               <property name="styleSheet">
-               <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(40,60,80);</string>
+               <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74);</string>
               </property>
               <property name="text"><string>Porcentagem?</string></property>
              </widget>
@@ -1001,7 +1001,7 @@ QComboBox QAbstractItemView { font-size: 18px; }</string>
              <item>
               <widget class="QLabel" name="lbl_taxa">
                <property name="styleSheet">
-                <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(40,60,80);</string>
+                <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74);</string>
                </property>
                <property name="text"><string>Taxa (%)</string></property>
               </widget>
@@ -1025,7 +1025,7 @@ QComboBox QAbstractItemView { font-size: 18px; }</string>
              <string>Imprime o cupom na impressora térmica ao confirmar a venda</string>
             </property>
             <property name="styleSheet">
-             <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(40,60,80);</string>
+             <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74);</string>
             </property>
             <property name="text">
              <string>Imprimir cupom na impressora térmica</string>
@@ -1062,7 +1062,7 @@ QComboBox QAbstractItemView { font-size: 18px; }</string>
            </property>
            <property name="styleSheet">
             <string notr="true">QFrame#frame_Resumo { background-color: white; border: 1px solid #e2e8f0; border-radius: 12px; }
-QLabel { background-color: transparent; border: none; font: 700 14pt &quot;Ubuntu&quot;; color: rgb(40,60,80); }</string>
+QLabel { background-color: transparent; border: none; font: 700 14pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74); }</string>
            </property>
            <property name="frameShape">
             <enum>QFrame::Shape::StyledPanel</enum>
@@ -1157,7 +1157,7 @@ QLabel { background-color: transparent; border: none; font: 700 14pt &quot;Ubunt
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QFrame#frame_Pagar { background-color: white; border: 1px solid #e2e8f0; border-top: 5px solid rgb(33,105,149); border-radius: 12px; }
+            <string notr="true">QFrame#frame_Pagar { background-color: white; border: 1px solid #e2e8f0; border-top: 5px solid rgb(16, 122, 46); border-radius: 12px; }
 QLabel { background-color: transparent; border: none; }</string>
            </property>
            <layout class="QVBoxLayout" name="vl_valor_final">
@@ -1188,7 +1188,7 @@ QLabel { background-color: transparent; border: none; }</string>
             <item>
              <widget class="QLabel" name="Lbl_TotalTaxa">
               <property name="styleSheet">
-               <string notr="true">font: 700 72pt &quot;Ubuntu&quot;; color: rgb(33,105,149);</string>
+               <string notr="true">font: 700 72pt &quot;Ubuntu&quot;; color: rgb(16, 122, 46);</string>
               </property>
               <property name="text">
                <string>0</string>
@@ -1316,7 +1316,7 @@ QLabel { background-color: transparent; border: none; }</string>
            <item>
             <widget class="QLabel" name="lbl_nf_titulo">
              <property name="styleSheet">
-              <string notr="true">font: 700 16pt &quot;Ubuntu&quot;; color: rgb(40,60,80);</string>
+              <string notr="true">font: 700 16pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74);</string>
              </property>
              <property name="text">
               <string>Emissão da Nota Fiscal</string>
@@ -1532,7 +1532,7 @@ QLabel { background-color: transparent; border: none; }</string>
       <item>
        <widget class="QCheckBox" name="Chk_NovaVenda">
         <property name="styleSheet">
-         <string notr="true">font: 700 13pt &quot;Segoe UI&quot;; color: rgb(40,60,80); background-color: transparent; border: none;</string>
+         <string notr="true">font: 700 13pt &quot;Segoe UI&quot;; color: rgb(29, 56, 74); background-color: transparent; border: none;</string>
         </property>
         <property name="text">
          <string>Nova venda ao finalizar</string>
@@ -1563,7 +1563,7 @@ QLabel { background-color: transparent; border: none; }</string>
         <item>
          <widget class="QLabel" name="Lbl_QtdItens">
           <property name="styleSheet">
-           <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(40,60,80); background-color: transparent; border: none; padding-right: 16px;</string>
+           <string notr="true">font: 700 15pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74); background-color: transparent; border: none; padding-right: 16px;</string>
           </property>
           <property name="text">
            <string>0 itens</string>
@@ -1573,7 +1573,7 @@ QLabel { background-color: transparent; border: none; }</string>
         <item>
          <widget class="QLabel" name="lbl_total_txt">
           <property name="styleSheet">
-           <string notr="true">font: 700 16pt &quot;Ubuntu&quot;; color: rgb(40,60,80); background-color: transparent; border: none;</string>
+           <string notr="true">font: 700 16pt &quot;Ubuntu&quot;; color: rgb(29, 56, 74); background-color: transparent; border: none;</string>
           </property>
           <property name="text">
            <string>Total (R$):</string>
@@ -1583,7 +1583,7 @@ QLabel { background-color: transparent; border: none; }</string>
         <item>
          <widget class="QLabel" name="Lbl_Total">
           <property name="styleSheet">
-           <string notr="true">font: 700 22pt &quot;Ubuntu&quot;; color: rgb(33,105,149); background-color: transparent; border: none;</string>
+           <string notr="true">font: 700 22pt &quot;Ubuntu&quot;; color: rgb(16, 122, 46); background-color: transparent; border: none;</string>
           </property>
           <property name="text">
            <string>0,00</string>
@@ -1634,9 +1634,9 @@ QLabel { background-color: transparent; border: none; }</string>
         </property>
         <property name="styleSheet">
          <string notr="true">
-#Btn_Aceitar { background-color: rgb(33,105,149); font-size: 16px; }
-#Btn_Aceitar:hover { background-color: rgb(3,75,119); }
-#Btn_Aceitar:pressed { background-color: rgb(153,193,241); }
+#Btn_Aceitar { background-color: rgb(16, 122, 46); font-size: 16px; }
+#Btn_Aceitar:hover { background-color: rgb(11, 92, 34); }
+#Btn_Aceitar:pressed { background-color: rgb(143, 217, 163); }
          </string>
         </property>
         <property name="text">

@@ -39,7 +39,7 @@ QPushButton *botaoSecundario(const QString &texto, const QString &icone, const Q
     b->setIcon(Icones::icone(icone, QColor(cor), 18));
     b->setStyleSheet(QStringLiteral(
         "QPushButton { background: white; color: %1; border: 1px solid #C9D3DF; }"
-        "QPushButton:hover { background: #EAF3FB; border-color: #2B84BF; }"
+        "QPushButton:hover { background: #EAF6EC; border-color: #17963A; }"
         "QPushButton:disabled { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; }").arg(cor));
     return b;
 }
@@ -67,12 +67,12 @@ ContasReceberJanela::ContasReceberJanela(GateGerente g, qlonglong abrirClienteId
 void ContasReceberJanela::montar()
 {
     auto *titulo = new QLabel("Contas a receber");
-    titulo->setStyleSheet("font-size: 18pt; font-weight: 700; color: #16324F;");
+    titulo->setStyleSheet("font-size: 18pt; font-weight: 700; color: #142D45;");
     auto *sub = new QLabel("Fiado e caderneta: o que cada cliente deve, o que comprou a prazo e o que já pagou.");
     sub->setStyleSheet("color: #5B6B7F;");
 
     cartaoTotal = novoCartao("#B91C1C");
-    cartaoClientes = novoCartao("#1E40AF");
+    cartaoClientes = novoCartao("#107A2E");
     cartaoMaior = novoCartao("#475569");
     auto *cartoes = new QHBoxLayout;
     cartoes->setSpacing(10);
@@ -118,10 +118,10 @@ void ContasReceberJanela::montar()
     btnLancar->setIcon(Icones::icone("plus", QColor(Qt::white), 18));
     btnReceber = new QPushButton("Receber");
     btnReceber->setIcon(Icones::icone("circle-check", QColor(Qt::white), 18));
-    btnExtrato = botaoSecundario("Extrato", "file-text", "#1E3A5F");
+    btnExtrato = botaoSecundario("Extrato", "file-text", "#142D45");
     btnCobrar = botaoSecundario("Cobrar no WhatsApp", "mail", "#15803D");
-    btnCredito = botaoSecundario("Dados de crédito", "settings", "#1E3A5F");
-    auto *btnFechar = botaoSecundario("Fechar", "x", "#1E3A5F");
+    btnCredito = botaoSecundario("Dados de crédito", "settings", "#142D45");
+    auto *btnFechar = botaoSecundario("Fechar", "x", "#142D45");
 
     connect(btnLancar, &QPushButton::clicked, this, [this]() { novaDivida(); });
     connect(btnReceber, &QPushButton::clicked, this, [this]() {

@@ -58,17 +58,17 @@
 }
 
 #Btn_Danfe:pressed {
-    background-color: #1e40af;
+    background-color: #107A2E;
 }
 
 QTableView {
     background-color: #ffffff;
-    alternate-background-color: #dce9f5;
+    alternate-background-color: #DDF1E1;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     gridline-color: #e2e8f0;
     font: 10pt &quot;Ubuntu&quot;;
-    selection-background-color: rgb(43, 132, 191);
+    selection-background-color: rgb(23, 150, 58);
     selection-color: #ffffff;
     outline: none;
 }

@@ -539,8 +539,8 @@ void MainWindow::atualizarLogoCabecalho()
         return;
 
     ui->label_6->setStyleSheet(logoDaEmpresa
-        ? QStringLiteral("background: white; border-radius: 6px; border: 2px solid rgba(43, 132, 191, 180);")
-        : QStringLiteral("border-right: 2px solid rgba(43, 132, 191, 180);"));
+        ? QStringLiteral("background: white; border-radius: 6px; border: 2px solid rgba(23, 150, 58, 180);")
+        : QStringLiteral("border-right: 2px solid rgba(23, 150, 58, 180);"));
     ui->label_6->setScaledContents(false);
     ui->label_6->setAlignment(Qt::AlignCenter);
     ui->label_6->setMargin(3);
@@ -614,12 +614,12 @@ void MainWindow::montarMenuInicial()
 
     // na lista de produtos: botão para voltar ao menu
     auto *btnInicio = new QPushButton(QStringLiteral("  Início"), ui->paginaProdutos);
-    btnInicio->setIcon(Icones::icone("arrow-left", QColor("#1E3A5F"), 18));
+    btnInicio->setIcon(Icones::icone("arrow-left", QColor("#142D45"), 18));
     btnInicio->setCursor(Qt::PointingHandCursor);
     btnInicio->setToolTip("Voltar ao menu inicial");
-    btnInicio->setStyleSheet("QPushButton { background: white; color: #1E3A5F; border: 1px solid #C9D3DF;"
+    btnInicio->setStyleSheet("QPushButton { background: white; color: #142D45; border: 1px solid #C9D3DF;"
                              " border-radius: 8px; padding: 6px 14px; font-weight: 700; }"
-                             "QPushButton:hover { background: #EAF3FB; border-color: #2B84BF; }");
+                             "QPushButton:hover { background: #EAF6EC; border-color: #17963A; }");
     connect(btnInicio, &QPushButton::clicked, this, &MainWindow::irParaInicio);
     ui->horizontalLayout_6->insertWidget(0, btnInicio);
     ui->horizontalLayout_6->insertSpacing(1, 8);
@@ -637,9 +637,9 @@ void MainWindow::atualizarIndicadorEmpresa()
         return;
     const EmpresaDTO e = Empresa_service::instancia()->ativa();
     const QString nome = e.valida() ? e.apelido : QStringLiteral("Empresa");
-    btnEmpresa->setIcon(Icones::icone("building-2", QColor("#0F766E"), 20));
+    btnEmpresa->setIcon(Icones::icone("building-2", QColor("#142D45"), 20));
     btnEmpresa->setText(QStringLiteral(" %1").arg(nome));
-    btnEmpresa->setStyleSheet(estiloChip("rgb(15, 118, 110)"));
+    btnEmpresa->setStyleSheet(estiloChip("rgb(20, 45, 69)"));
     btnEmpresa->setToolTip(QStringLiteral("Empresa em uso: %1\nCNPJ %2\nClique para trocar — as vendas e notas "
                                           "vão para o CNPJ escolhido.")
                                .arg(nome, e.cnpj.isEmpty() ? QStringLiteral("não informado") : e.cnpjFormatado()));
@@ -708,16 +708,16 @@ void MainWindow::atualizarIndicadorNuvem()
     QString cor;
     if (s.emExecucao) {
         texto = QStringLiteral(" Nuvem: sincronizando...");
-        cor = "rgb(30, 64, 175)";
+        cor = "rgb(16, 122, 46)";
     } else if (!s.ultimoErro.isEmpty()) {
         texto = QStringLiteral(" Nuvem: com erro");
         cor = "rgb(185, 28, 28)";
     } else {
         const QDateTime ok = QDateTime::fromString(s.ultimoCicloOk, "yyyy-MM-dd HH:mm:ss");
         texto = ok.isValid() ? QStringLiteral(" Nuvem: %1").arg(ok.toString("HH:mm")) : QStringLiteral(" Nuvem: aguardando");
-        cor = "rgb(15, 118, 110)";
+        cor = "rgb(23, 150, 58)";
     }
-    btnNuvem->setIcon(Icones::icone("repeat", QColor(cor.contains("185") ? "#B91C1C" : "#0F766E"), 20));
+    btnNuvem->setIcon(Icones::icone("repeat", QColor(cor.contains("185") ? "#B91C1C" : "#17963A"), 20));
     btnNuvem->setText(texto);
     btnNuvem->setStyleSheet(estiloChip(cor));
     btnNuvem->setToolTip(s.ultimoErro.isEmpty() ? QStringLiteral("Sincronização com o painel online. Último ciclo: %1").arg(s.ultimoCicloOk.isEmpty() ? "ainda não" : s.ultimoCicloOk)
@@ -819,7 +819,7 @@ void MainWindow::montarMenuCaixa()
     btnOperador->setCursor(Qt::PointingHandCursor);
     btnOperador->setToolTip("Operador logado — clique para trocar de operador ou sair da conta");
     QMenu *menuOperador = new QMenu(btnOperador);
-    menuOperador->addAction(Icones::icone("repeat", QColor("#1E3A5F"), 18), QStringLiteral("Trocar operador..."),
+    menuOperador->addAction(Icones::icone("repeat", QColor("#142D45"), 18), QStringLiteral("Trocar operador..."),
                             this, &MainWindow::trocarOperadorClicked);
     menuOperador->addAction(Icones::icone("log-out", QColor("#B91C1C"), 18), QStringLiteral("Sair da conta"),
                             this, &MainWindow::sairSessaoClicked);
@@ -889,11 +889,11 @@ void MainWindow::atualizarIndicadorSessao()
         btnOperador->setStyleSheet(estiloChip("rgb(180, 83, 9)"));
         return;
     }
-    btnOperador->setIcon(Icones::icone("user", QColor("#1E40AF"), 20));
+    btnOperador->setIcon(Icones::icone("user", QColor("#107A2E"), 20));
     btnOperador->setText(QStringLiteral(" %1%2  ▾")
                              .arg(sessao.nomeOperador,
                                   sessao.gerente ? QStringLiteral("  ·  Gerente") : QString()));
-    btnOperador->setStyleSheet(estiloChip("rgb(30, 64, 175)"));
+    btnOperador->setStyleSheet(estiloChip("rgb(16, 122, 46)"));
 }
 
 void MainWindow::aplicarSessao()

@@ -122,15 +122,15 @@ void LoginOperador::carregarOperadores(const QList<OperadorDTO> &operadores, boo
         botao->setFixedSize(168, 88);
         botao->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         botao->setIconSize(QSize(30, 30));
-        botao->setIcon(Icones::icone(ehGerenteGeral ? "shield-check" : "user", QColor("#2B84BF"), 30));
+        botao->setIcon(Icones::icone(ehGerenteGeral ? "shield-check" : "user", QColor("#17963A"), 30));
         botao->setText(ehGerente && !ehGerenteGeral ? nome + QStringLiteral("\nGerente") : nome);
         botao->setToolTip(ehGerenteGeral ? QStringLiteral("Usa o PIN geral do gerente") : nome);
         botao->setStyleSheet(QStringLiteral(
-            "QToolButton { background: white; color: #1E3A5F; border: 1px solid #D5DEE9; border-radius: 12px;"
+            "QToolButton { background: white; color: #142D45; border: 1px solid #D5DEE9; border-radius: 12px;"
             " font-weight: 700; padding: 6px; }"
-            "QToolButton:hover { background: #EAF3FB; border: 2px solid #2B84BF; }"
-            "QToolButton:checked { background: #D3E8F8; border: 2px solid #2B84BF; color: #0B2540; }"
-            "QToolButton:focus { border: 2px solid #2B84BF; }"));
+            "QToolButton:hover { background: #EAF6EC; border: 2px solid #17963A; }"
+            "QToolButton:checked { background: #D4F0DA; border: 2px solid #17963A; color: #142D45; }"
+            "QToolButton:focus { border: 2px solid #17963A; }"));
         connect(botao, &QToolButton::clicked, this, [this, i]() { selecionarCartao(i); });
         botoesOperador.append(botao);
         grade->addWidget(botao, i / kColunas, i % kColunas);

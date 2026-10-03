@@ -22,19 +22,19 @@
   <property name="styleSheet">
    <string notr="true">
 #JanelaOrcamento {
-  background-color: #f3f6fa;
+  background-color: #F2F7F4;
 }
 QPushButton {
-  background-color: rgb(43, 132, 191);
+  background-color: rgb(23, 150, 58);
   color: rgb(255, 255, 255);
   font: 600 10pt &quot;Segoe UI&quot;;
   border-radius: 8px;
 }
 QPushButton:hover {
-  background-color: rgb(13, 92, 161);
+  background-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
 }
 QLineEdit, QTextEdit {
   background-color: white;
@@ -44,7 +44,7 @@ QLineEdit, QTextEdit {
   font: 10pt &quot;Segoe UI&quot;;
 }
 QLineEdit:focus, QTextEdit:focus {
-  border-color: rgb(43, 132, 191);
+  border-color: rgb(23, 150, 58);
 }
 QTableView {
   background-color: white;
@@ -52,15 +52,15 @@ QTableView {
   border-radius: 6px;
   gridline-color: rgb(230, 232, 238);
   selection-background-color: rgb(210, 228, 248);
-  selection-color: rgb(30, 50, 80);
+  selection-color: rgb(20, 45, 69);
 }
 QHeaderView::section {
-  background-color: #eaf0f7;
-  color: #1e3a5f;
+  background-color: #EAF3EC;
+  color: #142D45;
   font-weight: 700;
   border: none;
   border-right: 1px solid #d5dee9;
-  border-bottom: 2px solid #2b84bf;
+  border-bottom: 2px solid #17963A;
   padding: 6px 8px;
 }
    </string>
@@ -98,7 +98,7 @@ QHeaderView::section {
      <property name="styleSheet">
       <string notr="true">
 #leftPanel {
-  background-color: #e9eef5;
+  background-color: #E8F0EA;
   border-right: 1px solid #d5dee9;
 }
       </string>
@@ -125,7 +125,7 @@ QHeaderView::section {
       <item>
        <widget class="QLabel" name="label_11">
         <property name="styleSheet">
-         <string notr="true">font: 700 11pt &quot;Segoe UI&quot;; color: rgb(30, 50, 80);</string>
+         <string notr="true">font: 700 11pt &quot;Segoe UI&quot;; color: rgb(20, 45, 69);</string>
         </property>
         <property name="text">
          <string>Novo Orçamento</string>
@@ -480,7 +480,7 @@ QHeaderView::section {
          <item>
           <widget class="QLabel" name="Lbl_TotalGeral">
            <property name="styleSheet">
-            <string notr="true">font: 700 12pt &quot;Segoe UI&quot;; color: rgb(30, 50, 80);</string>
+            <string notr="true">font: 700 12pt &quot;Segoe UI&quot;; color: rgb(20, 45, 69);</string>
            </property>
            <property name="text">
             <string>Total Geral:</string>

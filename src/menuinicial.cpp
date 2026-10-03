@@ -23,16 +23,16 @@ public:
 
 const char *kEstiloNormal =
     "QPushButton { background: white; border: 1px solid #D5DEE9; border-radius: 12px; padding: 0; }"
-    "QPushButton:hover { background: #EAF3FB; border: 2px solid #2B84BF; }"
-    "QPushButton:pressed { background: #D3E8F8; }"
-    "QPushButton:focus { border: 2px solid #2B84BF; }";
+    "QPushButton:hover { background: #EAF6EC; border: 2px solid #17963A; }"
+    "QPushButton:pressed { background: #D4F0DA; }"
+    "QPushButton:focus { border: 2px solid #17963A; }";
 
 const char *kEstiloDestaque =
-    "QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2F8FCC, stop:1 #1F6A9C);"
-    " border: 1px solid #174F75; border-radius: 12px; padding: 0; }"
-    "QPushButton:hover { background: #1F6A9C; }"
-    "QPushButton:pressed { background: #174F75; }"
-    "QPushButton:focus { border: 2px solid #8CC4EC; }";
+    "QPushButton { background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2DB14F, stop:1 #107A2E);"
+    " border: 1px solid #107A2E; border-radius: 12px; padding: 0; }"
+    "QPushButton:hover { background: #107A2E; }"
+    "QPushButton:pressed { background: #107A2E; }"
+    "QPushButton:focus { border: 2px solid #8FD9A3; }";
 }
 
 MenuInicial::MenuInicial(QWidget *parent)
@@ -57,7 +57,7 @@ MenuInicial::MenuInicial(QWidget *parent)
     conteudo->setSpacing(10);
 
     lblTitulo = new QLabel(pagina);
-    lblTitulo->setStyleSheet(QStringLiteral("font-size: 22pt; font-weight: 700; color: #16324F; background: transparent;"));
+    lblTitulo->setStyleSheet(QStringLiteral("font-size: 22pt; font-weight: 700; color: #142D45; background: transparent;"));
     lblSubtitulo = new QLabel(pagina);
     lblSubtitulo->setStyleSheet(QStringLiteral("font-size: 11pt; color: #5B6B7F; background: transparent;"));
     conteudo->addWidget(lblTitulo);
@@ -95,8 +95,8 @@ void MenuInicial::adicionarGrupo(const QString &titulo)
 {
     auto *rotulo = new QLabel(titulo.toUpper());
     rotulo->setStyleSheet(QStringLiteral(
-        "font-size: 10pt; font-weight: 700; color: #1E3A5F; letter-spacing: 1px;"
-        " background: transparent; border-bottom: 2px solid #2B84BF; padding: 10px 0 4px 0;"));
+        "font-size: 10pt; font-weight: 700; color: #142D45; letter-spacing: 1px;"
+        " background: transparent; border-bottom: 2px solid #17963A; padding: 10px 0 4px 0;"));
 
     auto *grade = new QGridLayout;
     grade->setHorizontalSpacing(12);
@@ -129,7 +129,7 @@ void MenuInicial::adicionarBotao(const QString &nomeIcone, const QString &titulo
     layout->setSpacing(4);
 
     auto *icone = new QLabel;
-    icone->setPixmap(Icones::pixmap(nomeIcone, destaque ? QColor(Qt::white) : QColor("#2B84BF"), 40));
+    icone->setPixmap(Icones::pixmap(nomeIcone, destaque ? QColor(Qt::white) : QColor("#17963A"), 40));
     icone->setAlignment(Qt::AlignCenter);
     icone->setStyleSheet(QStringLiteral("background: transparent; border: none;"));
     icone->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -138,7 +138,7 @@ void MenuInicial::adicionarBotao(const QString &nomeIcone, const QString &titulo
     texto->setAlignment(Qt::AlignCenter);
     texto->setWordWrap(true);
     texto->setStyleSheet(QStringLiteral("font-size: 10.5pt; font-weight: 700; background: transparent; border: none; color: %1;")
-                             .arg(destaque ? QStringLiteral("white") : QStringLiteral("#1E3A5F")));
+                             .arg(destaque ? QStringLiteral("white") : QStringLiteral("#142D45")));
     texto->setAttribute(Qt::WA_TransparentForMouseEvents);
 
     layout->addWidget(icone, 1);

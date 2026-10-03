@@ -25,17 +25,17 @@
   background-color: rgb(236, 240, 245);
 }
 QPushButton {
-  background-color: rgb(43, 132, 191);
+  background-color: rgb(23, 150, 58);
   color: rgb(255, 255, 255);
   font: 600 10pt &quot;Segoe UI&quot;;
   border-radius: 8px;
   padding: 0 14px;
 }
 QPushButton:hover {
-  background-color: rgb(13, 92, 161);
+  background-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
 }
 QPushButton:disabled {
   background-color: rgb(190, 200, 212);
@@ -87,7 +87,7 @@ QLineEdit, QDateEdit {
   color: rgb(30, 41, 59);
 }
 QLineEdit:focus, QDateEdit:focus {
-  border: 2px solid rgb(43, 132, 191);
+  border: 2px solid rgb(23, 150, 58);
 }
 QTableView {
   background-color: #ffffff;
@@ -95,7 +95,7 @@ QTableView {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   gridline-color: #e2e8f0;
-  selection-background-color: rgb(43, 132, 191);
+  selection-background-color: rgb(23, 150, 58);
   selection-color: #ffffff;
   font: 10pt &quot;Segoe UI&quot;;
   outline: none;
@@ -164,11 +164,11 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
       <string notr="true">
 QFrame {
   background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
-    stop:0 rgb(38, 62, 92), stop:1 rgb(24, 42, 66));
-  border-bottom: 2px solid rgb(43, 132, 191);
+    stop:0 rgb(29, 56, 74), stop:1 rgb(20, 45, 69));
+  border-bottom: 2px solid rgb(23, 150, 58);
 }
 QLabel {
-  color: rgb(195, 215, 235);
+  color: rgb(197, 222, 208);
   background-color: transparent;
   border: none;
 }

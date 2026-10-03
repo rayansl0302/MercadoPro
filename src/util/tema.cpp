@@ -7,10 +7,10 @@
 
 namespace {
 
-// azul da marca (o mesmo dos botões do programa) e tons de apoio
-constexpr auto kPrimaria = "#2B84BF";
-constexpr auto kPrimariaEscura = "#1F6A9C";
-constexpr auto kFundo = "#F3F6FA";
+// cores da logo MercadoPro: verde (botões e destaques) e azul-marinho (títulos), com tons de apoio
+constexpr auto kPrimaria = "#17963A";
+constexpr auto kPrimariaEscura = "#107A2E";
+constexpr auto kFundo = "#F2F7F4";
 constexpr auto kBorda = "#C9D3DF";
 constexpr auto kTexto = "#1F2937";
 
@@ -46,7 +46,7 @@ QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus, QDateTim
 QComboBox:disabled { background-color: #EEF1F5; color: #8A94A3; }
 QComboBox QAbstractItemView {
     background-color: white; border: 1px solid @borda; outline: none;
-    selection-background-color: #D3E8F8; selection-color: #0B2540;
+    selection-background-color: #D4F0DA; selection-color: #142D45;
 }
 
 /* ---- botões (telas com estilo próprio mantêm o delas) ---- */
@@ -55,24 +55,24 @@ QPushButton {
     padding: 6px 16px; min-height: 22px; font-weight: 600;
 }
 QPushButton:hover { background-color: @primariaEscura; }
-QPushButton:pressed { background-color: #174F75; }
+QPushButton:pressed { background-color: #107A2E; }
 QPushButton:disabled { background-color: #CBD5E1; color: #F8FAFC; }
-QPushButton:focus { outline: none; border: 2px solid #8CC4EC; }
+QPushButton:focus { outline: none; border: 2px solid #8FD9A3; }
 
 /* ---- tabelas ---- */
 QTableView, QTableWidget, QTreeView, QListView {
     background-color: white; alternate-background-color: #F5F8FC;
     border: 1px solid @borda; border-radius: 6px; gridline-color: #E6EBF1;
-    selection-background-color: #D3E8F8; selection-color: #0B2540;
+    selection-background-color: #D4F0DA; selection-color: #142D45;
 }
 QTableView::item, QTreeView::item { padding: 4px 6px; }
-QTableView::item:hover, QTreeView::item:hover { background-color: #EAF3FB; }
+QTableView::item:hover, QTreeView::item:hover { background-color: #EAF6EC; }
 QHeaderView::section {
-    background-color: #EAF0F7; color: #1E3A5F; font-weight: 700;
+    background-color: #EAF3EC; color: #142D45; font-weight: 700;
     border: none; border-right: 1px solid #D5DEE9; border-bottom: 2px solid @primaria;
     padding: 7px 8px;
 }
-QTableCornerButton::section { background-color: #EAF0F7; border: none; }
+QTableCornerButton::section { background-color: #EAF3EC; border: none; }
 
 /* ---- barras de rolagem finas ---- */
 QScrollBar:vertical { background: transparent; width: 12px; margin: 2px; }
@@ -87,29 +87,29 @@ QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
 /* ---- menus ---- */
 QMenuBar { background-color: white; border-bottom: 1px solid #DDE4ED; padding: 2px 4px; }
 QMenuBar::item { padding: 6px 12px; border-radius: 5px; background: transparent; color: @texto; }
-QMenuBar::item:selected { background-color: #E3F0FA; color: #174F75; }
+QMenuBar::item:selected { background-color: #E3F4E7; color: #107A2E; }
 QMenu { background-color: white; border: 1px solid @borda; padding: 6px; }
 QMenu::item { padding: 7px 28px 7px 14px; border-radius: 5px; color: @texto; }
-QMenu::item:selected { background-color: #E3F0FA; color: #174F75; }
+QMenu::item:selected { background-color: #E3F4E7; color: #107A2E; }
 QMenu::item:disabled { color: #9AA5B4; }
 QMenu::separator { height: 1px; background: #E2E8F0; margin: 5px 8px; }
 
 /* ---- barra de status ---- */
-QStatusBar { background-color: #E9EEF5; border-top: 1px solid #D5DEE9; }
+QStatusBar { background-color: #E8F0EA; border-top: 1px solid #D5DEE9; }
 QStatusBar::item { border: none; }
 
 /* ---- abas, grupos, barras de progresso ---- */
 QTabWidget::pane { border: 1px solid @borda; border-radius: 6px; background: white; top: -1px; }
 QTabBar::tab {
-    background: #E9EEF5; color: #475569; padding: 8px 18px; margin-right: 2px;
+    background: #E8F0EA; color: #475569; padding: 8px 18px; margin-right: 2px;
     border-top-left-radius: 6px; border-top-right-radius: 6px;
 }
-QTabBar::tab:selected { background: white; color: #174F75; font-weight: 700; border-bottom: 3px solid @primaria; }
+QTabBar::tab:selected { background: white; color: #107A2E; font-weight: 700; border-bottom: 3px solid @primaria; }
 QTabBar::tab:hover:!selected { background: #DCE6F1; }
 QGroupBox {
     border: 1px solid @borda; border-radius: 8px; margin-top: 14px; padding-top: 10px; font-weight: 600;
 }
-QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 6px; color: #1E3A5F; }
+QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 6px; color: #142D45; }
 QProgressBar { border: 1px solid @borda; border-radius: 6px; text-align: center; background: white; }
 QProgressBar::chunk { background-color: @primaria; border-radius: 5px; }
 

@@ -16,21 +16,21 @@
   <property name="styleSheet">
    <string notr="true">
 #JanelaEmailContador {
-  background-color: #f3f6fa;
-  background-color: #f3f6fa;
+  background-color: #F2F7F4;
+  background-color: #F2F7F4;
 }
 QPushButton {
-  background-color: rgb(43, 132, 191);
+  background-color: rgb(23, 150, 58);
   color: rgb(255, 255, 255);
   font-size: 13px;
   border-radius: 10px;
 }
 QPushButton:hover {
-  background-color: rgb(13, 92, 161);
+  background-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
   color: rgb(255, 255, 255);
-  background-color: rgb(153, 193, 241);
+  background-color: rgb(143, 217, 163);
   font-size: 13px;
   border-radius: 10px;
 }

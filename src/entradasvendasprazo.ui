@@ -19,7 +19,7 @@
     stop:0 rgba(210,210,210,255), stop:1 rgba(175,175,175,255));
 }
 QPushButton {
-  background-color: rgb(43,132,191);
+  background-color: rgb(23, 150, 58);
   color: rgb(255,255,255);
   font-size: 13px;
   border-radius: 6px;
@@ -29,10 +29,10 @@ QPushButton:disabled {
   background-color: rgb(154,153,150);
 }
 QPushButton:hover {
-  background-color: rgb(13,92,161);
+  background-color: rgb(16, 122, 46);
 }
 QPushButton:pressed {
-  background-color: rgb(153,193,241);
+  background-color: rgb(143, 217, 163);
 }
 #btn_DeletarEntrada {
   background-color: rgb(191,61,64);
@@ -70,7 +70,7 @@ CustomLineEdit, QLineEdit {
   font-size: 13px;
 }
 CustomLineEdit:focus, QLineEdit:focus {
-  border: 1px solid rgb(43,132,191);
+  border: 1px solid rgb(23, 150, 58);
 }
 </string>
   </property>
@@ -131,7 +131,7 @@ CustomLineEdit:focus, QLineEdit:focus {
      <item>
       <widget class="QLabel" name="label">
        <property name="styleSheet">
-        <string notr="true">font: 700 13pt &quot;Ubuntu&quot;; color: rgb(43,132,191);</string>
+        <string notr="true">font: 700 13pt &quot;Ubuntu&quot;; color: rgb(23, 150, 58);</string>
        </property>
        <property name="text">
         <string>—</string>
