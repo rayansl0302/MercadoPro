@@ -85,3 +85,8 @@ tests/Testing
 *_BASE_*
 *_BACKUP_*
 *.ini
+
+# painel
+painel/**/node_modules/
+painel/web/dist/
+.env

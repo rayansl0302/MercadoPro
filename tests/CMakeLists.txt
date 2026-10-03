@@ -39,6 +39,8 @@ set(TEST_SOURCES
     services/test_caixa_service.cpp
     services/test_empresa_contas.cpp
     services/test_contasreceber_service.cpp
+    services/test_numeracaonf.cpp
+    services/test_nuvem.cpp
 )
 
 
@@ -60,6 +62,8 @@ add_executable(QEstoqueLojaTests
     services/test_caixa_service.h services/test_caixa_service.cpp
     services/test_empresa_contas.h services/test_empresa_contas.cpp
     services/test_contasreceber_service.h services/test_contasreceber_service.cpp
+    services/test_numeracaonf.h services/test_numeracaonf.cpp
+    services/test_nuvem.h services/test_nuvem.cpp
 
 
 )

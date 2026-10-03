@@ -1,0 +1,58 @@
+# Ambiente local que imita o Railway: PostgreSQL + API/painel. Tudo só no localhost.
+#   docker compose up --build            -> painel em http://localhost:3000
+#   docker compose --profile test run --rm testes   -> testes da API (usa um banco de teste separado)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: painel
+      POSTGRES_PASSWORD: ${DB_SENHA:-painel-local}
+      POSTGRES_DB: painel
+    ports:
+      - "127.0.0.1:5434:5432"     # só o seu computador enxerga; fora disso o banco é privado
+    volumes:
+      - dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U painel -d painel"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://painel:${DB_SENHA:-painel-local}@db:5432/painel
+      PORT: "3000"
+      COOKIE_SEGURO: "false"        # http local (na Railway é https e fica true)
+      EXIGIR_2FA: ${EXIGIR_2FA:-false}
+      PASTA_WEB: /app/web
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./web/dist:/app/web:ro
+
+  testes:
+    profiles: ["test"]
+    image: node:22-alpine
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_ADMIN_URL: postgres://painel:${DB_SENHA:-painel-local}@db:5432/postgres
+      DATABASE_URL: postgres://painel:${DB_SENHA:-painel-local}@db:5432/painel_test
+      NODE_ENV: test
+      CONTRATO_LOJA: /loja/src/nuvem/contrato.json
+    volumes:
+      - ./api:/app
+      - ..:/loja:ro
+      - modulos-api:/app/node_modules
+    command: sh -c "npm install --no-audit --no-fund && npx vitest run"
+
+volumes:
+  dados:
+  modulos-api:

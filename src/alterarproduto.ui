@@ -29,7 +29,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Alterar Produto - QEstoqueLoja</string>
+   <string>Alterar Produto - MercadoPro</string>
   </property>
   <property name="layoutDirection">
    <enum>Qt::LayoutDirection::LeftToRight</enum>

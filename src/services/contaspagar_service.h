@@ -33,11 +33,13 @@ public:
 
     // Lança uma conta; com parcelas > 1 divide o valor total (a diferença de centavos vai para a última
     // parcela) e gera os vencimentos a partir do primeiro, na periodicidade escolhida.
+    // origem (opcional): quem pediu quando não foi um operador logado, ex.: "Painel: Maria". Vai para o log de acesso.
     Resultado lancar(const ContaPagarDTO &base, int parcelas = 1,
-                     Periodicidade periodicidade = Periodicidade::Mensal);
+                     Periodicidade periodicidade = Periodicidade::Mensal, const QString &origem = QString());
 
     Resultado alterar(const ContaPagarDTO &conta);
-    Resultado baixar(qlonglong id, double valorPago, const QString &forma, const QDateTime &quando = QDateTime());
+    Resultado baixar(qlonglong id, double valorPago, const QString &forma, const QDateTime &quando = QDateTime(),
+                     const QString &origem = QString());
     Resultado estornarBaixa(qlonglong id);
     Resultado cancelar(qlonglong id, const QString &motivo);
 

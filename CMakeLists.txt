@@ -115,6 +115,14 @@ set(QESTOQUE_SOURCES
     src/services/escposprinter_service.cpp
     src/services/sessao_service.cpp
     src/services/empresa_service.cpp
+    src/nuvem/nuvemconfig.cpp
+    src/nuvem/nuvemcontrato.cpp
+    src/nuvem/nuvemexportador.cpp
+    src/nuvem/nuvemclient.cpp
+    src/nuvem/nuvemcontrole_repository.cpp
+    src/nuvem/pedidoaplicador.cpp
+    src/nuvem/nuvem_service.cpp
+    src/nuvem/nuvem.qrc
     src/services/contasreceber_service.cpp
     src/services/contaspagar_service.cpp
 
@@ -329,6 +337,15 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/services/operador_service.h src/services/operador_service.cpp
         src/services/sessao_service.h src/services/sessao_service.cpp
         src/services/empresa_service.h src/services/empresa_service.cpp
+        src/nuvem/nuvemconfig.h src/nuvem/nuvemconfig.cpp
+        src/nuvem/nuvemcontrato.h src/nuvem/nuvemcontrato.cpp
+        src/nuvem/nuvemexportador.h src/nuvem/nuvemexportador.cpp
+        src/nuvem/nuvemclient.h src/nuvem/nuvemclient.cpp
+        src/nuvem/nuvemcontrole_repository.h src/nuvem/nuvemcontrole_repository.cpp
+        src/nuvem/pedidoaplicador.h src/nuvem/pedidoaplicador.cpp
+        src/nuvem/nuvem_service.h src/nuvem/nuvem_service.cpp
+        src/nuvem/nuvem.qrc
+        src/nuvemdialog.h src/nuvemdialog.cpp
         src/services/contasreceber_service.h src/services/contasreceber_service.cpp
         src/services/contaspagar_service.h src/services/contaspagar_service.cpp
         src/loginoperador.h src/loginoperador.cpp src/loginoperador.ui

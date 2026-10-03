@@ -139,6 +139,8 @@ private slots:
     void escolherEmpresaClicked();
     void abrirContasPagar() { contasPagarClicked(); }
     void abrirContasReceber() { contasReceberClicked(); }
+    void nuvemClicked();
+    void atualizarIndicadorNuvem();
     void contasReceberClicked(qlonglong idCliente = 0);
     void contasPagarClicked(const QString &statusInicial = QString());
     void atualizarIndicadorEmpresa();
@@ -179,7 +181,7 @@ private:
     void setarIconesJanela();
     //QModelIndex selected_index;
 
-    const int ultimaVersaoSchema = 21;
+    const int ultimaVersaoSchema = 23;
 
     // operador comum só entra em histórico, cadastro de operadores, configurações e
     // relatórios gerenciais depois de informar o PIN do gerente
@@ -207,7 +209,8 @@ private:
     QToolButton *btnSair = nullptr;       // "Sair da conta", sempre à vista
     QLabel *lblAvisoTimeout = nullptr;
     MenuInicial *menuInicial = nullptr;
-    QToolButton *btnEmpresa = nullptr;     // empresa (CNPJ) em uso, no rodapé
+    QToolButton *btnEmpresa = nullptr;
+    QToolButton *btnNuvem = nullptr;        // estado da sincronização com o painel online     // empresa (CNPJ) em uso, no rodapé
     bool empresaPerguntada = false;
     QAction *actionTrocarOperador = nullptr;
     QAction *actionSairSessao = nullptr;

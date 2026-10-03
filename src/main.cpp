@@ -20,6 +20,7 @@
     #include "services/sessao_service.h"
     #include "services/contaspagar_service.h"
     #include "services/contasreceber_service.h"
+    #include "nuvem/nuvem_service.h"
 
     namespace {
 
@@ -99,8 +100,8 @@
         QLockFile travaInstancia(QDir::temp().absoluteFilePath("QEstoqueLoja.instancia.lock"));
         travaInstancia.setStaleLockTime(0);   // só considera velha se o processo não existe mais
         if (!travaInstancia.tryLock(200)) {
-            QMessageBox::warning(nullptr, "QEstoqueLoja",
-                "O QEstoqueLoja já está aberto neste computador.");
+            QMessageBox::warning(nullptr, "MercadoPro",
+                "O MercadoPro já está aberto neste computador.");
             return 0;
         }
 
@@ -150,6 +151,8 @@
         w.setModoDesenvolvimento(modoDesenvolvimento);
         w.aplicarSessao();
         w.show();
+        // sincronização com o painel online (desligada por padrão; só age se configurada neste computador)
+        Nuvem_service::instancia()->iniciar();
         // várias empresas (CNPJs): pergunta com qual vai trabalhar antes de vender
         if (!QCoreApplication::arguments().contains("--preview-caixa"))
             w.perguntarEmpresaSeNecessario();
@@ -170,6 +173,7 @@
                 else if (tela == "sangria") slot = "sangriaClicked";
                 else if (tela == "contas") slot = "abrirContasPagar";
                 else if (tela == "receber") slot = "abrirContasReceber";
+                else if (tela == "nuvem") slot = "nuvemClicked";
                 else if (tela == "produto") slot = "on_Btn_AddProd_clicked";
                 else if (tela == "clientes") slot = "on_Btn_Clientes_clicked";
                 else if (tela == "vendas") slot = "on_Btn_Venda_clicked";

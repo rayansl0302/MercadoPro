@@ -35,6 +35,7 @@ public:
     QString getChaveNf();
     QString getDhEmiConvertida();
     NFRetornoDTO gerarEnviarRetorno();
+    NFRetornoDTO gerarEnviarRetornoInterno();      // só o envio (sem a reserva do número)
     void setProdutosVendidosNew(QList<ProdutoVendidoDTO> listaProds, bool emitirTodos);
     void setRetornoForcado(const QString &retorno);
 private:

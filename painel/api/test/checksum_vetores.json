@@ -1,0 +1,41 @@
+{
+  "casos": [
+    {
+      "nome": "vazio",
+      "linhas": [],
+      "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "nome": "uma linha com nulo",
+      "linhas": [
+        [
+          "1",
+          "a",
+          null
+        ]
+      ],
+      "checksum": "0f41b15537ca4807e4d43c1294d8f2935de423769d5a2d524371df97f47e4d00"
+    },
+    {
+      "nome": "acentos, decimal e vazios",
+      "linhas": [
+        [
+          "1",
+          "a",
+          null
+        ],
+        [
+          "2",
+          "João ç",
+          "12.50"
+        ],
+        [
+          "3",
+          "",
+          ""
+        ]
+      ],
+      "checksum": "9b84ca5385c27adc94340a07a6147c5da7c6c66df632eb0ebf7771ae21c71f02"
+    }
+  ]
+}

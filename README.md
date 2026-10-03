@@ -1,4 +1,27 @@
-# QEstoqueLoja
+# MercadoPro
+
+ERP para lojas: estoque, vendas/PDV, emissão de NF-e e NFC-e (Simples Nacional), caixa e operadores, contas a pagar e
+a receber, várias empresas (CNPJ) e **painel web de gestão** que acompanha a loja pela internet.
+
+| Pasta | O que é |
+|---|---|
+| `/` (raiz: `src`, `tests`, `CMakeLists.txt`) | Programa da loja (C++/Qt6, SQLite ou PostgreSQL) |
+| `painel/` | API Node + site React/Tailwind do painel (veja `painel/README.md`) |
+| `ferramentas/docker/` | Scripts de teste e de captura de telas em Docker |
+
+O programa da loja envia, por HTTPS, um retrato conferido dos dados à API do painel e aplica os pedidos do painel
+(baixar/lançar conta a pagar) pelos mesmos serviços do programa. O contrato dos dados compartilhados está em
+`src/nuvem/contrato.json` (a API tem uma cópia em `painel/api/src/contrato.json`; um teste confere que são idênticas).
+
+## Origem e licença
+
+O MercadoPro é baseado no **QEstoqueLoja**, de GabR36 e colaboradores
+(<https://github.com/GabR36/QEstoqueLoja>), e continua licenciado sob a **GNU GPL v3** (arquivo `LICENSE`).
+O histórico de commits original foi preservado, com a autoria de cada pessoa.
+
+---
+
+## Sobre o projeto original (QEstoqueLoja)
 
 ## Descrição
 

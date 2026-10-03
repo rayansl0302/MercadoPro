@@ -1118,7 +1118,34 @@ std::string NfeACBR::getPdfDanfe(){
 }
 
 
+// Reserva o número da nota antes de montar o XML (a chave de acesso já leva o número) e, no fim, confirma ou
+// devolve. Assim dois caixas emitindo ao mesmo tempo nunca ficam com o mesmo número.
 NFRetornoDTO NfeACBR::gerarEnviarRetorno(){
+    const bool producao = configDTO.tpAmbFiscal;       // 1 = produção, 0 = homologação
+    const qlonglong desejado = nnf.empty() ? 0 : std::stoll(nnf);
+    const auto reserva = notaServ.reservarNNF(serieNf, producao, ModeloNota::NFe, desejado);
+    if (!reserva.ok) {
+        NFRetornoDTO falha;
+        falha.msg = reserva.msg;
+        qDebug() << "Reserva de NNF falhou:" << reserva.msg;
+        return falha;
+    }
+    if (reserva.alterado)
+        qDebug() << "NNF" << desejado << "ja usado por outro caixa; usando" << reserva.nnf;
+    setNNF(static_cast<int>(reserva.nnf));
+
+    NFRetornoDTO nota = gerarEnviarRetornoInterno();
+
+    // número consumido: autorizada, denegada ou salva em contingência. Qualquer outra coisa não gerou nota.
+    static const QStringList consumiu = {"100", "150", "110", "301", "302", "CONTINGENCIA"};
+    if (consumiu.contains(nota.cstat))
+        notaServ.confirmarNNF(serieNf, producao, ModeloNota::NFe, reserva.nnf);
+    else
+        notaServ.liberarNNF(serieNf, producao, ModeloNota::NFe, reserva.nnf);
+    return nota;
+}
+
+NFRetornoDTO NfeACBR::gerarEnviarRetornoInterno(){
     NFRetornoDTO nota;
     QString retorno = gerarEnviar();
 

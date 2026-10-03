@@ -66,6 +66,9 @@
 #include "produtoemvendasdialog.h"
 #include "contaspagarjanela.h"
 #include "contasreceberjanela.h"
+#include "nuvemdialog.h"
+#include "nuvem/nuvem_service.h"
+#include "nuvem/nuvemconfig.h"
 #include "services/empresa_service.h"
 #include "services/contaspagar_service.h"
 #include <QStackedWidget>
@@ -604,6 +607,7 @@ void MainWindow::montarMenuInicial()
     m->adicionarBotao("mail", "Enviar ao contador", "Enviar as notas ao contador", [this]() { ui->actionEnviar_Notas_Contador->trigger(); });
 
     m->adicionarGrupo("Sistema");
+    m->adicionarBotao("repeat", "Nuvem (painel)", "Sincronização com o painel de gestão online", [this]() { nuvemClicked(); });
     m->adicionarBotao("settings", "Configurações", "Empresa, fiscal, e-mail e outros", [this]() { ui->actionConfig->trigger(); });
     m->adicionarBotao("book-open", "Ajuda", "Documentação do sistema", [this]() { ui->actionDocumenta_o->trigger(); });
     m->adicionarBotao("log-out", "Sair da conta", "Encerrar a sessão do operador", [this]() { sairSessaoClicked(); });
@@ -681,6 +685,45 @@ void MainWindow::contasPagarClicked(const QString &statusInicial)
     atualizarAlertaContas();
 }
 
+void MainWindow::nuvemClicked()
+{
+    if (!exigirGerente(QStringLiteral("A configuração da nuvem")))
+        return;
+    NuvemDialog dlg(this);
+    dlg.exec();
+    atualizarIndicadorNuvem();
+}
+
+void MainWindow::atualizarIndicadorNuvem()
+{
+    if (!btnNuvem)
+        return;
+    const auto s = Nuvem_service::instancia()->status();
+    if (!s.ativa) {                                   // desligada: nada no rodapé
+        btnNuvem->setVisible(false);
+        return;
+    }
+    btnNuvem->setVisible(true);
+    QString texto;
+    QString cor;
+    if (s.emExecucao) {
+        texto = QStringLiteral(" Nuvem: sincronizando...");
+        cor = "rgb(30, 64, 175)";
+    } else if (!s.ultimoErro.isEmpty()) {
+        texto = QStringLiteral(" Nuvem: com erro");
+        cor = "rgb(185, 28, 28)";
+    } else {
+        const QDateTime ok = QDateTime::fromString(s.ultimoCicloOk, "yyyy-MM-dd HH:mm:ss");
+        texto = ok.isValid() ? QStringLiteral(" Nuvem: %1").arg(ok.toString("HH:mm")) : QStringLiteral(" Nuvem: aguardando");
+        cor = "rgb(15, 118, 110)";
+    }
+    btnNuvem->setIcon(Icones::icone("repeat", QColor(cor.contains("185") ? "#B91C1C" : "#0F766E"), 20));
+    btnNuvem->setText(texto);
+    btnNuvem->setStyleSheet(estiloChip(cor));
+    btnNuvem->setToolTip(s.ultimoErro.isEmpty() ? QStringLiteral("Sincronização com o painel online. Último ciclo: %1").arg(s.ultimoCicloOk.isEmpty() ? "ainda não" : s.ultimoCicloOk)
+                                                : s.ultimoErro);
+}
+
 void MainWindow::contasReceberClicked(qlonglong idCliente)
 {
     ContasReceberJanela janela([this](const QString &acao) { return exigirGerente(acao); }, idCliente, this);
@@ -740,6 +783,7 @@ void MainWindow::montarMenuCaixa()
     actionSairSessao = menuSessao->addAction("Sair da conta", this, &MainWindow::sairSessaoClicked);
     menuSessao->addSeparator();
     menuSessao->addAction("Log de acesso...", this, &MainWindow::logAcessoClicked);
+    menuSessao->addAction("Nuvem (painel online)...", this, &MainWindow::nuvemClicked);
     ui->menuBar->insertMenu(ui->menuAjuda->menuAction(), menuSessao);
 
     // Rodapé: quem está logado (chip grande, com menu) + botão de sair sempre à vista.
@@ -747,6 +791,16 @@ void MainWindow::montarMenuCaixa()
     QFont fonteRodape = font();
     fonteRodape.setPointSize(qMax(font().pointSize(), 9) + 2);
     fonteRodape.setBold(true);
+
+    btnNuvem = new QToolButton(this);
+    btnNuvem->setFont(fonteRodape);
+    btnNuvem->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    btnNuvem->setIconSize(QSize(20, 20));
+    btnNuvem->setCursor(Qt::PointingHandCursor);
+    btnNuvem->setVisible(false);
+    connect(btnNuvem, &QToolButton::clicked, this, &MainWindow::nuvemClicked);
+    connect(Nuvem_service::instancia(), &Nuvem_service::statusMudou, this, &MainWindow::atualizarIndicadorNuvem);
+    ui->statusbar->addPermanentWidget(btnNuvem);
 
     btnEmpresa = new QToolButton(this);
     btnEmpresa->setFont(fonteRodape);
@@ -997,6 +1051,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
     }
     saindoDoPrograma = true;
+    // para a sincronização com a nuvem e solta a trava (outro computador assume)
+    Nuvem_service::instancia()->parar();
     event->accept();
     QApplication::quit();
 }

@@ -46,6 +46,7 @@ public:
     std::string getPdfDanfe();
     void setProdutosVendidosNew(QList<ProdutoVendidoDTO> listaProds, bool emitirTodos);
     NFRetornoDTO gerarEnviarRetorno();
+    NFRetornoDTO gerarEnviarRetornoInterno();      // só o envio (sem a reserva do número)
     void setRetornoForcado(const QString &retorno);
 private:
     ACBrNFe *nfe;

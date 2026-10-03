@@ -19,12 +19,20 @@ public:
     qlonglong getIdFromChave(QString chnfe);
     bool updateWhereChave(NotaFiscalDTO dto, QString chave, QString *erro = nullptr);
     qlonglong getIdFromIdVenda(qlonglong idvenda);
-    qlonglong getProximoNNF55(QString serie, bool tpAmb, qlonglong nnfConfigurado);
+    // cnpj só com dígitos; legado = a empresa original (notas antigas sem CNPJ gravado são dela)
+    qlonglong getProximoNNF55(QString serie, bool tpAmb, qlonglong nnfConfigurado,
+                              const QString &cnpj = QString(), bool legado = true);
+    // reserva (chave única) de um número de nota: dois caixas nunca ficam com o mesmo
+    bool reservarNNF(const QString &cnpj, const QString &modelo, const QString &serie, bool tpAmb, qlonglong nnf,
+                     const QString &terminal, QString *erro = nullptr);
+    void liberarNNF(const QString &cnpj, const QString &modelo, const QString &serie, bool tpAmb, qlonglong nnf);
+    void confirmarNNF(const QString &cnpj, const QString &modelo, const QString &serie, bool tpAmb, qlonglong nnf);
     NotaFiscalDTO getNotaNormalFromIdVenda(qlonglong idvenda);
     NotaFiscalDTO getNotaById(qlonglong id);
     bool inserir(NotaFiscalDTO nota);
     qlonglong getIdNotaNormalFromIdVenda(qlonglong idvenda);
-    qlonglong getProximoNNF65(QString serie, bool tpAmb, qlonglong nnfConfigurado);
+    qlonglong getProximoNNF65(QString serie, bool tpAmb, qlonglong nnfConfigurado,
+                              const QString &cnpj = QString(), bool legado = true);
     void listarEntradas(QSqlQueryModel *model, const QString &de = "", const QString &ate = "");
     void listarMonitor(QSqlQueryModel *model, const QStringList &finalidades);
     void listarContingencias(QSqlQueryModel *model);
@@ -35,6 +43,8 @@ public:
     bool                           atualizarRetornoContingencia(const QString &chNfe, const QString &cstat, const QString &nProt);
     QString getXmlPathFromIdVenda(qlonglong idvenda);
 private:
+    qlonglong proximoNNF(const QString &modelo, const QString &serie, bool tpAmb, qlonglong nnfConfigurado,
+                         const QString &cnpj, bool legado);
     QSqlDatabase db;
 
 signals:

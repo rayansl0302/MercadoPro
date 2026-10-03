@@ -2044,6 +2044,103 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             qDebug() << "Migracao para versao 21 concluida.";
             break;
         }
+        case 21:
+        {
+            // versao 22: reserva de numero de nota fiscal. Vários caixas emitindo ao mesmo tempo não podem
+            // pegar o mesmo número: a reserva é uma linha com chave única (CNPJ, modelo, série, ambiente, nº).
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 22", dbSchemaVersion};
+            }
+            const bool pg22 = DatabaseConnection_service::isPostgres();
+            const QString pk22 = pg22 ? "SERIAL PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT";
+            const QStringList comandos22 = {
+                "CREATE TABLE IF NOT EXISTS nnf_reservas ("
+                "  id " + pk22 + ","
+                "  cnpj_emit TEXT NOT NULL,"
+                "  modelo TEXT NOT NULL,"
+                "  serie TEXT NOT NULL,"
+                "  tp_amb INTEGER NOT NULL,"
+                "  nnf INTEGER NOT NULL,"
+                "  status TEXT NOT NULL DEFAULT 'RESERVADA',"
+                "  terminal TEXT,"
+                "  reservado_em TEXT NOT NULL)",
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_nnf_reservas ON nnf_reservas(cnpj_emit, modelo, serie, tp_amb, nnf)"
+            };
+            for (const QString &sql : comandos22) {
+                QSqlQuery query(db);
+                if (!query.exec(sql)) {
+                    qDebug() << "Erro migracao 22:" << query.lastError().text() << "SQL:" << sql;
+                    db.rollback();
+                    return {false, SchemaErro::ErroMigracao, "Erro na migracao 22 (reserva de numero de nota)", dbSchemaVersion};
+                }
+            }
+            if (!setSchemaVersion(22)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 22", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 22", dbSchemaVersion};
+            }
+            dbSchemaVersion = 22;
+            qDebug() << "Migracao para versao 22 concluida.";
+            break;
+        }
+        case 22:
+        {
+            // versao 23: controle do módulo Nuvem (sincronização com o painel online). Estado, trava de
+            // "quem sincroniza", histórico e os pedidos do painel já aplicados (para nunca aplicar duas vezes).
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 23", dbSchemaVersion};
+            }
+            const bool pg23 = DatabaseConnection_service::isPostgres();
+            const QString pk23 = pg23 ? "SERIAL PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT";
+            const QStringList comandos23 = {
+                "CREATE TABLE IF NOT EXISTS sync_estado (chave TEXT PRIMARY KEY, valor TEXT)",
+                "CREATE TABLE IF NOT EXISTS sync_trava ("
+                "  id INTEGER PRIMARY KEY,"
+                "  terminal TEXT,"
+                "  expira_em TEXT NOT NULL,"
+                "  atualizado_em TEXT NOT NULL)",
+                "INSERT INTO sync_trava (id, terminal, expira_em, atualizado_em) "
+                "SELECT 1, NULL, '2000-01-01 00:00:00', '2000-01-01 00:00:00' "
+                "WHERE NOT EXISTS (SELECT 1 FROM sync_trava WHERE id = 1)",
+                "CREATE TABLE IF NOT EXISTS sync_log ("
+                "  id " + pk23 + ","
+                "  quando TEXT NOT NULL,"
+                "  nivel TEXT NOT NULL,"
+                "  mensagem TEXT NOT NULL)",
+                "CREATE TABLE IF NOT EXISTS sync_pedidos_aplicados ("
+                "  id_pedido TEXT PRIMARY KEY,"
+                "  tipo TEXT NOT NULL,"
+                "  status TEXT NOT NULL,"
+                "  mensagem TEXT,"
+                "  detalhe TEXT,"
+                "  aplicado_em TEXT NOT NULL,"
+                "  enviado INTEGER NOT NULL DEFAULT 0)"
+            };
+            for (const QString &sql : comandos23) {
+                QSqlQuery query(db);
+                if (!query.exec(sql)) {
+                    qDebug() << "Erro migracao 23:" << query.lastError().text() << "SQL:" << sql;
+                    db.rollback();
+                    return {false, SchemaErro::ErroMigracao, "Erro na migracao 23 (nuvem)", dbSchemaVersion};
+                }
+            }
+            if (!setSchemaVersion(23)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 23", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 23", dbSchemaVersion};
+            }
+            dbSchemaVersion = 23;
+            qDebug() << "Migracao para versao 23 concluida.";
+            break;
+        }
 
         }
     }

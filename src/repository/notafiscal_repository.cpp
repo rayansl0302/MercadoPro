@@ -1,3 +1,4 @@
+#include <QDateTime>
 #include "notafiscal_repository.h"
 #include "../infra/databaseconnection_service.h"
 #include <QSqlQuery>
@@ -173,82 +174,147 @@ qlonglong notafiscal_repository::getIdFromIdVenda(qlonglong idvenda){
 }
 
 
-qlonglong notafiscal_repository::getProximoNNF55(QString serie, bool tpAmb, qlonglong nnfConfigurado){
+namespace {
+// CNPJ gravado na nota pode ter pontuação (vem da configuração como foi digitado): compara só os dígitos
+const char *kCnpjNota = "REPLACE(REPLACE(REPLACE(COALESCE(cnpjemit, ''), '.', ''), '/', ''), '-', '')";
+// reserva "RESERVADA" que ninguém confirmou deixa de valer depois disso (caixa que travou no meio da emissão)
+constexpr int kValidadeReservaMinutos = 15;
+
+// QString vazio e nulo são coisas diferentes para o banco (nulo vira NULL e quebra a chave e a comparação)
+QString naoNulo(const QString &t) { return t.isNull() ? QStringLiteral("") : t; }
+
+QString limiteReserva()
+{
+    return QDateTime::currentDateTime().addSecs(-kValidadeReservaMinutos * 60).toString("yyyy-MM-dd HH:mm:ss");
+}
+}
+
+// Próximo número = maior já usado + 1, olhando as notas salvas E as reservas em andamento de outros caixas.
+// Cada CNPJ tem a sua numeração; nota antiga sem CNPJ gravado é da empresa original ("legado").
+qlonglong notafiscal_repository::proximoNNF(const QString &modelo, const QString &serie, bool tpAmb,
+                                            qlonglong nnfConfigurado, const QString &cnpj, bool legado)
+{
     if(!DatabaseConnection_service::open()){
         qDebug() << "Banco nao abriu getProximoNNF()";
         return -1;
     }
 
-    QSqlQuery query(db);
-
-    query.prepare(
-        "SELECT nnf FROM notas_fiscais "
-        "WHERE modelo = :modelo "
-        "AND serie = :serie "
-        "AND tp_amb = :tp_amb "
-        "AND finalidade != 'ENTRADA EXTERNA' "
-        "ORDER BY nnf DESC "
-        "LIMIT 1"
-        );
-
-    query.bindValue(":modelo", "55");
-    query.bindValue(":serie", serie);
-    query.bindValue(":tp_amb", tpAmb ? 1 : 0);
-
-    if(!query.exec()){
-        qWarning() << "Erro na consulta NNF:" << query.lastError().text();
-        return -1;
+    qlonglong ultimo = 0;
+    {
+        QSqlQuery query(db);
+        query.prepare(QString(
+            "SELECT MAX(nnf) FROM notas_fiscais "
+            "WHERE modelo = :modelo AND serie = :serie AND tp_amb = :tp_amb "
+            "AND finalidade != 'ENTRADA EXTERNA' "
+            "AND (:cnpj = '' OR %1 = :cnpj2 OR (:legado = 1 AND %1 = ''))").arg(kCnpjNota));
+        query.bindValue(":modelo", modelo);
+        query.bindValue(":serie", serie);
+        query.bindValue(":tp_amb", tpAmb ? 1 : 0);
+        query.bindValue(":cnpj", naoNulo(cnpj));
+        query.bindValue(":cnpj2", naoNulo(cnpj));
+        query.bindValue(":legado", legado ? 1 : 0);
+        if(!query.exec()){
+            qWarning() << "Erro na consulta NNF:" << query.lastError().text();
+            return -1;
+        }
+        if(query.next() && !query.value(0).isNull())
+            ultimo = query.value(0).toLongLong();
     }
 
-    if(query.next()){
-        int ultimoNNF = query.value(0).toInt();
-        return ultimoNNF + 1;
+    // reservas de outros caixas (ainda válidas ou já confirmadas)
+    {
+        QSqlQuery query(db);
+        query.prepare("SELECT MAX(nnf) FROM nnf_reservas "
+                      "WHERE cnpj_emit = :cnpj AND modelo = :modelo AND serie = :serie AND tp_amb = :tp_amb "
+                      "AND (status = 'USADA' OR reservado_em >= :limite)");
+        query.bindValue(":cnpj", naoNulo(cnpj));
+        query.bindValue(":modelo", modelo);
+        query.bindValue(":serie", serie);
+        query.bindValue(":tp_amb", tpAmb ? 1 : 0);
+        query.bindValue(":limite", limiteReserva());
+        if(query.exec() && query.next() && !query.value(0).isNull())
+            ultimo = qMax(ultimo, query.value(0).toLongLong());
     }
 
+    if(ultimo > 0)
+        return ultimo + 1;
     // Se não encontrou nenhuma nota
-    if(nnfConfigurado > 0){
+    if(nnfConfigurado > 0)
         return nnfConfigurado + 1;
-    }
     return 1; // fallback final
 }
 
-qlonglong notafiscal_repository::getProximoNNF65(QString serie, bool tpAmb, qlonglong nnfConfigurado){
+qlonglong notafiscal_repository::getProximoNNF55(QString serie, bool tpAmb, qlonglong nnfConfigurado,
+                                                 const QString &cnpj, bool legado){
+    return proximoNNF("55", serie, tpAmb, nnfConfigurado, cnpj, legado);
+}
+
+qlonglong notafiscal_repository::getProximoNNF65(QString serie, bool tpAmb, qlonglong nnfConfigurado,
+                                                 const QString &cnpj, bool legado){
+    return proximoNNF("65", serie, tpAmb, nnfConfigurado, cnpj, legado);
+}
+
+bool notafiscal_repository::reservarNNF(const QString &cnpj, const QString &modelo, const QString &serie, bool tpAmb,
+                                        qlonglong nnf, const QString &terminal, QString *erro)
+{
     if(!DatabaseConnection_service::open()){
-        qDebug() << "Banco nao abriu getProximoNNF()";
-        return -1;
+        if(erro) *erro = "Banco de dados indisponível.";
+        return false;
     }
-
+    // reservas que ninguém confirmou e já venceram saem do caminho (a chave única as segura se ficarem)
+    {
+        QSqlQuery limpa(db);
+        limpa.prepare("DELETE FROM nnf_reservas WHERE status = 'RESERVADA' AND reservado_em < :limite");
+        limpa.bindValue(":limite", limiteReserva());
+        limpa.exec();
+    }
     QSqlQuery query(db);
-
-    query.prepare(
-        "SELECT nnf FROM notas_fiscais "
-        "WHERE modelo = :modelo "
-        "AND serie = :serie "
-        "AND tp_amb = :tp_amb "
-        "AND finalidade != 'ENTRADA EXTERNA' "
-        "ORDER BY nnf DESC "
-        "LIMIT 1"
-        );
-
-    query.bindValue(":modelo", "65");
+    query.prepare("INSERT INTO nnf_reservas (cnpj_emit, modelo, serie, tp_amb, nnf, status, terminal, reservado_em) "
+                  "VALUES (:cnpj, :modelo, :serie, :tp_amb, :nnf, 'RESERVADA', :terminal, :agora)");
+    query.bindValue(":cnpj", naoNulo(cnpj));
+    query.bindValue(":modelo", modelo);
     query.bindValue(":serie", serie);
     query.bindValue(":tp_amb", tpAmb ? 1 : 0);
-
+    query.bindValue(":nnf", nnf);
+    query.bindValue(":terminal", terminal);
+    query.bindValue(":agora", QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"));
     if(!query.exec()){
-        qWarning() << "Erro na consulta NNF:" << query.lastError().text();
-        return -1;
+        if(erro) *erro = query.lastError().text();
+        return false;
     }
+    return true;
+}
 
-    if(query.next()){
-        int ultimoNNF = query.value(0).toInt();
-        return ultimoNNF + 1;
-    }
+void notafiscal_repository::liberarNNF(const QString &cnpj, const QString &modelo, const QString &serie, bool tpAmb,
+                                       qlonglong nnf)
+{
+    if(!DatabaseConnection_service::open())
+        return;
+    QSqlQuery query(db);
+    query.prepare("DELETE FROM nnf_reservas WHERE cnpj_emit = :cnpj AND modelo = :modelo AND serie = :serie "
+                  "AND tp_amb = :tp_amb AND nnf = :nnf AND status = 'RESERVADA'");
+    query.bindValue(":cnpj", naoNulo(cnpj));
+    query.bindValue(":modelo", modelo);
+    query.bindValue(":serie", serie);
+    query.bindValue(":tp_amb", tpAmb ? 1 : 0);
+    query.bindValue(":nnf", nnf);
+    query.exec();
+}
 
-    // Se não encontrou nenhuma nota
-    if(nnfConfigurado > 0){
-        return nnfConfigurado + 1;
-    }
-    return 1; // fallback final
+void notafiscal_repository::confirmarNNF(const QString &cnpj, const QString &modelo, const QString &serie, bool tpAmb,
+                                         qlonglong nnf)
+{
+    if(!DatabaseConnection_service::open())
+        return;
+    QSqlQuery query(db);
+    query.prepare("UPDATE nnf_reservas SET status = 'USADA' WHERE cnpj_emit = :cnpj AND modelo = :modelo "
+                  "AND serie = :serie AND tp_amb = :tp_amb AND nnf = :nnf");
+    query.bindValue(":cnpj", naoNulo(cnpj));
+    query.bindValue(":modelo", modelo);
+    query.bindValue(":serie", serie);
+    query.bindValue(":tp_amb", tpAmb ? 1 : 0);
+    query.bindValue(":nnf", nnf);
+    query.exec();
 }
 
 NotaFiscalDTO notafiscal_repository::getNotaNormalFromIdVenda(qlonglong idvenda){

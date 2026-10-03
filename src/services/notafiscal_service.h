@@ -38,6 +38,20 @@ public:
     qlonglong getIdFromIdVenda(qlonglong idvenda);
     qlonglong getProximoNNF(bool tpAmb, ModeloNota mod);
     qlonglong getProximoNNF(QString serie, bool tpAmb, ModeloNota mod);
+
+    struct ReservaNNF {
+        bool ok = false;
+        qlonglong nnf = 0;
+        bool alterado = false;     // o número pedido já estava em uso e foi trocado pelo próximo livre
+        QString msg;
+    };
+    // Reserva o número ANTES de montar o XML. desejado = 0 pega o próximo; se o desejado já foi usado por outro
+    // caixa, pega o próximo livre (alterado = true).
+    ReservaNNF reservarNNF(QString serie, bool tpAmb, ModeloNota mod, qlonglong desejado = 0);
+    // número que não gerou nota (rejeição antes da autorização, erro de envio): volta para a fila
+    void liberarNNF(QString serie, bool tpAmb, ModeloNota mod, qlonglong nnf);
+    // número consumido (autorizada, denegada ou em contingência)
+    void confirmarNNF(QString serie, bool tpAmb, ModeloNota mod, qlonglong nnf);
     NotaFiscalDTO getNotaNormalFromIdVenda(qlonglong idvenda);
     NotaFiscalDTO getNotaById(qlonglong id);
     NotaFiscal_service::Resultado inserir(NotaFiscalDTO nota);

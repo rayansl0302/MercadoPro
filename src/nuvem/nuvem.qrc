@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/nuvem">
+        <file>contrato.json</file>
+    </qresource>
+</RCC>

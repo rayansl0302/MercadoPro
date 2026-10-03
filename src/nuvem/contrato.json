@@ -1,0 +1,144 @@
+{
+  "versao": 1,
+  "observacao": "Contrato entre o QEstoqueLoja e a API do painel. Só as colunas listadas aqui saem da loja (lista de permissão): colunas novas do banco NÃO sobem até entrarem aqui. Nunca listar PIN, hash, salt, caminhos de arquivo, CPF, endereço ou e-mail. Valores trafegam sempre como texto (ou null); tipos: int, dec, real, text, bool, ts.",
+  "tabelas": {
+    "empresas": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "apelido", "t": "text"}, {"n": "cnpj", "t": "text"},
+        {"n": "razao_social", "t": "text"}, {"n": "ativa", "t": "bool"}, {"n": "criado_em", "t": "ts"}
+      ]
+    },
+    "clientes": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "nome", "t": "text"}, {"n": "telefone", "t": "text"},
+        {"n": "whatsapp", "t": "text"}, {"n": "observacao", "t": "text"}, {"n": "ativo", "t": "bool"},
+        {"n": "limite_credito", "t": "dec"}, {"n": "data_cadastro", "t": "ts"}
+      ]
+    },
+    "operadores": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "nome", "t": "text"}, {"n": "ativo", "t": "bool"},
+        {"n": "bloqueado", "t": "bool"}, {"n": "gerente", "t": "bool"}, {"n": "adicionado_em", "t": "ts"}
+      ]
+    },
+    "produtos": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "quantidade", "t": "real"}, {"n": "descricao", "t": "text"},
+        {"n": "preco", "t": "dec"}, {"n": "codigo_barras", "t": "text"}, {"n": "nf", "t": "bool"},
+        {"n": "un_comercial", "t": "text"}, {"n": "preco_fornecedor", "t": "dec"}, {"n": "porcent_lucro", "t": "real"},
+        {"n": "local", "t": "text"}, {"n": "adicionado_em", "t": "ts"}, {"n": "atualizado_em", "t": "ts"}
+      ]
+    },
+    "vendas2": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "cliente", "t": "text"}, {"n": "data_hora", "t": "ts"},
+        {"n": "total", "t": "dec"}, {"n": "forma_pagamento", "t": "text"}, {"n": "valor_recebido", "t": "dec"},
+        {"n": "troco", "t": "dec"}, {"n": "taxa", "t": "dec"}, {"n": "valor_final", "t": "dec"},
+        {"n": "desconto", "t": "dec"}, {"n": "esta_pago", "t": "bool"}, {"n": "id_cliente", "t": "int"},
+        {"n": "id_caixa", "t": "int"}, {"n": "id_operador_sessao", "t": "int"}, {"n": "id_empresa", "t": "int"}
+      ]
+    },
+    "produtos_vendidos": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_produto", "t": "int"}, {"n": "id_venda", "t": "int"},
+        {"n": "quantidade", "t": "real"}, {"n": "preco_vendido", "t": "dec"}, {"n": "emitido_nf", "t": "bool"}
+      ]
+    },
+    "entradas_vendas": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_venda", "t": "int"}, {"n": "total", "t": "dec"},
+        {"n": "data_hora", "t": "ts"}, {"n": "forma_pagamento", "t": "text"}, {"n": "valor_final", "t": "dec"},
+        {"n": "taxa", "t": "real"}, {"n": "desconto", "t": "dec"}, {"n": "id_caixa", "t": "int"},
+        {"n": "id_operador_sessao", "t": "int"}
+      ]
+    },
+    "caixas": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_operador", "t": "int"}, {"n": "terminal", "t": "text"},
+        {"n": "status", "t": "text"}, {"n": "aberto_em", "t": "ts"}, {"n": "fechado_em", "t": "ts"},
+        {"n": "troco_inicial", "t": "dec"}, {"n": "troco_sugerido", "t": "dec"},
+        {"n": "observacao_fechamento", "t": "text"}
+      ]
+    },
+    "movimentacoes_caixa": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_caixa", "t": "int"}, {"n": "tipo", "t": "text"}, {"n": "valor", "t": "dec"},
+        {"n": "forma_pagamento", "t": "text"}, {"n": "motivo", "t": "text"}, {"n": "id_venda", "t": "int"},
+        {"n": "id_entrada_venda", "t": "int"}, {"n": "id_pagamento_divida", "t": "int"}, {"n": "id_operador", "t": "int"},
+        {"n": "id_operador_sessao", "t": "int"}, {"n": "estornado", "t": "bool"}, {"n": "data_hora", "t": "ts"}
+      ]
+    },
+    "fechamentos_caixa": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_caixa", "t": "int"}, {"n": "forma_pagamento", "t": "text"},
+        {"n": "valor_esperado", "t": "dec"}, {"n": "valor_informado", "t": "dec"}, {"n": "diferenca", "t": "dec"},
+        {"n": "ocorrencia_tecnica", "t": "bool"}
+      ]
+    },
+    "sessoes_operador": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_operador", "t": "int"}, {"n": "nome_operador", "t": "text"},
+        {"n": "gerente", "t": "bool"}, {"n": "terminal", "t": "text"}, {"n": "entrada_em", "t": "ts"},
+        {"n": "saida_em", "t": "ts"}, {"n": "motivo_saida", "t": "text"}, {"n": "id_caixa_no_momento", "t": "int"}
+      ]
+    },
+    "auditoria_acesso": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "data_hora", "t": "ts"}, {"n": "id_operador_sessao", "t": "int"},
+        {"n": "nome_operador", "t": "text"}, {"n": "terminal", "t": "text"}, {"n": "acao", "t": "text"},
+        {"n": "detalhe", "t": "text"}
+      ]
+    },
+    "dividas": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_cliente", "t": "int"}, {"n": "id_empresa", "t": "int"},
+        {"n": "data_compra", "t": "text"}, {"n": "descricao", "t": "text"}, {"n": "valor_total", "t": "dec"},
+        {"n": "observacao", "t": "text"}, {"n": "status", "t": "text"}, {"n": "motivo_cancelamento", "t": "text"},
+        {"n": "id_operador_sessao", "t": "int"}, {"n": "criado_em", "t": "ts"}
+      ]
+    },
+    "pagamentos_divida": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_divida", "t": "int"}, {"n": "data_pagamento", "t": "ts"},
+        {"n": "valor", "t": "dec"}, {"n": "forma_pagamento", "t": "text"}, {"n": "observacao", "t": "text"},
+        {"n": "id_operador_sessao", "t": "int"}, {"n": "id_caixa", "t": "int"}, {"n": "cancelado", "t": "bool"},
+        {"n": "motivo_cancelamento", "t": "text"}, {"n": "criado_em", "t": "ts"}
+      ]
+    },
+    "contas_pagar": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_empresa", "t": "int"}, {"n": "descricao", "t": "text"},
+        {"n": "fornecedor", "t": "text"}, {"n": "categoria", "t": "text"}, {"n": "documento", "t": "text"},
+        {"n": "valor", "t": "dec"}, {"n": "vencimento", "t": "text"}, {"n": "status", "t": "text"},
+        {"n": "valor_pago", "t": "dec"}, {"n": "forma_pagamento", "t": "text"}, {"n": "pago_em", "t": "ts"},
+        {"n": "parcela", "t": "int"}, {"n": "total_parcelas", "t": "int"}, {"n": "grupo", "t": "text"},
+        {"n": "observacao", "t": "text"}, {"n": "motivo_cancelamento", "t": "text"},
+        {"n": "id_operador_sessao", "t": "int"}, {"n": "criado_em", "t": "ts"}
+      ]
+    },
+    "notas_fiscais": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "cstat", "t": "text"}, {"n": "nnf", "t": "int"}, {"n": "serie", "t": "text"},
+        {"n": "modelo", "t": "text"}, {"n": "tp_amb", "t": "int"}, {"n": "valor_total", "t": "dec"},
+        {"n": "id_venda", "t": "int"}, {"n": "cnpjemit", "t": "text"}, {"n": "chnfe", "t": "text"},
+        {"n": "finalidade", "t": "text"}, {"n": "saida", "t": "bool"}, {"n": "dhemi", "t": "text"}
+      ]
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "qestoqueloja-painel-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "API do painel de gestão do QEstoqueLoja (recebe os dados da loja e entrega os pedidos do painel)",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "vitest run",
+    "criar-loja": "node src/cli.js criar-loja",
+    "criar-usuario": "node src/cli.js criar-usuario"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.0",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/static": "^8.0.0",
+    "fastify": "^5.0.0",
+    "pg": "^8.13.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

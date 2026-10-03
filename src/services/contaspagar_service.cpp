@@ -60,7 +60,7 @@ QList<double> ContasPagar_service::dividirValor(double total, int parcelas)
 }
 
 ContasPagar_service::Resultado ContasPagar_service::lancar(const ContaPagarDTO &base, int parcelas,
-                                                           Periodicidade periodicidade)
+                                                           Periodicidade periodicidade, const QString &origem)
 {
     if (base.descricao.trimmed().size() < 2)
         return {false, "Informe a descrição da conta."};
@@ -108,6 +108,11 @@ ContasPagar_service::Resultado ContasPagar_service::lancar(const ContaPagarDTO &
     QList<qlonglong> ids;
     if (!repo.inserirVarias(contas, &ids, &erro))
         return {false, "Não foi possível lançar a conta: " + erro};
+    if (!origem.isEmpty())
+        Sessao_service::instancia()->registrarAcao(
+            QStringLiteral("CONTA_PAGAR_LANCADA_PAINEL"),
+            QStringLiteral("[%1] Conta #%2 (%3, %4) lançada em %5 parcela(s)")
+                .arg(origem).arg(ids.value(0)).arg(base.descricao.trimmed(), dinheiro(base.valor)).arg(parcelas));
     return {true, parcelas > 1 ? QString("%1 parcelas lançadas.").arg(parcelas) : QStringLiteral("Conta lançada."),
             ids.value(0), parcelas};
 }
@@ -146,7 +151,7 @@ ContasPagar_service::Resultado ContasPagar_service::alterar(const ContaPagarDTO 
 }
 
 ContasPagar_service::Resultado ContasPagar_service::baixar(qlonglong id, double valorPago, const QString &forma,
-                                                           const QDateTime &quando)
+                                                           const QDateTime &quando, const QString &origem)
 {
     const ContaPagarDTO c = repo.getPorId(id);
     if (c.id <= 0)
@@ -163,8 +168,10 @@ ContasPagar_service::Resultado ContasPagar_service::baixar(qlonglong id, double 
     if (!repo.baixar(id, arredondar2(valorPago), forma.trimmed(), em.toString("yyyy-MM-dd HH:mm:ss"), &erro))
         return {false, erro};
     Sessao_service::instancia()->registrarAcao(
-        QStringLiteral("CONTA_PAGAR_BAIXA"),
-        QStringLiteral("Conta #%1 (%2) paga: %3 em %4").arg(id).arg(c.descricao, dinheiro(valorPago), forma.trimmed()));
+        origem.isEmpty() ? QStringLiteral("CONTA_PAGAR_BAIXA") : QStringLiteral("CONTA_PAGAR_BAIXA_PAINEL"),
+        QStringLiteral("%1Conta #%2 (%3) paga: %4 em %5")
+            .arg(origem.isEmpty() ? QString() : QStringLiteral("[%1] ").arg(origem))
+            .arg(id).arg(c.descricao, dinheiro(valorPago), forma.trimmed()));
     return {true, "Conta baixada.", id, 1};
 }
 

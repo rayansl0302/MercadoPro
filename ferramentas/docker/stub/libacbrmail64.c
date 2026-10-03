@@ -1,0 +1,14 @@
+int MAIL_AddAddress(){return 0;}
+int MAIL_AddAltBody(){return 0;}
+int MAIL_AddAttachment(){return 0;}
+int MAIL_AddBody(){return 0;}
+int MAIL_Clear(){return 0;}
+int MAIL_ClearAttachment(){return 0;}
+int MAIL_ConfigGravar(){return 0;}
+int MAIL_ConfigGravarValor(){return 0;}
+int MAIL_Finalizar(){return 0;}
+int MAIL_Inicializar(){return 0;}
+int MAIL_Nome(){return 0;}
+int MAIL_Send(){return 0;}
+int MAIL_SetSubject(){return 0;}
+int MAIL_Versao(){return 0;}

@@ -1,0 +1,9 @@
+FROM qe-build
+RUN apt-get update && apt-get install -y --no-install-recommends imagemagick xdotool sqlite3 x11-utils libxcb-cursor0 libxcb-xinerama0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xkb1 libxkbcommon-x11-0 dbus-x11 openbox && rm -rf /var/lib/apt/lists/*
+COPY stub /stub
+RUN mkdir -p /usr/include/QtRPT && cp /stub/qtrpt.h /usr/include/QtRPT/ \
+ && /usr/lib/qt6/libexec/moc /stub/qtrpt.h -o /tmp/moc_qtrpt.cpp \
+ && g++ -fPIC -shared -std=c++17 -I/usr/include/x86_64-linux-gnu/qt6 -I/usr/include/x86_64-linux-gnu/qt6/QtCore -I/usr/include/x86_64-linux-gnu/qt6/QtGui -I/stub /stub/qtrpt.cpp /tmp/moc_qtrpt.cpp -o /usr/local/lib/libQtRPT.so && ldconfig
+RUN gcc -shared -fPIC /stub/libacbrnfe64.c -o /usr/lib/libacbrnfe64.so \
+ && gcc -shared -fPIC /stub/libacbrmail64.c -o /usr/lib/libacbrmail64.so \
+ && gcc -shared -fPIC /stub/libacbrconsultacnpj64.c -o /usr/lib/libacbrconsultacnpj64.so
