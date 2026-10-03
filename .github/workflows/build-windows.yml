@@ -105,14 +105,15 @@ jobs:
           mkdir -p dist/sqldrivers
           cp "$QT_ROOT_DIR/plugins/sqldrivers/qsqlite.dll" dist/sqldrivers/ || echo "qsqlite.dll nao encontrado no Qt"
           cp "$QT_ROOT_DIR/plugins/sqldrivers/qsqlpsql.dll" dist/sqldrivers/ || echo "qsqlpsql.dll nao encontrado no Qt"
+          cp instalador/acbr/ACBrNFe64.dll dist/
+          cp instalador/acbr/ACBrMail64.dll dist/
+          cp instalador/acbr/ACBrConsultaCNPJ64.dll dist/
           # identificação da versão (o script de atualização mostra este arquivo)
           echo "commit ${GITHUB_SHA} - branch ${GITHUB_REF_NAME} - compilado em $(date -u +%Y-%m-%d\ %H:%M) UTC" > dist/VERSAO.txt
           cp -r recursos dist/recursos
           cp -r reports dist/reports
           cat > dist/LEIA-ME.txt <<'EOF'
-          Copie para esta pasta as DLLs da ACBrLib que você já usa na versão instalada
-          (ACBrNFe64.dll, ACBrMail64.dll, ACBrConsultaCNPJ64.dll). Sem elas o programa fecha
-          ao iniciar. Depois é só abrir o QEstoqueLoja.exe.
+          Abra o QEstoqueLoja.exe nesta pasta.
           EOF
 
       # Só SQLite e PostgreSQL são usados: os outros drivers de banco (Mimer, ODBC, Firebird...) trariam

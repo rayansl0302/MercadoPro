@@ -23,6 +23,8 @@ SolidCompression=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
+WizardImageFile=wizard-lateral.png,wizard-lateral-2x.png
+WizardSmallImageFile=wizard-icone.png,wizard-icone-2x.png
 UninstallDisplayIcon={app}\QEstoqueLoja.exe
 SetupIconFile=..\Imagens\QEstoqueLOja\ICONEQe48ico.ico
 ; programa aberto: o instalador pede para fechar e atualiza os arquivos
@@ -38,9 +40,11 @@ Name: "desktopicon"; Description: "Criar atalho na Área de Trabalho"; GroupDesc
 Name: "pdvicon"; Description: "Criar atalho que abre direto na tela de venda (PDV)"; GroupDescription: "Atalhos:"
 
 [Files]
-; Só o que o workflow montou. As DLLs da ACBrLib NÃO vêm aqui (licença/tamanho): numa atualização sobre a pasta
-; já instalada elas continuam lá, porque o instalador não apaga o que não faz parte do pacote.
+; Só o que o workflow montou, mais as DLLs da ACBrLib (vêm de instalador\acbr).
 Source: "..\dist\*"; DestDir: "{app}"; Excludes: "LEIA-ME.txt"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "acbr\ACBrNFe64.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "acbr\ACBrMail64.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "acbr\ACBrConsultaCNPJ64.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\MercadoPro"; Filename: "{app}\QEstoqueLoja.exe"
@@ -151,8 +155,17 @@ begin
   Result := Atualizando and (PageID = wpSelectDir);
 end;
 
+procedure AplicarTemaMercadoPro;
+begin
+  WizardForm.WelcomeLabel1.Font.Color := $452D14;
+  WizardForm.FinishedHeadingLabel.Font.Color := $452D14;
+  WizardForm.PageNameLabel.Font.Color := $452D14;
+  WizardForm.PageDescriptionLabel.Font.Color := $3A9617;
+end;
+
 procedure InitializeWizard;
 begin
+  AplicarTemaMercadoPro;
   if Atualizando then
   begin
     WizardForm.WelcomeLabel1.Caption := 'Atualizar o MercadoPro';
@@ -177,12 +190,3 @@ begin
     WizardForm.FinishedHeadingLabel.Caption := 'Atualização concluída';
 end;
 
-// Sem as DLLs da ACBrLib o programa fecha ao abrir. Avisa só quando faltam (em atualização elas já estão na pasta).
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if (CurStep = ssPostInstall) and (not WizardSilent) then
-    if not FileExists(ExpandConstant('{app}\ACBrNFe64.dll')) then
-      MsgBox('Atenção: faltam as DLLs da ACBrLib (ACBrNFe64.dll, ACBrMail64.dll e ACBrConsultaCNPJ64.dll) na pasta:' + #13#10 +
-             ExpandConstant('{app}') + #13#10#13#10 +
-             'Copie-as da instalação anterior para essa pasta antes de abrir o programa.', mbInformation, MB_OK);
-end;
