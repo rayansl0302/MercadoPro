@@ -1,6 +1,6 @@
 // Todas as chamadas ao servidor. Mudanças levam o cabeçalho de origem exigido pela API.
 export class ErroApi extends Error {
-  constructor(status, mensagem) { super(mensagem); this.status = status; }
+  constructor(status, mensagem, detalhe) { super(mensagem); this.status = status; this.detalhe = detalhe; }
 }
 
 async function chamar(metodo, url, corpo) {
@@ -12,7 +12,7 @@ async function chamar(metodo, url, corpo) {
   });
   let dados = null;
   try { dados = await resp.json(); } catch { /* sem corpo */ }
-  if (!resp.ok) throw new ErroApi(resp.status, dados?.mensagem ?? 'Não foi possível completar a ação.');
+  if (!resp.ok) throw new ErroApi(resp.status, dados?.mensagem ?? 'Não foi possível completar a ação.', dados?.detalhe);
   return dados;
 }
 

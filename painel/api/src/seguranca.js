@@ -49,6 +49,17 @@ export function senhaForte(senha) {
   return typeof senha === 'string' && senha.length >= 10 && /[a-z]/i.test(senha) && /\d/.test(senha);
 }
 
+// senha temporária legível (sem 0/O/1/l/I) que sempre passa em senhaForte
+export function gerarSenhaTemporaria() {
+  const letras = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+  const numeros = '23456789';
+  const pega = (cj) => cj[randomBytes(1)[0] % cj.length];
+  let s = '';
+  for (let i = 0; i < 10; i++) s += pega(letras);
+  s = s.slice(0, 5) + pega(numeros) + pega(numeros) + s.slice(5) + pega(numeros);
+  return s;
+}
+
 // ---- verificação em duas etapas (TOTP, RFC 6238) ------------------------------------------------------------
 
 const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -100,6 +111,6 @@ export function conferirTotp(segredoBase32, codigo, agoraMs = Date.now()) {
   return false;
 }
 
-export function urlOtpauth(segredo, email, emissor = 'QEstoqueLoja') {
+export function urlOtpauth(segredo, email, emissor = 'MercadoPro') {
   return `otpauth://totp/${encodeURIComponent(emissor)}:${encodeURIComponent(email)}?secret=${segredo}&issuer=${encodeURIComponent(emissor)}`;
 }

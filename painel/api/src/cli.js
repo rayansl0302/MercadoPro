@@ -12,7 +12,7 @@ const config = carregarConfig();
 const pool = criarPool(config.databaseUrl);
 
 function uso() {
-  console.log('Uso:\n  criar-loja "Nome da loja"\n  criar-usuario "Nome" email perfil(consulta|gerente) [--sem-2fa] [--senha=...]');
+  console.log('Uso:\n  criar-loja "Nome da loja"\n  criar-usuario "Nome" email perfil(consulta|gerente|admin) [--sem-2fa] [--senha=...]');
   process.exit(1);
 }
 
@@ -27,7 +27,7 @@ try {
     console.log(`TOKEN DA LOJA (guarde agora, não será mostrado de novo):\n${token}`);
   } else if (comando === 'criar-usuario') {
     const [nome, email, perfil = 'consulta'] = args.filter((a) => !a.startsWith('--'));
-    if (!nome || !email || !['consulta', 'gerente'].includes(perfil)) uso();
+    if (!nome || !email || !['consulta', 'gerente', 'admin'].includes(perfil)) uso();
     const sem2fa = args.includes('--sem-2fa');
     const senhaArg = args.find((a) => a.startsWith('--senha='));
     const senha = senhaArg ? senhaArg.slice(8) : gerarToken(9);

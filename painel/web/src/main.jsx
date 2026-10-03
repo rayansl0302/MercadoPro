@@ -4,6 +4,7 @@ import './index.css';
 import { api, horaBr } from './api.js';
 import { Agrupada, Caixas, ContasPagar, Devedores, Estoque, Fiscal, Fluxo, Operadores, Pedidos, Seguranca, Sincronizacao, VisaoGeral, Vendas } from './paginas.jsx';
 import { useDados } from './ui.jsx';
+import { CampoSenha, TrocarSenha, Usuarios } from './conta.jsx';
 
 const MENU = [
   ['geral', 'Início'], ['vendas', 'Vendas'], ['pagar', 'Contas a pagar'], ['receber', 'A receber'],
@@ -11,7 +12,10 @@ const MENU = [
 ];
 
 function Login({ onEntrou }) {
-  const [f, setF] = useState({ email: '', senha: '', codigo: '' });
+  const guardado = (() => { try { return localStorage.getItem('mp_email') ?? ''; } catch { return ''; } })();
+  const [f, setF] = useState({ email: guardado, senha: '', codigo: '' });
+  const [lembrar, setLembrar] = useState(true);
+  const [lembrarEmail, setLembrarEmail] = useState(Boolean(guardado) || true);
   const [erro, setErro] = useState('');
   const [pedeCodigo, setPedeCodigo] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -19,7 +23,8 @@ function Login({ onEntrou }) {
     e.preventDefault();
     setEnviando(true); setErro('');
     try {
-      await api.post('/api/painel/login', { email: f.email, senha: f.senha, codigo: f.codigo || undefined });
+      await api.post('/api/painel/login', { email: f.email, senha: f.senha, codigo: f.codigo || undefined, lembrar });
+      try { if (lembrarEmail) localStorage.setItem('mp_email', f.email); else localStorage.removeItem('mp_email'); } catch { /* sem armazenamento */ }
       onEntrou();
     } catch (x) {
       setErro(x.message);
@@ -33,8 +38,10 @@ function Login({ onEntrou }) {
         <img src="/logo.png" alt="MercadoPro" className="mb-1 h-12 w-auto" />
         <p className="mb-5 text-sm text-slate-500">Painel de gestão</p>
         <label className="mb-3 block text-sm">E-mail<input className={c} type="email" autoComplete="username" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} required /></label>
-        <label className="mb-3 block text-sm">Senha<input className={c} type="password" autoComplete="current-password" value={f.senha} onChange={(e) => setF({ ...f, senha: e.target.value })} required /></label>
+        <CampoSenha rotulo="Senha" valor={f.senha} onChange={(v) => setF({ ...f, senha: v })} auto="current-password" />
         {pedeCodigo && <label className="mb-3 block text-sm">Código do aplicativo autenticador<input className={c} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={f.codigo} onChange={(e) => setF({ ...f, codigo: e.target.value })} /></label>}
+        <label className="mb-1 flex items-center gap-2 text-sm"><input type="checkbox" checked={lembrar} onChange={(e) => setLembrar(e.target.checked)} />Manter conectado por 30 dias</label>
+        <label className="mb-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={lembrarEmail} onChange={(e) => setLembrarEmail(e.target.checked)} />Lembrar meu e-mail neste aparelho</label>
         {erro && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-800">{erro}</p>}
         <button disabled={enviando} className="w-full rounded bg-marca py-2 font-medium text-white hover:bg-marca-escuro disabled:opacity-50">Entrar</button>
         <button type="button" className="mt-3 w-full text-xs text-slate-500 underline" onClick={() => setPedeCodigo((v) => !v)}>{pedeCodigo ? 'Não uso código' : 'Tenho um código de verificação'}</button>
@@ -66,6 +73,7 @@ function App() {
   const [aviso, setAviso] = useState('');
   const [aberto, setAberto] = useState(false);
   const [empresas, setEmpresas] = useState([]);
+  const [trocando, setTrocando] = useState(false);
 
   const carregarEu = useCallback(() => {
     api.get('/api/painel/eu').then((d) => { setUsuario(d.usuario); setFormas(d.formasPagamento); }).catch(() => setUsuario(null));
@@ -76,8 +84,10 @@ function App() {
 
   if (usuario === undefined) return null;
   if (!usuario) return <Login onEntrou={carregarEu} />;
+  if (usuario.trocarSenha) return <TrocarSenha obrigatoria onTrocada={carregarEu} />;
 
-  const podeAgir = usuario.perfil === 'gerente';
+  const podeAgir = ['gerente', 'admin'].includes(usuario.perfil);
+  const menu = usuario.perfil === 'admin' ? [...MENU, ['usuarios', 'Usuários']] : MENU;
   const emp = empresa ? Number(empresa) : undefined;
   const ir = (p) => { setPagina(p); setAberto(false); };
   const telas = {
@@ -87,6 +97,7 @@ function App() {
     receber: <Devedores empresa={emp} />,
     estoque: <Estoque />,
     fiscal: <Agrupada abas={[['f', 'Notas fiscais', <Fiscal />], ['s', 'Segurança', <Seguranca />]]} />,
+    usuarios: <Usuarios eu={usuario} avisar={setAviso} />,
     loja: <Agrupada abas={[['p', 'Pedidos enviados', <Pedidos podeAgir={podeAgir} />], ['s', 'Sincronização', <Sincronizacao />]]} />,
   };
   const sair = async () => { await api.post('/api/painel/logout'); setUsuario(null); };
@@ -96,20 +107,21 @@ function App() {
       <nav className={`${aberto ? 'block' : 'hidden'} fixed inset-0 z-40 overflow-y-auto bg-white p-4 lg:static lg:block lg:w-56 lg:shrink-0 lg:border-r lg:border-slate-200`}>
         <img src="/logo.png" alt="MercadoPro" className="mb-4 hidden h-10 w-auto lg:block" />
         <ul className="space-y-1">
-          {MENU.map(([id, nome]) => (
+          {menu.map(([id, nome]) => (
             <li key={id}><button onClick={() => ir(id)} className={`w-full rounded-lg px-3 py-2 text-left text-sm ${pagina === id ? 'bg-marca-claro font-medium text-marca-escuro' : 'hover:bg-slate-100'}`}>{nome}</button></li>
           ))}
         </ul>
         <div className="mt-6 border-t border-slate-200 pt-4 text-xs text-slate-500">
           <div>{usuario.nome} · {usuario.perfil}</div>
-          <button className="mt-1 underline" onClick={sair}>Sair</button>
+          <button className="mt-1 underline" onClick={() => setTrocando(true)}>Alterar minha senha</button>
+          <button className="ml-3 underline" onClick={sair}>Sair</button>
         </div>
       </nav>
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-3">
           <div className="flex items-center gap-3">
             <button className="rounded border border-slate-300 px-2 py-1 text-sm lg:hidden" onClick={() => setAberto((v) => !v)}>{aberto ? 'Fechar' : 'Menu'}</button>
-            <h1 className="text-base font-semibold">{MENU.find(([id]) => id === pagina)[1]}</h1>
+            <h1 className="text-base font-semibold">{menu.find(([id]) => id === pagina)?.[1]}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {empresas.length > 1 && (
@@ -122,6 +134,7 @@ function App() {
           </div>
         </header>
         {aviso && <div className="mx-4 mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">{aviso}</div>}
+        {trocando && <TrocarSenha onFechar={() => setTrocando(false)} onTrocada={() => { setTrocando(false); setAviso('Senha alterada. Os outros aparelhos foram desconectados.'); }} />}
         <main className="mx-auto max-w-6xl p-4" key={`${pagina}-${empresa}`}>{telas[pagina]}</main>
       </div>
     </div>

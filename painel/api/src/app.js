@@ -4,10 +4,11 @@ import helmet from '@fastify/helmet';
 import fastifyStatic from '@fastify/static';
 import { existsSync } from 'node:fs';
 import { z } from 'zod';
-import { entrar, lojaDoToken, sair, usuarioDaSessao } from './auth.js';
+import { entrar, horasDaSessao, lojaDoToken, sair, usuarioDaSessao } from './auth.js';
 import { cancelarCiclo, concluirCiclo, ErroHttp, iniciarCiclo, receberLote } from './ciclo.js';
 import { cancelarPedido, criarPedido, entregarPedidos, listarPedidos, registrarResultado, FORMAS_PAGAMENTO } from './pedidos.js';
 import { registrarRotasConsulta } from './consultas.js';
+import { alterarMinhaSenha, atualizarUsuario, criarUsuario, listarUsuarios, redefinirDoisFatores, redefinirSenha } from './usuarios.js';
 
 const COOKIE = 'sid';
 
@@ -66,14 +67,20 @@ export function criarApp({ pool, config }) {
     painel.addHook('preHandler', async (req) => {
       if (req.method !== 'GET' && req.headers['x-requested-with'] !== 'painel') throw new ErroHttp(403, 'Requisição não permitida.');
     });
-    const exigirSessao = async (req) => {
+    // com senha temporária, só dá para ver quem é e trocar a senha
+    const exigirSessao = async (req, { permitirTroca = false } = {}) => {
       const u = await usuarioDaSessao(pool, req.cookies[COOKIE]);
       if (!u) throw new ErroHttp(401, 'Entre para continuar.');
+      if (u.trocarSenha && !permitirTroca) throw new ErroHttp(403, 'Defina uma nova senha para continuar.', { codigo: 'TROCAR_SENHA' });
       req.usuario = u;
     };
     const exigirGerente = async (req) => {
       await exigirSessao(req);
-      if (req.usuario.perfil !== 'gerente') throw new ErroHttp(403, 'Seu perfil só permite consultar.');
+      if (!['gerente', 'admin'].includes(req.usuario.perfil)) throw new ErroHttp(403, 'Seu perfil só permite consultar.');
+    };
+    const exigirAdmin = async (req) => {
+      await exigirSessao(req);
+      if (req.usuario.perfil !== 'admin') throw new ErroHttp(403, 'Só administradores podem fazer isso.');
     };
     const lojaUnica = async (req) => {
       const r = await pool.query('SELECT id, nome, fuso FROM painel.lojas WHERE ativa ORDER BY id LIMIT 1');
@@ -82,9 +89,10 @@ export function criarApp({ pool, config }) {
     };
 
     painel.post('/api/painel/login', async (req, resp) => {
-      const corpo = z.object({ email: z.string().max(200), senha: z.string().max(200), codigo: z.string().max(10).optional() }).parse(req.body ?? {});
+      const corpo = z.object({ email: z.string().max(200), senha: z.string().max(200), codigo: z.string().max(10).optional(), lembrar: z.boolean().optional() }).parse(req.body ?? {});
       const r = await entrar(pool, config, { ...corpo, ip: req.ip });
-      resp.setCookie(COOKIE, r.token, { httpOnly: true, sameSite: 'strict', secure: config.cookieSeguro, path: '/', maxAge: config.sessaoHoras * 3600 });
+      // "manter conectado" guarda o cookie por 30 dias; sem marcar, ele some quando o navegador fecha
+      resp.setCookie(COOKIE, r.token, { httpOnly: true, sameSite: 'strict', secure: config.cookieSeguro, path: '/', ...(r.lembrar ? { maxAge: r.horas * 3600 } : {}) });
       return { usuario: r.usuario };
     });
     painel.post('/api/painel/logout', async (req, resp) => {
@@ -93,8 +101,38 @@ export function criarApp({ pool, config }) {
       return { ok: true };
     });
     painel.get('/api/painel/eu', async (req) => {
-      await exigirSessao(req);
+      await exigirSessao(req, { permitirTroca: true });
       return { usuario: req.usuario, formasPagamento: FORMAS_PAGAMENTO };
+    });
+
+    painel.post('/api/painel/senha', async (req) => {
+      await exigirSessao(req, { permitirTroca: true });
+      const corpo = z.object({ atual: z.string().max(200), nova: z.string().max(200) }).parse(req.body ?? {});
+      return alterarMinhaSenha(pool, req.usuario, req.cookies[COOKIE], corpo, req.ip);
+    });
+
+    // ---- usuários (só admin)
+    painel.get('/api/painel/usuarios', async (req) => {
+      await exigirAdmin(req);
+      return { usuarios: await listarUsuarios(pool) };
+    });
+    painel.post('/api/painel/usuarios', async (req) => {
+      await exigirAdmin(req);
+      const corpo = z.object({ nome: z.string().max(200), email: z.string().max(200), perfil: z.string().max(20) }).parse(req.body ?? {});
+      return criarUsuario(pool, req.usuario, corpo, req.ip);
+    });
+    painel.post('/api/painel/usuarios/:id', async (req) => {
+      await exigirAdmin(req);
+      const corpo = z.object({ nome: z.string().max(200).optional(), perfil: z.string().max(20).optional(), ativo: z.boolean().optional() }).parse(req.body ?? {});
+      return atualizarUsuario(pool, req.usuario, req.params.id, corpo, req.ip);
+    });
+    painel.post('/api/painel/usuarios/:id/redefinir-senha', async (req) => {
+      await exigirAdmin(req);
+      return redefinirSenha(pool, req.usuario, req.params.id, req.ip);
+    });
+    painel.post('/api/painel/usuarios/:id/redefinir-2fa', async (req) => {
+      await exigirAdmin(req);
+      return redefinirDoisFatores(pool, req.usuario, req.params.id, req.ip);
     });
 
     painel.get('/api/painel/loja', async (req) => {

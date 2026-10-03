@@ -14,6 +14,8 @@ export function carregarConfig(env = process.env) {
     // verificação em duas etapas obrigatória para entrar no painel
     exigir2fa: (env.EXIGIR_2FA ?? 'true') === 'true',
     sessaoHoras: inteiro(env.SESSAO_HORAS, 12),
+    // "manter conectado" no login
+    sessaoLongaDias: inteiro(env.SESSAO_LONGA_DIAS, 30),
     pedidoValidadeHoras: inteiro(env.PEDIDO_VALIDADE_HORAS, 24),
     cicloValidadeMinutos: inteiro(env.CICLO_VALIDADE_MINUTOS, 30),
     // loja considerada offline se não deu sinal há mais que isso

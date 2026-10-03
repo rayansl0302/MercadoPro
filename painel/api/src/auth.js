@@ -8,7 +8,12 @@ async function hashFalso() {
   return senhaFalsa;
 }
 
-export async function entrar(pool, config, { email, senha, codigo, ip }) {
+// "manter conectado": 30 dias; sem marcar, a sessão curta (12 h)
+export function horasDaSessao(config, lembrar) {
+  return lembrar ? config.sessaoLongaDias * 24 : config.sessaoHoras;
+}
+
+export async function entrar(pool, config, { email, senha, codigo, lembrar, ip }) {
   const mensagemGenerica = 'E-mail, senha ou código incorretos.';
   const r = await pool.query('SELECT * FROM painel.usuarios WHERE lower(email) = lower($1)', [String(email ?? '').trim()]);
   const usuario = r.rows[0];
@@ -45,16 +50,16 @@ export async function entrar(pool, config, { email, senha, codigo, ip }) {
   const token = gerarToken(32);
   await pool.query(
     'INSERT INTO painel.sessoes (id_hash, usuario_id, expira_em, ip) VALUES ($1, $2, now() + make_interval(hours => $3), $4)',
-    [hashToken(token), usuario.id, config.sessaoHoras, ip ?? null],
+    [hashToken(token), usuario.id, horasDaSessao(config, lembrar), ip ?? null],
   );
   await pool.query('INSERT INTO painel.auditoria (usuario_id, usuario, acao, ip) VALUES ($1, $2, $3, $4)', [usuario.id, usuario.nome, 'LOGIN', ip ?? null]);
-  return { token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, perfil: usuario.perfil } };
+  return { token, lembrar: Boolean(lembrar), horas: horasDaSessao(config, lembrar), usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, perfil: usuario.perfil, trocarSenha: usuario.trocar_senha } };
 }
 
 export async function usuarioDaSessao(pool, token) {
   if (!token) return null;
   const r = await pool.query(
-    `SELECT u.id, u.nome, u.email, u.perfil FROM painel.sessoes s JOIN painel.usuarios u ON u.id = s.usuario_id
+    `SELECT u.id, u.nome, u.email, u.perfil, u.trocar_senha AS "trocarSenha" FROM painel.sessoes s JOIN painel.usuarios u ON u.id = s.usuario_id
      WHERE s.id_hash = $1 AND s.expira_em > now() AND u.ativo`,
     [hashToken(token)],
   );
