@@ -149,6 +149,13 @@ bool Atualizador_service::ativo() const
     return config().value("atualizacao/ativa", true).toBool();
 }
 
+bool Atualizador_service::manualPermitido() const
+{
+    if (!urlApiDeTeste.isEmpty())
+        return true;
+    return versaoAtual() != QLatin1String("0.0.0"); // compilação local sem versão não tem o que comparar
+}
+
 void Atualizador_service::iniciar(std::function<bool()> aplicarSePuder)
 {
     podeAplicar = std::move(aplicarSePuder);
@@ -156,13 +163,13 @@ void Atualizador_service::iniciar(std::function<bool()> aplicarSePuder)
         return;
     if (!relogio) {
         relogio = new QTimer(this);
-        connect(relogio, &QTimer::timeout, this, &Atualizador_service::verificarAgora);
+        connect(relogio, &QTimer::timeout, this, [this]() { verificarAgora(false); });
         aplicador = new QTimer(this);
         aplicador->setInterval(30 * 1000);
         connect(aplicador, &QTimer::timeout, this, &Atualizador_service::tentarAplicar);
     }
     relogio->start(6 * 60 * 60 * 1000);
-    QTimer::singleShot(20 * 1000, this, &Atualizador_service::verificarAgora); // sem atrapalhar a abertura
+    QTimer::singleShot(20 * 1000, this, [this]() { verificarAgora(false); }); // sem atrapalhar a abertura
 }
 
 void Atualizador_service::parar()
@@ -187,12 +194,22 @@ void Atualizador_service::falha(const QString &motivo)
     emit falhou(motivo);
 }
 
-void Atualizador_service::verificarAgora()
+void Atualizador_service::verificarAgora(bool manual)
 {
-    if (emAndamento || !ativo())
+    if (emAndamento) {
+        if (manual)
+            emit falhou("Já existe uma verificação em andamento. Tente de novo em instantes.");
         return;
+    }
+    if (manual ? !manualPermitido() : !ativo()) {
+        if (manual)
+            emit falhou("Esta é uma versão de desenvolvimento, sem número de versão para comparar.");
+        return;
+    }
     if (!instaladorPronto.isEmpty()) { // já baixada e conferida: só falta um momento ocioso
-        if (aplicador && !aplicador->isActive())
+        if (manual)
+            emit atualizacaoPronta(versaoPronta, instaladorPronto);
+        else if (aplicador && !aplicador->isActive())
             aplicador->start();
         return;
     }
@@ -215,7 +232,7 @@ void Atualizador_service::verificarAgora()
     req.setRawHeader("Accept", "application/vnd.github+json");
     req.setTransferTimeout(kTempoApiMs);
     QNetworkReply *reply = rede->get(req);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, manual]() {
         reply->deleteLater();
         if (reply->error() != QNetworkReply::NoError) { // offline, DNS, 403 (limite da API), 404 (sem release)...
             falha("consulta falhou: " + reply->errorString());
@@ -233,7 +250,7 @@ void Atualizador_service::verificarAgora()
             return;
         }
         QSettings ini = config();
-        if (ini.value("atualizacao/tentativas_versao").toString() == release->versao &&
+        if (!manual && ini.value("atualizacao/tentativas_versao").toString() == release->versao &&
             ini.value("atualizacao/tentativas").toInt() >= kMaximoTentativas) {
             falha("versão " + release->versao + " já falhou " + QString::number(kMaximoTentativas) + " vezes; aguardando uma versão mais nova");
             return;
@@ -339,8 +356,20 @@ void Atualizador_service::tentarAplicar()
     // só instala quando o PDV está ocioso (sem venda aberta nem diálogo modal); senão tenta de novo em 30 s
     if (podeAplicar && !podeAplicar())
         return;
+    executarInstalador();
+}
+
+bool Atualizador_service::aplicarAgora()
+{
+    return executarInstalador();
+}
+
+bool Atualizador_service::executarInstalador()
+{
+    if (instaladorPronto.isEmpty() || !QFile::exists(instaladorPronto))
+        return false;
     if (!urlApiDeTeste.isEmpty())
-        return; // em teste nunca executa o instalador
+        return false; // em teste nunca executa o instalador
 
     QSettings ini = config();
     const int tentativas = ini.value("atualizacao/tentativas_versao").toString() == versaoPronta
@@ -354,8 +383,10 @@ void Atualizador_service::tentarAplicar()
     const QStringList args{"/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/REINICIAR=1", "/LOG=" + log};
     if (!QProcess::startDetached(instaladorPronto, args)) {
         falha("não foi possível iniciar o instalador");
-        return;
+        return false;
     }
-    aplicador->stop();
+    if (aplicador)
+        aplicador->stop();
     QTimer::singleShot(1500, qApp, &QCoreApplication::quit); // sai para o instalador poder trocar os arquivos
+    return true;
 }

@@ -49,7 +49,12 @@ public:
     // seguro instalar agora (sem venda aberta nem diálogo modal).
     void iniciar(std::function<bool()> podeAplicar);
     void parar();
-    void verificarAgora();   // uma verificação imediata (usada pelo ciclo e pelos testes)
+    // Uma verificação imediata. manual=true (menu Ajuda > Verificar atualizações) ignora o "ativa=0" do
+    // config.ini e, se a atualização já estiver baixada, avisa de novo em vez de ficar calado.
+    void verificarAgora(bool manual = false);
+    // Executa o instalador agora (o operador confirmou). Retorna false se não houver nada pronto.
+    bool aplicarAgora();
+    bool atualizacaoBaixada() const { return !instaladorPronto.isEmpty(); }
     void resetarEstadoParaTeste();
 
 signals:
@@ -60,6 +65,8 @@ signals:
 private:
     explicit Atualizador_service(QObject *parent = nullptr);
     bool ativo() const;
+    bool manualPermitido() const;
+    bool executarInstalador();
     void baixar(const Release &release);
     void tentarAplicar();
     void falha(const QString &motivo);

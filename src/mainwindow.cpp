@@ -69,6 +69,7 @@
 #include "nuvemdialog.h"
 #include "nuvem/nuvem_service.h"
 #include "infra/atualizador_service.h"
+#include <QProgressDialog>
 #include "nuvem/nuvemconfig.h"
 #include "services/empresa_service.h"
 #include "services/contaspagar_service.h"
@@ -767,6 +768,10 @@ void MainWindow::montarMenuCaixa()
     menuCaixa->addAction("Operadores...", this, &MainWindow::operadoresClicked);
     // alterarPinGerente já confirma com o PIN atual antes de trocar
     menuCaixa->addAction("PIN do gerente...", this, [this]() { Operadores::alterarPinGerente(this); });
+    // Ajuda > Verificar atualizações (mostra a versão instalada)
+    ui->menuAjuda->addSeparator();
+    ui->menuAjuda->addAction(QStringLiteral("Verificar atualizações... (versão %1)").arg(Atualizador_service::versaoAtual()),
+                             this, [this]() { verificarAtualizacoes(); });
     ui->menuBar->insertMenu(ui->menuAjuda->menuAction(), menuCaixa);
 
     QMenu *menuFinanceiro = new QMenu("Financeiro", this);
@@ -1520,4 +1525,47 @@ bool MainWindow::ociosoParaAtualizar() const
 {
     // venda em andamento (PDV aberto), qualquer diálogo modal (pagamento, fechamento de caixa...) ou menu aberto
     return pdvAberto.isNull() && QApplication::activeModalWidget() == nullptr && QApplication::activePopupWidget() == nullptr;
+}
+
+void MainWindow::verificarAtualizacoes()
+{
+    auto *a = Atualizador_service::instancia();
+    const QString atual = Atualizador_service::versaoAtual();
+
+    // diálogo de espera: ele é o "contexto" das conexões, então quando fecha elas somem junto
+    // (um resultado atrasado não abre mensagem fora de hora)
+    auto *espera = new QProgressDialog(QStringLiteral("Verificando se existe uma versão nova do MercadoPro..."),
+                                       QStringLiteral("Fechar"), 0, 0, this);
+    espera->setWindowTitle(QStringLiteral("Atualizações"));
+    espera->setWindowModality(Qt::WindowModal);
+    espera->setMinimumDuration(0);
+    espera->setAttribute(Qt::WA_DeleteOnClose);
+    espera->show();
+
+    connect(a, &Atualizador_service::semAtualizacao, espera, [this, espera, atual]() {
+        espera->close();
+        QMessageBox::information(this, "Atualizações", QStringLiteral("Você já está na versão mais recente (%1).").arg(atual));
+    });
+    connect(a, &Atualizador_service::falhou, espera, [this, espera](const QString &motivo) {
+        espera->close();
+        QMessageBox::warning(this, "Atualizações",
+            QStringLiteral("Não foi possível verificar agora.\n\n%1\n\nO sistema continua funcionando normalmente. "
+                           "Confira a internet e tente de novo mais tarde.").arg(motivo));
+    });
+    connect(a, &Atualizador_service::atualizacaoPronta, espera, [this, espera, atual](const QString &versao, const QString &) {
+        espera->close();
+        if (!ociosoParaAtualizar()) {
+            QMessageBox::information(this, "Atualizações",
+                QStringLiteral("A versão %1 está pronta, mas há uma venda ou janela aberta.\n"
+                               "Finalize e feche a tela de venda e verifique de novo.").arg(versao));
+            return;
+        }
+        const auto r = QMessageBox::question(this, "Atualizações",
+            QStringLiteral("Nova versão disponível: %1 (instalada: %2).\n\n"
+                           "O MercadoPro vai fechar, atualizar e abrir sozinho em seguida. Atualizar agora?").arg(versao, atual));
+        if (r == QMessageBox::Yes && !Atualizador_service::instancia()->aplicarAgora())
+            QMessageBox::warning(this, "Atualizações", "Não foi possível iniciar o instalador. Tente de novo.");
+    });
+    // a nova versão é baixada em segundo plano (pode levar alguns instantes); este diálogo espera o resultado
+    a->verificarAgora(true);
 }

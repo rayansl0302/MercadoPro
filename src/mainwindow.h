@@ -179,6 +179,8 @@ private:
 public:
     // true quando é seguro reiniciar o programa para atualizar: sem venda aberta e sem diálogo na frente
     bool ociosoParaAtualizar() const;
+    // Ajuda > Verificar atualizações: consulta agora e, se houver versão nova, oferece instalar
+    void verificarAtualizacoes();
 private:
 
 
