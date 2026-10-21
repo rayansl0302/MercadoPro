@@ -36,6 +36,7 @@ public:
     QLocale portugues;
     QList<QList<QVariant>> rowDataList;
     static bool imprimirReciboVenda(qlonglong idvenda);
+    static bool imprimirAposVenda(qlonglong idvenda, bool querCupom);
     void actionAbrirPagamentosVenda(QString id_venda);
 
 

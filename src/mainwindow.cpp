@@ -68,6 +68,7 @@
 #include "contasreceberjanela.h"
 #include "nuvemdialog.h"
 #include "nuvem/nuvem_service.h"
+#include "infra/atualizador_service.h"
 #include "nuvem/nuvemconfig.h"
 #include "services/empresa_service.h"
 #include "services/contaspagar_service.h"
@@ -1053,6 +1054,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     saindoDoPrograma = true;
     // para a sincronização com a nuvem e solta a trava (outro computador assume)
     Nuvem_service::instancia()->parar();
+    Atualizador_service::instancia()->parar();
     event->accept();
     QApplication::quit();
 }
@@ -1513,3 +1515,9 @@ void MainWindow::on_actionSQLite_triggered()
 
 }
 
+
+bool MainWindow::ociosoParaAtualizar() const
+{
+    // venda em andamento (PDV aberto), qualquer diálogo modal (pagamento, fechamento de caixa...) ou menu aberto
+    return pdvAberto.isNull() && QApplication::activeModalWidget() == nullptr && QApplication::activePopupWidget() == nullptr;
+}

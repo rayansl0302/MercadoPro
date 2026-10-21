@@ -21,6 +21,7 @@
     #include "services/contaspagar_service.h"
     #include "services/contasreceber_service.h"
     #include "nuvem/nuvem_service.h"
+    #include "infra/atualizador_service.h"
 
     namespace {
 
@@ -155,6 +156,8 @@
         w.show();
         // sincronização com o painel online (desligada por padrão; só age se configurada neste computador)
         Nuvem_service::instancia()->iniciar();
+        // auto-update silencioso: consulta em segundo plano; só instala com o PDV ocioso; offline não faz nada
+        Atualizador_service::instancia()->iniciar([&w]() { return w.ociosoParaAtualizar(); });
         // várias empresas (CNPJs): pergunta com qual vai trabalhar antes de vender
         if (!QCoreApplication::arguments().contains("--preview-caixa"))
             w.perguntarEmpresaSeNecessario();

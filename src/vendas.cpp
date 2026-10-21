@@ -402,6 +402,19 @@ bool Vendas::imprimirReciboVenda(qlonglong idvenda){
     }
     return true;
 }
+// Chamado ao finalizar a venda: escolhe sozinho entre comanda de lanches e cupom padrão.
+// Falha de impressão nunca desfaz a venda (já gravada): só avisa, e dá para reimprimir em Vendas.
+bool Vendas::imprimirAposVenda(qlonglong idvenda, bool querCupom){
+    Recibo_service reciboServ;
+    QString erro;
+    if (!reciboServ.imprimirAposVenda(idvenda, querCupom, &erro)) {
+        QMessageBox::warning(nullptr, "Impressora",
+                             (erro.isEmpty() ? QString("Não foi possível imprimir.") : erro) +
+                             "\n\nA venda foi salva. Você pode reimprimir em Vendas.");
+        return false;
+    }
+    return true;
+}
 void Vendas::imprimirReciboVendaSelec(QString id){
     imprimirReciboVenda(id.toLongLong());
 }

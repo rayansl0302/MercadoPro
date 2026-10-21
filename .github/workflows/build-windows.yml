@@ -2,8 +2,19 @@ name: Compilar para Windows
 
 # Gera a pasta do programa (Qt 6 + MSVC) e o instalador MercadoPro-Setup-<versão>.exe.
 # Rode manualmente em Actions > "Compilar para Windows" > Run workflow.
+#
+# Marque "Publicar como atualização" SÓ quando a versão estiver aprovada: ela vira uma Release no GitHub
+# e todos os caixas com o programa aberto passam a se atualizar sozinhos (auto-update).
 on:
   workflow_dispatch:
+    inputs:
+      publicar_release:
+        description: 'Publicar como atualização (os caixas se atualizam sozinhos)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # só usado para criar a Release quando "publicar_release" está marcado
 
 jobs:
   build-windows:
@@ -74,6 +85,7 @@ jobs:
           export CXXFLAGS="-I$(cygpath -m "$GITHUB_WORKSPACE")/libs-externas/zint/backend"
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64 \
             -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
+            -DMERCADOPRO_VERSAO=1.0.${{ github.run_number }} \
             -DZINT_USE_PNG=OFF -DZINT_USE_QT=OFF -DZINT_FRONTEND=OFF -DZINT_TEST=OFF
 
       - name: Compilar
@@ -181,3 +193,19 @@ jobs:
         with:
           name: MercadoPro-instalador
           path: saida-instalador/*.exe
+
+      # Publica a Release que os caixas consultam (auto-update). O programa só instala se o SHA-256 do
+      # arquivo .sha256 (publicado junto) bater com o instalador baixado.
+      - name: Publicar a atualização (Release)
+        if: ${{ inputs.publicar_release }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $versao = "1.0.${{ github.run_number }}"
+          $exe = "saida-instalador/MercadoPro-Setup-$versao.exe"
+          if (-not (Test-Path $exe)) { throw "instalador nao encontrado: $exe" }
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  MercadoPro-Setup-$versao.exe" | Out-File -Encoding ascii "$exe.sha256"
+          gh release create "v$versao" $exe "$exe.sha256" --title "MercadoPro $versao" --notes "Atualização automática. SHA-256: $hash" --target ${{ github.sha }}
+          if ($LASTEXITCODE -ne 0) { throw "gh release falhou ($LASTEXITCODE)" }

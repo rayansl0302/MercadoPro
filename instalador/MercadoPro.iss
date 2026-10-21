@@ -55,8 +55,15 @@ Name: "{autodesktop}\MercadoPro PDV"; Filename: "{app}\QEstoqueLoja.exe"; Parame
 
 [Run]
 Filename: "{app}\QEstoqueLoja.exe"; Description: "Abrir o MercadoPro agora"; Flags: nowait postinstall skipifsilent
+; atualização automática (silenciosa): o programa pede o parâmetro /REINICIAR=1 e é reaberto no fim
+Filename: "{app}\QEstoqueLoja.exe"; Flags: nowait runasoriginaluser; Check: ReiniciarAposAtualizar
 
 [Code]
+function ReiniciarAposAtualizar: Boolean;
+begin
+  Result := ExpandConstant('{param:REINICIAR|0}') = '1';
+end;
+
 var
   PastaExistente: String;   // pasta de uma instalação anterior (QEstoqueLoja ou MercadoPro); vazio = instalação nova
   VersaoExistente: String;

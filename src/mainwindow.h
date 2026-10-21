@@ -176,6 +176,10 @@ private:
     // Fica como QWidget porque venda só é forward-declared aqui; o .cpp faz o
     // static_cast quando precisa dos métodos específicos do PDV.
     QPointer<QWidget> pdvAberto;
+public:
+    // true quando é seguro reiniciar o programa para atualizar: sem venda aberta e sem diálogo na frente
+    bool ociosoParaAtualizar() const;
+private:
 
 
     void setarIconesJanela();

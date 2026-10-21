@@ -785,9 +785,9 @@ void venda::terminarPagamento()
     }
     newVenda.id = result.idVendaInserida;
 
-    if (ui->CheckImprimirCNF->isChecked() ||
-        (!configDTO.emitNfFiscal && ui->CheckImprimirCupomPag->isChecked()))
-        Vendas::imprimirReciboVenda(newVenda.id);
+    // venda de lanche: a comanda da cozinha sai mesmo sem o cupom marcado (decisão dentro de imprimirAposVenda)
+    Vendas::imprimirAposVenda(newVenda.id,
+        ui->CheckImprimirCNF->isChecked() || (!configDTO.emitNfFiscal && ui->CheckImprimirCupomPag->isChecked()));
 
     if (configDTO.emitNfFiscal) {
         qlonglong nnf = ui->Ledit_NNF->text().toLongLong();

@@ -124,9 +124,7 @@ void pagamentoVenda::terminarPagamento(){
         newVenda.id = result.idVendaInserida;
     }
 
-    if(ui->CheckImprimirCNF->isChecked()){
-        Vendas::imprimirReciboVenda(idVenda.toLongLong());
-    }
+    Vendas::imprimirAposVenda(idVenda.toLongLong(), ui->CheckImprimirCNF->isChecked());
 
     bool okEmitir = true;
 

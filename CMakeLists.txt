@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.5)
 
 project(QEstoqueLoja VERSION 0.1 LANGUAGES CXX)
 
+# versão do MercadoPro (o Actions passa -DMERCADOPRO_VERSAO=1.0.N); usada pelo auto-update
+set(MERCADOPRO_VERSAO "0.0.0" CACHE STRING "Versão do MercadoPro")
+add_compile_definitions(MERCADOPRO_VERSAO=\"${MERCADOPRO_VERSAO}\")
+
 enable_testing()
 
 set(CMAKE_AUTOUIC ON)
@@ -172,6 +176,9 @@ set(QESTOQUE_SOURCES
 
     src/infra/databaseconnection_service.cpp
     src/infra/apppath_service.cpp
+    src/infra/atualizador_service.cpp
+    src/util/lanches.cpp
+    src/util/comandalanche.cpp
 
 
 )
@@ -310,6 +317,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/repository/contingencia_repository.h src/repository/contingencia_repository.cpp
         src/services/schemamigration_service.h src/services/schemamigration_service.cpp
         src/infra/apppath_service.h src/infra/apppath_service.cpp
+        src/infra/atualizador_service.h src/infra/atualizador_service.cpp
+        src/util/lanches.h src/util/lanches.cpp
+        src/util/comandalanche.h src/util/comandalanche.cpp
         src/infra/databaseconnection_service.h src/infra/databaseconnection_service.cpp
         src/services/schemamigration_service.cpp src/services/schemamigration_service.h
         src/dto/Config_dto.h
