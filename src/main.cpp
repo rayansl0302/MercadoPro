@@ -22,6 +22,7 @@
     #include "services/contasreceber_service.h"
     #include "nuvem/nuvem_service.h"
     #include "infra/atualizador_service.h"
+    #include "services/backup_service.h"
 
     namespace {
 
@@ -157,6 +158,14 @@
         // sincronização com o painel online (desligada por padrão; só age se configurada neste computador)
         Nuvem_service::instancia()->iniciar();
         // auto-update silencioso: consulta em segundo plano; só instala com o PDV ocioso; offline não faz nada
+        // backup diário (só se ligado neste computador). Falha do backup automático nunca passa em silêncio.
+        QObject::connect(Backup_service::instancia(), &Backup_service::terminou, &w, [&w](const Backup_service::Resultado &r) {
+            if (r.automatico && !r.ok)
+                QMessageBox::warning(&w, "Backup automático falhou",
+                    "O backup automático do banco de dados não foi concluído:\n\n" + r.msg +
+                    "\n\nAbra Sessão > Backup do banco de dados para corrigir e fazer um backup agora.");
+        });
+        Backup_service::instancia()->iniciar();
         Atualizador_service::instancia()->iniciar([&w]() { return w.ociosoParaAtualizar(); });
         // várias empresas (CNPJs): pergunta com qual vai trabalhar antes de vender
         if (!QCoreApplication::arguments().contains("--preview-caixa"))

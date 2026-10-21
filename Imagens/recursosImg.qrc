@@ -17,6 +17,7 @@
         <file alias="package.svg">icones/package.svg</file>
         <file alias="receipt.svg">icones/receipt.svg</file>
         <file alias="repeat.svg">icones/repeat.svg</file>
+        <file alias="database-backup.svg">icones/database-backup.svg</file>
         <file alias="settings.svg">icones/settings.svg</file>
         <file alias="shield-check.svg">icones/shield-check.svg</file>
         <file alias="shopping-cart.svg">icones/shopping-cart.svg</file>

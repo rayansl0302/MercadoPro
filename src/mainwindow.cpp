@@ -69,6 +69,8 @@
 #include "nuvemdialog.h"
 #include "nuvem/nuvem_service.h"
 #include "infra/atualizador_service.h"
+#include "backupdialog.h"
+#include "services/backup_service.h"
 #include <QProgressDialog>
 #include "nuvem/nuvemconfig.h"
 #include "services/empresa_service.h"
@@ -610,6 +612,7 @@ void MainWindow::montarMenuInicial()
 
     m->adicionarGrupo("Sistema");
     m->adicionarBotao("repeat", "Nuvem (painel)", "Sincronização com o painel de gestão online", [this]() { nuvemClicked(); });
+    m->adicionarBotao("database-backup", "Backup do banco", "Cópia de segurança em uma pasta (ex.: MEGA)", [this]() { backupClicked(); });
     m->adicionarBotao("settings", "Configurações", "Empresa, fiscal, e-mail e outros", [this]() { ui->actionConfig->trigger(); });
     m->adicionarBotao("book-open", "Ajuda", "Documentação do sistema", [this]() { ui->actionDocumenta_o->trigger(); });
     m->adicionarBotao("log-out", "Sair da conta", "Encerrar a sessão do operador", [this]() { sairSessaoClicked(); });
@@ -694,6 +697,14 @@ void MainWindow::nuvemClicked()
     NuvemDialog dlg(this);
     dlg.exec();
     atualizarIndicadorNuvem();
+}
+
+void MainWindow::backupClicked()
+{
+    if (!exigirGerente(QStringLiteral("O backup do banco de dados")))
+        return;
+    BackupDialog dlg(this);
+    dlg.exec();
 }
 
 void MainWindow::atualizarIndicadorNuvem()
@@ -790,6 +801,7 @@ void MainWindow::montarMenuCaixa()
     menuSessao->addSeparator();
     menuSessao->addAction("Log de acesso...", this, &MainWindow::logAcessoClicked);
     menuSessao->addAction("Nuvem (painel online)...", this, &MainWindow::nuvemClicked);
+    menuSessao->addAction("Backup do banco de dados...", this, &MainWindow::backupClicked);
     ui->menuBar->insertMenu(ui->menuAjuda->menuAction(), menuSessao);
 
     // Rodapé: quem está logado (chip grande, com menu) + botão de sair sempre à vista.
@@ -1060,6 +1072,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     // para a sincronização com a nuvem e solta a trava (outro computador assume)
     Nuvem_service::instancia()->parar();
     Atualizador_service::instancia()->parar();
+    Backup_service::instancia()->parar();
     event->accept();
     QApplication::quit();
 }

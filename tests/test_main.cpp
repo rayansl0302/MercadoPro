@@ -21,6 +21,7 @@
 #include "services/test_numeracaonf.h"
 #include "services/test_nuvem.h"
 #include "services/test_lanches.h"
+#include "services/test_backup.h"
 #include <QSqlDatabase>
 #include <QDebug>
 #include "nota/acbrmanager.h"
@@ -57,6 +58,7 @@ int main(int argc, char *argv[])
     status |= QTest::qExec(new TestNumeracaoNF, argc, argv);
     status |= QTest::qExec(new TestNuvem, argc, argv);
     status |= QTest::qExec(new TestLanches, argc, argv);
+    status |= QTest::qExec(new TestBackup, argc, argv);
 
 #ifdef TEST_POSTGRES
     TestDbFactory::removerBDAtual();

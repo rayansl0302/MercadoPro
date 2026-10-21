@@ -177,6 +177,7 @@ set(QESTOQUE_SOURCES
     src/infra/databaseconnection_service.cpp
     src/infra/apppath_service.cpp
     src/infra/atualizador_service.cpp
+    src/services/backup_service.cpp
     src/util/lanches.cpp
     src/util/comandalanche.cpp
 
@@ -318,6 +319,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/services/schemamigration_service.h src/services/schemamigration_service.cpp
         src/infra/apppath_service.h src/infra/apppath_service.cpp
         src/infra/atualizador_service.h src/infra/atualizador_service.cpp
+        src/services/backup_service.h src/services/backup_service.cpp
         src/util/lanches.h src/util/lanches.cpp
         src/util/comandalanche.h src/util/comandalanche.cpp
         src/infra/databaseconnection_service.h src/infra/databaseconnection_service.cpp
@@ -356,6 +358,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/nuvem/nuvem_service.h src/nuvem/nuvem_service.cpp
         src/nuvem/nuvem.qrc
         src/nuvemdialog.h src/nuvemdialog.cpp
+        src/backupdialog.h src/backupdialog.cpp
         src/services/contasreceber_service.h src/services/contasreceber_service.cpp
         src/services/contaspagar_service.h src/services/contaspagar_service.cpp
         src/loginoperador.h src/loginoperador.cpp src/loginoperador.ui

@@ -140,6 +140,7 @@ private slots:
     void abrirContasPagar() { contasPagarClicked(); }
     void abrirContasReceber() { contasReceberClicked(); }
     void nuvemClicked();
+    void backupClicked();
     void atualizarIndicadorNuvem();
     void contasReceberClicked(qlonglong idCliente = 0);
     void contasPagarClicked(const QString &statusInicial = QString());
