@@ -277,3 +277,13 @@ void TestLanches::versao_igual_ou_menor_nao_baixa_nada()
     QVERIFY(!s.pedidos.contains("/exe"));
     QVERIFY(!s.pedidos.contains("/hash"));
 }
+
+void TestLanches::nenhuma_versao_publicada_404_nao_e_erro()
+{
+    ServidorFalso s;                       // sem nenhuma resposta cadastrada: tudo vira 404, como o GitHub sem Release
+    Atualizador_service::definirUrlApiParaTeste(QUrl(s.base() + "/api"));
+    auto *a = Atualizador_service::instancia();
+    a->resetarEstadoParaTeste();
+    QCOMPARE(esperar(a), QString("sem"));
+    QVERIFY(!s.pedidos.contains("/exe"));
+}

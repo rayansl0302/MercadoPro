@@ -1,5 +1,6 @@
 #include "backup_service.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -158,6 +159,12 @@ QString Backup_service::localizarPgDump(const QString &configurado)
 {
     if (!configurado.trimmed().isEmpty() && QFileInfo::exists(configurado.trimmed()))
         return configurado.trimmed();
+    // o pg_dump que vai junto com o programa (pasta pgtools): funciona sem PostgreSQL instalado no computador
+    for (const char *exe : {"pgtools/pg_dump.exe", "pgtools/pg_dump"}) {
+        const QString embutido = QCoreApplication::applicationDirPath() + "/" + exe;
+        if (QFileInfo::exists(embutido))
+            return embutido;
+    }
     const QString noPath = QStandardPaths::findExecutable("pg_dump");
     if (!noPath.isEmpty())
         return noPath;
@@ -278,9 +285,9 @@ void Backup_service::backupPostgres(const Config &cfg)
     Resultado r;
     const QString pgDump = localizarPgDump(cfg.pgDump);
     if (pgDump.isEmpty()) {
-        r.msg = "O programa pg_dump não foi encontrado neste computador. Ele vem com o PostgreSQL "
-                "(pasta bin, ex.: C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe). "
-                "Informe o caminho dele na tela de Backup.";
+        r.msg = "O programa pg_dump não foi encontrado. A versão nova do MercadoPro já o traz na pasta pgtools: "
+                "reinstale/atualize pelo instalador mais recente. Se preferir, informe na tela de Backup o caminho do "
+                "pg_dump.exe do PostgreSQL (pasta bin, ex.: C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe).";
         concluir(r, false);
         return;
     }

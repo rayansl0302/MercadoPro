@@ -21,6 +21,7 @@ private slots:
     void instalador_com_hash_errado_e_descartado();
     void servidor_fora_do_ar_nao_trava_nem_levanta_erro();
     void versao_igual_ou_menor_nao_baixa_nada();
+    void nenhuma_versao_publicada_404_nao_e_erro();
 };
 
 #endif // TEST_LANCHES_H

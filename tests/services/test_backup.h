@@ -14,6 +14,7 @@ private slots:
     void lista_vem_do_mais_novo_para_o_mais_antigo();
     void pg_dump_nao_leva_a_senha_na_linha_de_comando();
     void caminho_do_pg_dump_informado_vale_primeiro();
+    void pg_dump_embutido_na_pasta_pgtools_e_encontrado();
     void backup_sqlite_gera_copia_consistente_sem_arquivo_parcial();
     void pasta_invalida_falha_com_motivo_e_nao_apaga_nada();
 };

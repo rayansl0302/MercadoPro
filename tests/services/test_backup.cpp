@@ -100,6 +100,25 @@ void TestBackup::caminho_do_pg_dump_informado_vale_primeiro()
     QVERIFY(Backup_service::localizarPgDump(tmp.filePath("nao_existe.exe")) != tmp.filePath("nao_existe.exe"));
 }
 
+void TestBackup::pg_dump_embutido_na_pasta_pgtools_e_encontrado()
+{
+    const QString pasta = QCoreApplication::applicationDirPath() + "/pgtools";
+    QVERIFY(QDir().mkpath(pasta));
+    const QString falso = pasta + "/pg_dump.exe";
+    {
+        QFile f(falso);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write("x");
+    }
+    QCOMPARE(Backup_service::localizarPgDump(QString()), falso);
+    // o caminho informado pelo usuário continua tendo prioridade sobre o embutido
+    QTemporaryDir tmp;
+    criar(QDir(tmp.path()), "outro_pg_dump.exe");
+    QCOMPARE(Backup_service::localizarPgDump(tmp.filePath("outro_pg_dump.exe")), tmp.filePath("outro_pg_dump.exe"));
+    QFile::remove(falso);
+    QDir().rmdir(pasta);
+}
+
 void TestBackup::backup_sqlite_gera_copia_consistente_sem_arquivo_parcial()
 {
     if (DatabaseConnection_service::isPostgres())

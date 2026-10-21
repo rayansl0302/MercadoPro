@@ -234,8 +234,15 @@ void Atualizador_service::verificarAgora(bool manual)
     QNetworkReply *reply = rede->get(req);
     connect(reply, &QNetworkReply::finished, this, [this, reply, manual]() {
         reply->deleteLater();
-        if (reply->error() != QNetworkReply::NoError) { // offline, DNS, 403 (limite da API), 404 (sem release)...
-            falha("consulta falhou: " + reply->errorString());
+        const int http = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        // 404 em "releases/latest" = ainda não existe nenhuma versão publicada: não é erro, só não há o que baixar
+        if (http == 404) {
+            emAndamento = false;
+            emit semAtualizacao();
+            return;
+        }
+        if (reply->error() != QNetworkReply::NoError) { // offline, DNS, 403 (limite da API do GitHub)...
+            falha(QStringLiteral("consulta falhou%1: %2").arg(http > 0 ? QStringLiteral(" (HTTP %1)").arg(http) : QString(), reply->errorString()));
             return;
         }
         const auto release = interpretarRelease(reply->readAll());

@@ -170,6 +170,44 @@ jobs:
           }
           Write-Host 'OK: sem login de desenvolvimento no pacote.'
 
+      # pg_dump/pg_restore embutidos (subpasta pgtools): o backup do banco funciona em qualquer computador,
+      # mesmo sem PostgreSQL instalado, porque conecta ao servidor pela rede. Ficam numa pasta própria com
+      # as DLLs da mesma versão, sem misturar com a libpq usada pelo programa.
+      - name: Cache das ferramentas do PostgreSQL
+        id: pgcache
+        uses: actions/cache@v4
+        with:
+          path: pgtools-cache
+          key: pgtools-17.5-1
+
+      - name: Baixar as ferramentas do PostgreSQL (pg_dump)
+        if: steps.pgcache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest "https://get.enterprisedb.com/postgresql/postgresql-17.5-1-windows-x64-binaries.zip" -OutFile pg.zip
+          7z x pg.zip "pgsql/bin/*" -opgx -y | Out-Null
+          New-Item -ItemType Directory -Force pgtools-cache | Out-Null
+          # só o necessário para fazer e restaurar backup (sem ICU, XML, ECPG e servidor: pesam e não são usados)
+          Get-ChildItem pgx/pgsql/bin -File | Where-Object {
+            ($_.Name -in 'pg_dump.exe', 'pg_restore.exe') -or
+            ($_.Extension -eq '.dll' -and $_.Name -notmatch '^(icu|libxml2|libxslt|libecpg|libpgtypes)')
+          } | Copy-Item -Destination pgtools-cache
+
+      - name: Incluir o pg_dump no pacote e conferir que ele abre
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/pgtools | Out-Null
+          Copy-Item pgtools-cache/* dist/pgtools/ -Force
+          foreach ($f in 'pg_dump.exe', 'pg_restore.exe', 'libpq.dll') {
+            if (-not (Test-Path "dist/pgtools/$f")) { throw "dist/pgtools/$f ausente" }
+          }
+          # roda de verdade: se faltar alguma DLL, o build falha aqui e não gera um pacote que não faz backup
+          $v = & dist/pgtools/pg_dump.exe --version
+          if ($LASTEXITCODE -ne 0) { throw "pg_dump nao executa (codigo $LASTEXITCODE)" }
+          Write-Host "OK: $v"
+          Get-ChildItem dist/pgtools | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+
       - name: Enviar o resultado
         uses: actions/upload-artifact@v4
         with:
