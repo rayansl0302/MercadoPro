@@ -70,6 +70,7 @@
 #include "nuvem/nuvem_service.h"
 #include "infra/atualizador_service.h"
 #include "backupdialog.h"
+#include "util/tema.h"
 #include "services/backup_service.h"
 #include <QProgressDialog>
 #include "nuvem/nuvemconfig.h"
@@ -805,7 +806,7 @@ void MainWindow::montarMenuCaixa()
     ui->menuBar->insertMenu(ui->menuAjuda->menuAction(), menuSessao);
 
     // Rodapé: quem está logado (chip grande, com menu) + botão de sair sempre à vista.
-    ui->statusbar->setMinimumHeight(44);
+    ui->statusbar->setMinimumHeight(qRound(44 * Tema::fatorFonte()));
     QFont fonteRodape = font();
     fonteRodape.setPointSize(qMax(font().pointSize(), 9) + 2);
     fonteRodape.setBold(true);

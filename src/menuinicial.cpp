@@ -6,19 +6,23 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
+#include "util/tema.h"
 #include <QVBoxLayout>
 
 namespace {
 constexpr int kColunas = 5;
-constexpr int kLargura = 158;
-constexpr int kAltura = 112;
+constexpr int kLarguraBase = 158;
+constexpr int kAlturaBase = 112;
+// os botões da tela inicial crescem junto com a letra (senão o texto não cabe)
+int kLargura() { return qRound(kLarguraBase * Tema::fatorFonte()); }
+int kAltura() { return qRound(kAlturaBase * Tema::fatorFonte()); }
 
 // o tamanho vem do sizeHint: com botão sem texto próprio o layout usaria o mínimo do estilo
 class Tile : public QPushButton
 {
 public:
-    QSize sizeHint() const override { return QSize(kLargura, kAltura); }
-    QSize minimumSizeHint() const override { return QSize(kLargura, kAltura); }
+    QSize sizeHint() const override { return QSize(kLargura(), kAltura()); }
+    QSize minimumSizeHint() const override { return QSize(kLargura(), kAltura()); }
 };
 
 const char *kEstiloNormal =
@@ -118,7 +122,7 @@ void MenuInicial::adicionarBotao(const QString &nomeIcone, const QString &titulo
         adicionarGrupo(QString());
 
     auto *botao = new Tile;
-    botao->setFixedSize(kLargura, kAltura);
+    botao->setFixedSize(kLargura(), kAltura());
     botao->setCursor(Qt::PointingHandCursor);
     botao->setToolTip(dica);
     botao->setStyleSheet(QString::fromLatin1(destaque ? kEstiloDestaque : kEstiloNormal));

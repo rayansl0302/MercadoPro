@@ -1,4 +1,11 @@
 #include "configuracao.h"
+#include "util/tema.h"
+#include <QApplication>
+#include <QBoxLayout>
+#include <QLabel>
+#include <QGroupBox>
+#include <QFormLayout>
+#include <QComboBox>
 #include "services/empresa_service.h"
 #include "ui_configuracao.h"
 #include <QFileDialog>
@@ -21,6 +28,34 @@ Configuracao::Configuracao(QWidget *parent)
 {
     ui->setupUi(this);
     ui->tabWidget->setCurrentIndex(0); // começa na tab Empresa
+
+    // Aparência: tamanho da letra (para quem tem dificuldade de ler). Vale na próxima abertura do programa.
+    {
+        auto *caixa = new QGroupBox(QStringLiteral("Aparência"), this);
+        auto *form = new QFormLayout(caixa);
+        auto *combo = new QComboBox(caixa);
+        combo->addItem(QStringLiteral("Normal (padrão)"), 0);
+        combo->addItem(QStringLiteral("Maior (+5%)"), 5);
+        combo->addItem(QStringLiteral("Grande (+10%)"), 10);
+        combo->addItem(QStringLiteral("Muito grande (+20%)"), 20);
+        combo->setCurrentIndex(qMax(0, combo->findData(Tema::percentualFonte())));
+        auto *dica = new QLabel(QStringLiteral("Aumenta o tamanho das letras em todas as telas deste computador. "
+                                               "A mudança vale quando o programa for aberto de novo."), caixa);
+        dica->setWordWrap(true);
+        form->addRow(QStringLiteral("Tamanho da letra:"), combo);
+        form->addRow(dica);
+        if (auto *lay = qobject_cast<QBoxLayout *>(ui->gbCaixa->parentWidget() ? ui->gbCaixa->parentWidget()->layout() : nullptr))
+            lay->insertWidget(0, caixa);
+        else
+            caixa->hide();
+        connect(combo, &QComboBox::currentIndexChanged, this, [this, combo](int) {
+            Tema::definirPercentualFonte(combo->currentData().toInt());
+            const auto r = QMessageBox::question(this, QStringLiteral("Tamanho da letra"),
+                QStringLiteral("Salvo. O novo tamanho aparece quando o programa for aberto de novo.\n\nFechar o programa agora?"));
+            if (r == QMessageBox::Yes)
+                QApplication::closeAllWindows();
+        });
+    }
 
     ui->Btn_CertficadoAcPath->setVisible(false);
     ui->Lbl_CertificadoAcPath->setVisible(false);

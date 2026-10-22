@@ -3,7 +3,14 @@
 #include <QApplication>
 #include <QFont>
 #include <QFontDatabase>
+#include <QEvent>
+#include <QObject>
 #include <QPalette>
+#include <QRegularExpression>
+#include <QSettings>
+#include <QWidget>
+
+#include "../infra/apppath_service.h"
 
 namespace {
 
@@ -126,7 +133,105 @@ QMessageBox QPushButton, QDialogButtonBox QPushButton { min-width: 84px; }
     return saida;
 }
 
+// Telas e widgets definem tamanhos de letra próprios (folha de estilo "font-size: 18pt" e fontes do .ui).
+// Esse filtro escala esses tamanhos na primeira vez que cada widget é preparado para aparecer, para que
+// o aumento valha em TODAS as telas, e não só no texto que usa a fonte padrão.
+class EscalaDeFonte : public QObject
+{
+public:
+    explicit EscalaDeFonte(double f) : fator(f) {}
+    bool eventFilter(QObject *o, QEvent *e) override
+    {
+        if (e->type() != QEvent::Polish)
+            return false;
+        auto *w = qobject_cast<QWidget *>(o);
+        if (!w)
+            return false;
+        if (!w->property("_escala_css").isValid()) {
+            w->setProperty("_escala_css", true);
+            const QString css = w->styleSheet();
+            if (css.contains(QLatin1String("font-size"))) {
+                const QString novo = Tema::escalarFolha(css, fator);
+                if (novo != css)
+                    w->setStyleSheet(novo);
+            }
+        }
+        if (!w->property("_escala_fonte").isValid()) {
+            w->setProperty("_escala_fonte", true);
+            // fonte com tamanho próprio (definida no .ui ou no código); a que o widget só herda do pai não conta,
+            // senão o aumento seria aplicado duas vezes
+            const bool propria = (w->font().resolveMask() & QFont::SizeResolved) != 0;
+            const bool herdada = w->parentWidget() && qFuzzyCompare(w->parentWidget()->font().pointSizeF(), w->font().pointSizeF());
+            if (propria && !herdada && w->font().pointSizeF() > 0) {
+                QFont f = w->font();
+                f.setPointSizeF(f.pointSizeF() * fator);
+                w->setFont(f);
+            }
+        }
+        return false;
+    }
+
+private:
+    double fator;
+};
+
 } // namespace
+
+int Tema::percentualFonte()
+{
+    QSettings s(AppPath_service::configPath(), QSettings::IniFormat);
+    const int p = s.value("interface/fonte_percentual", 0).toInt();
+    return (p == 5 || p == 10 || p == 20) ? p : 0;
+}
+
+void Tema::definirPercentualFonte(int percentual)
+{
+    QSettings s(AppPath_service::configPath(), QSettings::IniFormat);
+    s.setValue("interface/fonte_percentual", (percentual == 5 || percentual == 10 || percentual == 20) ? percentual : 0);
+    s.sync();
+}
+
+double Tema::fatorFonte()
+{
+    return 1.0 + percentualFonte() / 100.0;
+}
+
+QString Tema::escalarFolha(const QString &css, double fator)
+{
+    static const QRegularExpression re(QStringLiteral("font-size\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)\\s*(pt|px)"));
+    QString saida;
+    qsizetype ultimo = 0;
+    auto it = re.globalMatch(css);
+    while (it.hasNext()) {
+        const auto m = it.next();
+        const double valor = m.captured(1).toDouble() * fator;
+        const bool pt = m.captured(2) == QLatin1String("pt");
+        // pt com 1 casa decimal; px inteiro
+        const QString numero = pt ? QString::number(qRound(valor * 10) / 10.0, 'f', 1) : QString::number(qRound(valor));
+        saida += css.mid(ultimo, m.capturedStart() - ultimo);
+        saida += QStringLiteral("font-size: %1%2").arg(numero, m.captured(2));
+        ultimo = m.capturedEnd();
+    }
+    saida += css.mid(ultimo);
+
+    // forma abreviada: "font: 700 9pt \"Segoe UI\"" (estilo, peso e tamanho na mesma propriedade)
+    static const QRegularExpression abreviada(QStringLiteral(
+        "\\bfont\\s*:\\s*((?:(?:italic|oblique|normal|bold|bolder|lighter)\\s+|[1-9]00\\s+)*)([0-9]+(?:\\.[0-9]+)?)(pt|px)"));
+    QString final_;
+    qsizetype ult2 = 0;
+    auto it2 = abreviada.globalMatch(saida);
+    while (it2.hasNext()) {
+        const auto m = it2.next();
+        const double valor = m.captured(2).toDouble() * fator;
+        const bool pt = m.captured(3) == QLatin1String("pt");
+        const QString numero = pt ? QString::number(qRound(valor * 10) / 10.0, 'f', 1) : QString::number(qRound(valor));
+        final_ += saida.mid(ult2, m.capturedStart() - ult2);
+        final_ += QStringLiteral("font: %1%2%3").arg(m.captured(1), numero, m.captured(3));
+        ult2 = m.capturedEnd();
+    }
+    final_ += saida.mid(ult2);
+    return final_;
+}
 
 void Tema::aplicar(QApplication &app)
 {
@@ -134,8 +239,11 @@ void Tema::aplicar(QApplication &app)
     QFont fonte = app.font();
     if (QFontDatabase::families().contains(QStringLiteral("Segoe UI")))
         fonte.setFamily(QStringLiteral("Segoe UI"));
-    fonte.setPointSize(10);
+    const double fator = fatorFonte();
+    fonte.setPointSizeF(10 * fator);
     app.setFont(fonte);
+    if (fator > 1.0)
+        app.installEventFilter(new EscalaDeFonte(fator)); // vive até o fim do programa
 
     QPalette p = app.palette();
     p.setColor(QPalette::Window, QColor(kFundo));
@@ -143,5 +251,5 @@ void Tema::aplicar(QApplication &app)
     p.setColor(QPalette::HighlightedText, Qt::white);
     app.setPalette(p);
 
-    app.setStyleSheet(folhaDeEstilo());
+    app.setStyleSheet(escalarFolha(folhaDeEstilo(), fator));
 }

@@ -1,4 +1,5 @@
 #include "venda.h"
+#include "util/tema.h"
 #include "operadores.h"
 #include "services/contasreceber_service.h"
 #include "ui_venda.h"
@@ -131,6 +132,8 @@ venda::venda(QWidget *parent) :
     ui(new Ui::venda)
 {
     ui->setupUi(this);
+    // com a letra maior (Configurações > Aparência) o painel de busca precisa ficar mais largo, senão o texto é cortado
+    ui->groupBox->setMaximumWidth(qRound(320 * Tema::fatorFonte()));
 
     // enquanto houver itens no carrinho a sessão não pode ser trocada nem expirar (só bloquear)
     Sessao_service::instancia()->registrarTelaDeVenda(this, [this]() { return carrinhoComItens(); });
