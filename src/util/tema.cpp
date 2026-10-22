@@ -254,6 +254,28 @@ void Tema::escalarFontesDeClasse(double fator, const QString &familia)
     }
 }
 
+QString Tema::folhaDeFontesDeClasse(double fator)
+{
+    static const char *classes[] = {
+        "QMenuBar", "QMenu", "QStatusBar", "QToolTip", "QTabBar", "QHeaderView",
+        "QAbstractItemView", "QTableView", "QTreeView", "QListView",
+        "QLineEdit", "QTextEdit", "QPlainTextEdit", "QComboBox", "QAbstractSpinBox", "QSpinBox", "QDoubleSpinBox",
+        "QDateEdit", "QTimeEdit", "QDateTimeEdit", "QCheckBox", "QRadioButton", "QGroupBox", "QCalendarWidget"};
+    QString css;
+    for (const char *nome : classes) {
+        const QFont f = QApplication::font(nome);
+        // o tema do sistema pode dar o tamanho em pontos OU em pixels; se não der nenhum dos dois, assume 9 pt
+        // (padrão do Windows). Nunca pula a classe: pular deixaria tabelas e menus no tamanho antigo.
+        if (f.pointSizeF() <= 0 && f.pixelSize() > 0)
+            css += QStringLiteral("%1 { font-size: %2px; }\n").arg(QLatin1String(nome), QString::number(qRound(f.pixelSize() * fator)));
+        else {
+            const double pt = f.pointSizeF() > 0 ? f.pointSizeF() : 9.0;
+            css += QStringLiteral("%1 { font-size: %2pt; }\n").arg(QLatin1String(nome), QString::number(qRound(pt * fator * 10) / 10.0, 'f', 1));
+        }
+    }
+    return css;
+}
+
 void Tema::aplicar(QApplication &app)
 {
     // fonte única e legível (no Windows a Segoe UI; em outros sistemas, a padrão)
@@ -265,7 +287,9 @@ void Tema::aplicar(QApplication &app)
     fonte.setPointSize(10);
     app.setFont(fonte);
     // 2) com aumento: as fontes próprias da plataforma (tabelas, menus, cabeçalhos...) e a geral crescem pelo mesmo fator
+    QString regrasDeFonte;
     if (fator > 1.0) {
+        regrasDeFonte = folhaDeFontesDeClasse(fator); // lida ANTES de crescer: parte do tamanho atual de cada classe
         escalarFontesDeClasse(fator, fonte.family());
         fonte.setPointSizeF(10 * fator);
         app.setFont(fonte);
@@ -279,5 +303,6 @@ void Tema::aplicar(QApplication &app)
     p.setColor(QPalette::HighlightedText, Qt::white);
     app.setPalette(p);
 
-    app.setStyleSheet(escalarFolha(folhaDeEstilo(), fator));
+    // as regras por classe vêm depois da folha do tema: valem para tabelas, menus, cabeçalhos e campos em qualquer sistema
+    app.setStyleSheet(escalarFolha(folhaDeEstilo(), fator) + QLatin1Char('\n') + regrasDeFonte);
 }

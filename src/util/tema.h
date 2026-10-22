@@ -26,6 +26,12 @@ QString escalarFolha(const QString &css, double fator);
 // de cada uma dessas classes pelo fator. Deve ser chamada ANTES de mudar a fonte geral.
 // "familia" (opcional) troca a família da letra nessas classes.
 void escalarFontesDeClasse(double fator, const QString &familia = QString());
+
+// Regras de folha de estilo "Classe { font-size: Xpt; }" com o tamanho atual de cada classe multiplicado
+// pelo fator. É o jeito que funciona em qualquer sistema: a folha de estilo manda na fonte do componente,
+// mesmo quando o tema do Windows dá uma fonte própria a tabelas, menus e cabeçalhos.
+// Chamar depois de definir a fonte geral e ANTES de aumentá-la.
+QString folhaDeFontesDeClasse(double fator);
 }
 
 #endif // TEMA_H

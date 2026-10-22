@@ -73,3 +73,36 @@ void TestTema::fonte_propria_de_tabelas_menus_e_cabecalhos_tambem_cresce()
     QApplication::setFont(origCab, "QHeaderView");
     QApplication::setFont(origMenu, "QMenuBar");
 }
+
+void TestTema::folha_de_estilo_leva_o_tamanho_de_cada_classe_ja_aumentado()
+{
+    const QFont origTabela = QApplication::font("QTableView");
+    const QFont origMenu = QApplication::font("QMenuBar");
+    QApplication::setFont(QFont("DejaVu Sans", 9), "QTableView");
+    QApplication::setFont(QFont("DejaVu Sans", 10), "QMenuBar");
+
+    const QString css = Tema::folhaDeFontesDeClasse(1.2);
+    QVERIFY2(css.contains("QTableView { font-size: 10.8pt; }"), qPrintable(css));
+    QVERIFY2(css.contains("QMenuBar { font-size: 12.0pt; }"), qPrintable(css));
+    QVERIFY(css.contains("QHeaderView {"));
+    QVERIFY(css.contains("QLineEdit {"));
+    QVERIFY(!css.contains("font-size: 0"));
+
+    QApplication::setFont(origTabela, "QTableView");
+    QApplication::setFont(origMenu, "QMenuBar");
+}
+
+void TestTema::fonte_do_tema_em_pixels_tambem_gera_regra()
+{
+    // no Windows a fonte de tabela/menu pode vir em pixels: a classe não pode ficar de fora
+    const QFont orig = QApplication::font("QTableView");
+    QFont px("DejaVu Sans");
+    px.setPixelSize(12);
+    QApplication::setFont(px, "QTableView");
+    const QString css = Tema::folhaDeFontesDeClasse(1.2);
+    QVERIFY2(css.contains("QTableView { font-size: 14px; }"), qPrintable(css));
+    // e toda classe da lista tem regra
+    for (const char *c : {"QMenuBar", "QMenu", "QHeaderView", "QLineEdit", "QTreeView", "QListView", "QComboBox"})
+        QVERIFY2(css.contains(QString("%1 { font-size:").arg(c)), c);
+    QApplication::setFont(orig, "QTableView");
+}
