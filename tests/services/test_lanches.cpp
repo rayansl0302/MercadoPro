@@ -10,6 +10,7 @@
 #include "test_lanches.h"
 #include "util/lanches.h"
 #include "util/comandalanche.h"
+#include "util/cardapiolanches.h"
 #include "infra/atualizador_service.h"
 #include "services/Produto_service.h"
 #include "dto/Produto_dto.h"
@@ -139,7 +140,7 @@ void TestLanches::comanda_tem_senha_itens_e_corte_e_nenhum_dado_fiscal()
     d.empresa = "Lanchonete do Zé";
     d.senha = 7;
     d.quando = QDateTime(QDate(2026, 10, 3), QTime(12, 30));
-    d.itens = {{2, "X-BURGUER", "sem cebola"}, {1, "BATATA FRITA", ""}};
+    d.itens = {{2, "X-BURGUER", "", "chapa", "sem cebola"}, {1, "BATATA FRITA", "", "chapa", ""}};
     const QByteArray b = ComandaLanche::montar(d);
 
     QVERIFY(b.startsWith(QByteArray("\x1B@", 2)));                 // ESC @ (inicializa)
@@ -326,4 +327,96 @@ void TestLanches::venda_e_devolucao_de_lanche_nao_mexem_no_estoque_mas_mercadori
     QVERIFY(servico.updateAumentarQuantidadeProduto(idComum, 3).ok);
     QCOMPARE(servico.getProduto(idLanche).quantidade, 9999.0);
     QCOMPARE(servico.getProduto(idComum).quantidade, 10.0);
+}
+
+void TestLanches::comanda_mostra_pago_com_forma_e_valor_e_a_pagar_quando_nao_pago()
+{
+    ComandaLanche::Dados d;
+    d.senha = 12;
+    d.statusPagamento = "PAGO";
+    d.formaPagamento = "Pix";
+    d.total = 15.0;
+    d.itens = {{1, "X-TUDO"}};
+    const QByteArray pago = ComandaLanche::montar(d);
+    QVERIFY(pago.contains("*** PAGO ***"));
+    QVERIFY(pago.contains("Pix"));
+    QVERIFY(pago.contains("R$ 15,00"));
+    QVERIFY(pago.contains(QByteArray("\x1D!\x22", 3)));          // GS ! 0x22: "PAGO" em fonte 3x3
+    QVERIFY(!pago.contains("A PAGAR"));
+    QVERIFY(!pago.contains("CNPJ"));                               // continua sem dado fiscal
+
+    d.statusPagamento = "A PAGAR";
+    d.formaPagamento = "Prazo";
+    const QByteArray naoPago = ComandaLanche::montar(d);
+    QVERIFY(naoPago.contains("*** A PAGAR ***"));
+    QVERIFY(!naoPago.contains("*** PAGO ***"));
+
+    // sem status de pagamento (comanda antiga) o bloco some
+    ComandaLanche::Dados semPag;
+    semPag.senha = 1;
+    semPag.itens = {{1, "MISTO QUENTE"}};
+    const QByteArray s = ComandaLanche::montar(semPag);
+    QVERIFY(!s.contains("PAGO") && !s.contains("R$"));
+}
+
+void TestLanches::comanda_traz_ingredientes_e_separa_chapa_de_bebidas()
+{
+    ComandaLanche::Dados d;
+    d.senha = 3;
+    ComandaLanche::Item tudo{1, "X-TUDO", "Pão francês, hambúrguer, presunto, mussarela, ovo, alface, tomate, cebola", "chapa", ""};
+    ComandaLanche::Item suco{2, "SUCO NATURAL", "Suco natural batido na hora", "bebida", ""};
+    d.itens = {suco, tudo};                                      // a bebida vem primeiro no pedido, mas sai depois
+    const QByteArray b = ComandaLanche::montar(d);
+    QVERIFY(b.contains("hambúrguer") || b.contains(QString("hambúrguer").toLocal8Bit()));
+    QVERIFY(b.contains("presunto,"));                          // o texto longo quebra em linhas: confere pedaços
+    QVERIFY(b.contains("alface") && b.contains("cebola"));
+    QVERIFY(b.contains("2x SUCO NATURAL"));
+    const int iChapa = b.indexOf("[ CHAPA / LANCHES ]");
+    const int iBebida = b.indexOf("[ BEBIDAS ]");
+    QVERIFY(iChapa > 0 && iBebida > iChapa);                     // chapa antes de bebidas
+    QVERIFY(b.indexOf("1x X-TUDO") > iChapa && b.indexOf("1x X-TUDO") < iBebida);
+    QVERIFY(b.indexOf("2x SUCO NATURAL") > iBebida);
+
+    // um bloco só: sem rótulos
+    ComandaLanche::Dados um;
+    um.senha = 4;
+    um.itens = {tudo};
+    const QByteArray so = ComandaLanche::montar(um);
+    QVERIFY(!so.contains("[ CHAPA") && !so.contains("[ BEBIDAS"));
+    // ingrediente comprido quebra em linhas sem estourar a largura de 42 colunas
+    for (const QByteArray &linha : so.split('\n'))
+        QVERIFY2(linha.size() <= 60, linha.constData());
+}
+
+void TestLanches::cardapio_padrao_tem_os_14_itens_com_ingredientes_e_grupo()
+{
+    CardapioLanches::recarregar();
+    for (int cod = 201; cod <= 214; ++cod) {
+        const auto i = CardapioLanches::buscar(QString::number(cod));
+        QVERIFY2(!i.nome.isEmpty(), qPrintable(QString::number(cod)));
+        QVERIFY2(!i.ingredientes.isEmpty(), qPrintable(QString::number(cod)));
+        QCOMPARE(i.grupo, QString(cod >= 212 ? "bebida" : "chapa"));
+    }
+    QVERIFY(CardapioLanches::buscar("211").ingredientes.contains("ovo"));        // X-Tudo leva ovo
+    QVERIFY(CardapioLanches::buscar("203").ingredientes.contains("2 fatias"));
+    QVERIFY(CardapioLanches::buscar(" 208 ").ingredientes.contains("hambúrguer")); // espaços do leitor
+    QVERIFY(CardapioLanches::buscar("999").ingredientes.isEmpty());               // fora do cardápio: sem ingredientes
+    QVERIFY(CardapioLanches::buscar("7891000100103").ingredientes.isEmpty());
+}
+
+void TestLanches::cardapio_do_usuario_e_interpretado_e_arquivo_quebrado_nao_derruba()
+{
+    QString erro;
+    const auto m = CardapioLanches::carregarDeJson(
+        R"({"300": {"nome": "Tapioca", "grupo": "Bebidas", "ingredientes": "Goma, coco"}, "301": {"nome": "Crepioca"}, "x": 5})", &erro);
+    QVERIFY2(erro.isEmpty(), qPrintable(erro));
+    QCOMPARE(m.size(), 2);                                       // a entrada que não é objeto é ignorada
+    QCOMPARE(m.value("300").grupo, QString("bebida"));           // grupo é aceito em qualquer caixa
+    QCOMPARE(m.value("301").grupo, QString("chapa"));            // sem grupo = chapa
+    QVERIFY(m.value("301").ingredientes.isEmpty());
+
+    QString erro2;
+    QVERIFY(CardapioLanches::carregarDeJson("{ quebrado", &erro2).isEmpty());
+    QVERIFY(!erro2.isEmpty());
+    QVERIFY(CardapioLanches::carregarDeJson("[1,2]", &erro2).isEmpty());
 }

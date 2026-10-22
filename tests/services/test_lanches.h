@@ -23,6 +23,10 @@ private slots:
     void versao_igual_ou_menor_nao_baixa_nada();
     void nenhuma_versao_publicada_404_nao_e_erro();
     void venda_e_devolucao_de_lanche_nao_mexem_no_estoque_mas_mercadoria_sim();
+    void comanda_mostra_pago_com_forma_e_valor_e_a_pagar_quando_nao_pago();
+    void comanda_traz_ingredientes_e_separa_chapa_de_bebidas();
+    void cardapio_padrao_tem_os_14_itens_com_ingredientes_e_grupo();
+    void cardapio_do_usuario_e_interpretado_e_arquivo_quebrado_nao_derruba();
 };
 
 #endif // TEST_LANCHES_H

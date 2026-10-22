@@ -1,0 +1,16 @@
+{
+  "201": { "nome": "Pão na Chapa com Manteiga", "grupo": "chapa", "ingredientes": "Pão francês cortado ao meio, dourado na chapa com manteiga" },
+  "202": { "nome": "Pão com Queijo (1 fatia)", "grupo": "chapa", "ingredientes": "Pão francês tostado na chapa, 1 fatia de queijo mussarela derretido" },
+  "203": { "nome": "Pão com Queijo (2 fatias)", "grupo": "chapa", "ingredientes": "Pão francês tostado na chapa, 2 fatias de queijo mussarela derretido" },
+  "204": { "nome": "Pão com Mortadela", "grupo": "chapa", "ingredientes": "Pão francês, fatias finas de mortadela (fria ou aquecida na chapa)" },
+  "205": { "nome": "Pão com Ovo", "grupo": "chapa", "ingredientes": "Pão francês quentinho, ovo frito na hora na chapa com sal" },
+  "206": { "nome": "Misto Quente", "grupo": "chapa", "ingredientes": "Pão francês, presunto, mussarela derretida, chapa com manteiga" },
+  "207": { "nome": "Pão Recheio de Pizza", "grupo": "chapa", "ingredientes": "Pão francês, presunto, mussarela derretida na chapa, rodelas de tomate, orégano" },
+  "208": { "nome": "X-Burguer Tradicional", "grupo": "chapa", "ingredientes": "Pão francês, hambúrguer de chapa, queijo mussarela derretido" },
+  "209": { "nome": "X-Salada de Padaria", "grupo": "chapa", "ingredientes": "Pão francês, hambúrguer na chapa, mussarela derretida, alface, tomate" },
+  "210": { "nome": "X-Calabresa Acebolada", "grupo": "chapa", "ingredientes": "Pão francês, linguiça calabresa frita na chapa com cebola, mussarela derretida" },
+  "211": { "nome": "X-Tudo", "grupo": "chapa", "ingredientes": "Pão francês, hambúrguer, presunto, mussarela, ovo, alface, tomate, cebola" },
+  "212": { "nome": "Café Preto (copo 200 ml)", "grupo": "bebida", "ingredientes": "Café passado na hora" },
+  "213": { "nome": "Café com Leite (copo 200 ml)", "grupo": "bebida", "ingredientes": "Café com leite integral bem quente" },
+  "214": { "nome": "Suco Natural (copo 200 ml)", "grupo": "bebida", "ingredientes": "Suco natural batido na hora e bem gelado (consultar o sabor do dia)" }
+}

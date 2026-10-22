@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/cardapio">
+        <file alias="cardapio_lanches.json">cardapio_lanches.json</file>
+    </qresource>
+</RCC>

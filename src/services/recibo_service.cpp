@@ -6,6 +6,7 @@
 #include "escposprinter_service.h"
 #include "../util/escposcomandos.h"
 #include "../util/comandalanche.h"
+#include "../util/cardapiolanches.h"
 #include <QSqlQuery>
 #include <QDate>
 
@@ -115,10 +116,18 @@ bool Recibo_service::imprimirComanda(qlonglong idvenda, const QList<ProdutoVendi
         dados.setor = setor;
     dados.senha = senhaDoDia(idvenda, venda.dataHora);
     dados.quando = QDateTime::currentDateTime();
+    // pagamento: a comanda diz se o pedido já está pago, com a forma e o valor
+    dados.statusPagamento = venda.estaPago ? QStringLiteral("PAGO") : QStringLiteral("A PAGAR");
+    dados.formaPagamento = venda.formaPagamento;
+    dados.total = venda.valorFinal > 0 ? venda.valorFinal : venda.total;
     for (const auto &item : itens) {
         ComandaLanche::Item i;
         i.quantidade = item.quantidade;
         i.descricao = item.descricao;
+        // ingredientes e grupo (chapa/bebida) vêm do cardápio, pelo código de barras do produto
+        const auto cardapio = CardapioLanches::buscar(prodServ.getProduto(item.idProduto).codigoBarras);
+        i.ingredientes = cardapio.ingredientes;
+        i.grupo = cardapio.grupo;
         dados.itens.append(i);
     }
 

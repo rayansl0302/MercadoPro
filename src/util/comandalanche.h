@@ -13,7 +13,9 @@ namespace ComandaLanche {
 struct Item {
     double quantidade = 1;
     QString descricao;
-    QString observacao; // preparo deste item (ex.: "sem cebola"); opcional
+    QString ingredientes; // do cardápio (ex.: "Pão francês, hambúrguer, queijo"); opcional
+    QString grupo = "chapa"; // "chapa" (lanches) ou "bebida": a comanda separa os dois blocos
+    QString observacao;   // preparo deste item (ex.: "sem cebola"); opcional
 };
 
 struct Dados {
@@ -21,6 +23,10 @@ struct Dados {
     QString setor = "COZINHA / CHAPA";
     int senha = 0;                   // número do pedido/senha do dia
     QDateTime quando;
+    // pagamento: "PAGO" (ou "A PAGAR") em destaque, com a forma e o valor. Vazio = não imprime o bloco.
+    QString statusPagamento;
+    QString formaPagamento;
+    double total = 0;                // 0 = não imprime o valor
     QList<Item> itens;
     QString observacao;              // observação geral do pedido; opcional
     int colunas = 42;                // largura da bobina em caracteres (fonte normal): 42 (80 mm) ou 32 (58 mm)

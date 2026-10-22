@@ -63,6 +63,7 @@ QByteArray montar(const Dados &d)
     const int cols = qMax(20, d.colunas);
     const int colsGrande = cols / 2; // fonte com largura 2x cabe metade das colunas
     const QString separador(cols, QLatin1Char('='));
+    const QString tracejado(cols, QLatin1Char('-'));
 
     QByteArray b;
     b += EscPosComandos::inicializar();
@@ -79,6 +80,22 @@ QByteArray montar(const Dados &d)
     b += EscPosComandos::tamanhoFonte(6, 6);
     b += linha(QStringLiteral("%1").arg(d.senha, 3, 10, QLatin1Char('0')));
     b += EscPosComandos::tamanhoFonte(1, 1);
+
+    // pagamento: o cozinheiro e o balcão veem de longe se o pedido já está pago
+    if (!d.statusPagamento.trimmed().isEmpty()) {
+        const QString status = QStringLiteral("*** %1 ***").arg(d.statusPagamento.trimmed().toUpper());
+        b += EscPosComandos::tamanhoFonte(status.size() * 3 <= cols ? 3 : 2, status.size() * 3 <= cols ? 3 : 2);
+        for (const QString &l : quebrarLinhas(status, status.size() * 3 <= cols ? cols / 3 : colsGrande))
+            b += linha(l);
+        b += EscPosComandos::tamanhoFonte(1, 1);
+        QString detalhe = d.formaPagamento.trimmed();
+        if (d.total > 0) {
+            const QString valor = QLocale(QLocale::Portuguese, QLocale::Brazil).toString(d.total, 'f', 2);
+            detalhe += (detalhe.isEmpty() ? QString() : QStringLiteral("  -  ")) + "R$ " + valor;
+        }
+        if (!detalhe.isEmpty())
+            b += linha(detalhe);
+    }
     b += EscPosComandos::bold(false);
 
     const QString hora = d.quando.isValid() ? d.quando.toString("dd/MM/yyyy HH:mm") : QString();
@@ -87,21 +104,47 @@ QByteArray montar(const Dados &d)
     if (!d.empresa.trimmed().isEmpty())
         b += linha(centralizar(d.empresa.trimmed(), cols).trimmed());
 
-    // itens: letra grande e em negrito, uma linha de leitura por lanche
+    // itens em dois blocos (chapa e bebidas): cada um vai para uma estação diferente
     b += EscPosComandos::alinharEsquerda();
     b += linha(separador);
-    for (const Item &item : d.itens) {
-        b += EscPosComandos::bold(true);
-        b += EscPosComandos::tamanhoFonte(2, 2);
-        const QString prefixo = quantidadeTexto(item.quantidade) + "x ";
-        const QStringList partes = quebrarLinhas(item.descricao, colsGrande - prefixo.size());
-        for (int i = 0; i < partes.size(); ++i)
-            b += linha((i == 0 ? prefixo : QString(prefixo.size(), QLatin1Char(' '))) + partes.at(i));
-        b += EscPosComandos::tamanhoFonte(1, 1);
-        b += EscPosComandos::bold(false);
-        if (!item.observacao.trimmed().isEmpty())
-            for (const QString &l : quebrarLinhas(item.observacao.trimmed(), cols - 4))
-                b += linha("  > " + l);
+    const QStringList ordem{"chapa", "bebida"};
+    int blocos = 0;
+    for (const QString &g : ordem)
+        for (const Item &i : d.itens)
+            if ((g == "bebida") == (i.grupo == "bebida")) { ++blocos; break; }
+    bool primeiroBloco = true;
+    for (const QString &g : ordem) {
+        QList<Item> doGrupo;
+        for (const Item &i : d.itens)
+            if ((g == "bebida") == (i.grupo == "bebida"))
+                doGrupo << i;
+        if (doGrupo.isEmpty())
+            continue;
+        if (!primeiroBloco)
+            b += linha(tracejado);
+        primeiroBloco = false;
+        if (blocos > 1) { // só rotula os blocos quando há mais de um
+            b += EscPosComandos::bold(true);
+            b += linha(g == "bebida" ? QStringLiteral("[ BEBIDAS ]") : QStringLiteral("[ CHAPA / LANCHES ]"));
+            b += EscPosComandos::bold(false);
+        }
+        for (const Item &item : doGrupo) {
+            b += EscPosComandos::bold(true);
+            b += EscPosComandos::tamanhoFonte(2, 2);
+            const QString prefixo = quantidadeTexto(item.quantidade) + "x ";
+            const QStringList partes = quebrarLinhas(item.descricao, colsGrande - prefixo.size());
+            for (int i = 0; i < partes.size(); ++i)
+                b += linha((i == 0 ? prefixo : QString(prefixo.size(), QLatin1Char(' '))) + partes.at(i));
+            b += EscPosComandos::tamanhoFonte(1, 1);
+            // ingredientes (do cardápio) em negrito normal, logo abaixo do nome
+            if (!item.ingredientes.trimmed().isEmpty())
+                for (const QString &l : quebrarLinhas(item.ingredientes.trimmed(), cols - 2))
+                    b += linha("  " + l);
+            b += EscPosComandos::bold(false);
+            if (!item.observacao.trimmed().isEmpty())
+                for (const QString &l : quebrarLinhas(item.observacao.trimmed(), cols - 4))
+                    b += linha("  > " + l);
+        }
     }
     b += linha(separador);
 

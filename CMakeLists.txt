@@ -180,6 +180,8 @@ set(QESTOQUE_SOURCES
     src/services/backup_service.cpp
     src/util/lanches.cpp
     src/util/comandalanche.cpp
+    src/util/cardapiolanches.cpp
+    src/util/cardapio.qrc
 
 
 )
@@ -322,6 +324,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/services/backup_service.h src/services/backup_service.cpp
         src/util/lanches.h src/util/lanches.cpp
         src/util/comandalanche.h src/util/comandalanche.cpp
+        src/util/cardapiolanches.h src/util/cardapiolanches.cpp
+        src/util/cardapio.qrc
         src/infra/databaseconnection_service.h src/infra/databaseconnection_service.cpp
         src/services/schemamigration_service.cpp src/services/schemamigration_service.h
         src/dto/Config_dto.h
