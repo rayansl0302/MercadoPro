@@ -1,5 +1,7 @@
 #include <QtTest>
 #include "test_tema.h"
+#include <QApplication>
+#include <QFont>
 #include "util/tema.h"
 
 void TestTema::multiplica_font_size_em_pt_e_px()
@@ -45,4 +47,29 @@ void TestTema::forma_abreviada_font_tambem_e_escalada()
     // as duas formas juntas, como na barra do topo; "font-weight" não é confundido com "font:"
     QCOMPARE(Tema::escalarFolha("font: 700 9pt \"Segoe UI\"; font-size: 15px; font-weight: 700;", 1.2),
              QString("font: 700 10.8pt \"Segoe UI\"; font-size: 18px; font-weight: 700;"));
+}
+
+void TestTema::fonte_propria_de_tabelas_menus_e_cabecalhos_tambem_cresce()
+{
+    // simula o Windows: tabela, cabeçalho e menu têm fonte própria (9 pt) que a fonte geral não alcança
+    const QFont origTabela = QApplication::font("QTableView");
+    const QFont origCab = QApplication::font("QHeaderView");
+    const QFont origMenu = QApplication::font("QMenuBar");
+    QApplication::setFont(QFont("DejaVu Sans", 9), "QTableView");
+    QApplication::setFont(QFont("DejaVu Sans", 9), "QHeaderView");
+    QApplication::setFont(QFont("DejaVu Sans", 9), "QMenuBar");
+
+    Tema::escalarFontesDeClasse(1.2);
+    QCOMPARE(QApplication::font("QTableView").pointSizeF(), 10.8);
+    QCOMPARE(QApplication::font("QHeaderView").pointSizeF(), 10.8);
+    QCOMPARE(QApplication::font("QMenuBar").pointSizeF(), 10.8);
+
+    // com a letra normal (fator 1) nada muda
+    QApplication::setFont(QFont("DejaVu Sans", 9), "QTableView");
+    Tema::escalarFontesDeClasse(1.0);
+    QCOMPARE(QApplication::font("QTableView").pointSizeF(), 9.0);
+
+    QApplication::setFont(origTabela, "QTableView");
+    QApplication::setFont(origCab, "QHeaderView");
+    QApplication::setFont(origMenu, "QMenuBar");
 }

@@ -233,6 +233,27 @@ QString Tema::escalarFolha(const QString &css, double fator)
     return final_;
 }
 
+void Tema::escalarFontesDeClasse(double fator, const QString &familia)
+{
+    static const char *classes[] = {
+        "QAbstractItemView", "QTableView", "QTreeView", "QListView", "QTableWidget", "QTreeWidget", "QListWidget",
+        "QHeaderView", "QMenu", "QMenuBar", "QStatusBar", "QMessageBox", "QDialogButtonBox",
+        "QPushButton", "QToolButton", "QAbstractButton", "QCheckBox", "QRadioButton", "QGroupBox", "QTabBar", "QTabWidget",
+        "QLabel", "QLineEdit", "QTextEdit", "QPlainTextEdit", "QTextBrowser", "QComboBox", "QAbstractSpinBox", "QSpinBox",
+        "QDoubleSpinBox", "QDateEdit", "QTimeEdit", "QDateTimeEdit", "QCalendarWidget", "QProgressBar", "QDockWidget",
+        "QToolTip", "QTipLabel"};
+    for (const char *nome : classes) {
+        QFont f = QApplication::font(nome); // a da plataforma, se existir; senão, a geral
+        if (f.pointSizeF() > 0)
+            f.setPointSizeF(f.pointSizeF() * fator);
+        else if (f.pixelSize() > 0)
+            f.setPixelSize(qRound(f.pixelSize() * fator));
+        if (!familia.isEmpty())
+            f.setFamily(familia);
+        QApplication::setFont(f, nome);
+    }
+}
+
 void Tema::aplicar(QApplication &app)
 {
     // fonte única e legível (no Windows a Segoe UI; em outros sistemas, a padrão)
@@ -240,8 +261,15 @@ void Tema::aplicar(QApplication &app)
     if (QFontDatabase::families().contains(QStringLiteral("Segoe UI")))
         fonte.setFamily(QStringLiteral("Segoe UI"));
     const double fator = fatorFonte();
-    fonte.setPointSizeF(10 * fator);
+    // 1) a fonte normal (100%): é a partir dela que cada classe é medida
+    fonte.setPointSize(10);
     app.setFont(fonte);
+    // 2) com aumento: as fontes próprias da plataforma (tabelas, menus, cabeçalhos...) e a geral crescem pelo mesmo fator
+    if (fator > 1.0) {
+        escalarFontesDeClasse(fator, fonte.family());
+        fonte.setPointSizeF(10 * fator);
+        app.setFont(fonte);
+    }
     if (fator > 1.0)
         app.installEventFilter(new EscalaDeFonte(fator)); // vive até o fim do programa
 

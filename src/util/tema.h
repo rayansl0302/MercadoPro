@@ -20,6 +20,12 @@ double fatorFonte();                           // 1.0, 1.05, 1.10 ou 1.20
 
 // Multiplica todo "font-size: Npt|Npx" de uma folha de estilo pelo fator (função pura, testável).
 QString escalarFolha(const QString &css, double fator);
+
+// No Windows (e em outros temas) o Qt dá fonte própria a tabelas, cabeçalhos, menus, caixas de mensagem,
+// botões, campos etc., e a fonte geral do aplicativo NÃO vale para eles. Esta função multiplica a fonte
+// de cada uma dessas classes pelo fator. Deve ser chamada ANTES de mudar a fonte geral.
+// "familia" (opcional) troca a família da letra nessas classes.
+void escalarFontesDeClasse(double fator, const QString &familia = QString());
 }
 
 #endif // TEMA_H

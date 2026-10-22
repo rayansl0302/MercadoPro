@@ -13,6 +13,7 @@ private slots:
     void escala_varias_ocorrencias_e_preserva_o_resto();
     void os_quatro_niveis_de_zoom_dao_tamanhos_crescentes();
     void forma_abreviada_font_tambem_e_escalada();
+    void fonte_propria_de_tabelas_menus_e_cabecalhos_tambem_cresce();
 };
 
 #endif // TEST_TEMA_H
