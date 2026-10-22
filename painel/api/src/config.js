@@ -22,6 +22,9 @@ export function carregarConfig(env = process.env) {
     lojaOfflineMinutos: inteiro(env.LOJA_OFFLINE_MINUTOS, 3),
     loginMaxTentativas: inteiro(env.LOGIN_MAX_TENTATIVAS, 5),
     loginBloqueioMinutos: inteiro(env.LOGIN_BLOQUEIO_MINUTOS, 15),
+    // códigos de barras de lanche (produção): fora do estoque e analisados à parte
+    lancheMin: inteiro(env.LANCHE_MIN, 200),
+    lancheMax: inteiro(env.LANCHE_MAX, 500),
     pastaWeb: env.PASTA_WEB || '',
     ambiente: env.NODE_ENV || 'development',
   };

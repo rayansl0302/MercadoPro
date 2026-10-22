@@ -45,7 +45,7 @@ export function Vendas({ empresa }) {
   const [agrupar, setAgrupar] = useState('dia');
   const serie = useDados('/api/painel/vendas', { ...per, agrupar, empresa });
   const lista = useDados('/api/painel/vendas/lista', { ...per, empresa });
-  const grupos = [['dia', 'Por dia'], ['mes', 'Por mês'], ['hora', 'Por hora'], ['forma', 'Por forma'], ['operador', 'Por operador']];
+  const grupos = [['dia', 'Por dia'], ['mes', 'Por mês'], ['hora', 'Por hora'], ['forma', 'Por forma'], ['operador', 'Por operador'], ['tipo', 'Por tipo (lanche × mercadoria)']];
   return (
     <div className="space-y-4">
       <Periodo valor={per} onChange={setPer} />
@@ -330,6 +330,7 @@ export function Estoque() {
       {(d) => (
         <div className="space-y-4">
           <BuscaProduto />
+          <p className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">Os números de estoque abaixo <b>não incluem os lanches</b> (códigos de barras de {d.lanches.faixa.de} a {d.lanches.faixa.ate}): a quantidade deles é fixa e não é estoque de verdade. Eles aparecem separados, mais abaixo.</p>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             <Cartao titulo="Produtos cadastrados" valor={d.resumo.produtos} />
             <Cartao titulo="Estoque a preço de venda" valor={moeda(d.resumo.valorAPrecoDeVenda)} />
@@ -345,6 +346,12 @@ export function Estoque() {
           <Secao titulo="Mais vendidos (30 dias)">
             <Tabela linhas={d.maisVendidos30Dias} vazio="Sem vendas." colunas={[
               { titulo: 'Produto', render: (l) => l.descricao }, { titulo: 'Qtd', direita: true, render: (l) => l.quantidade }, dinheiroCol('Total', (l) => l.total),
+            ]} />
+          </Secao>
+          <Secao titulo={`Lanches (códigos ${d.lanches.faixa.de} a ${d.lanches.faixa.ate}) · últimos 30 dias`}>
+            <p className="mb-3 text-sm text-slate-600">{d.lanches.produtos} itens cadastrados · faturamento <b>{moeda(d.lanches.faturamento30Dias)}</b></p>
+            <Tabela linhas={d.lanches.maisVendidos30Dias} vazio="Nenhum lanche vendido nos últimos 30 dias." colunas={[
+              { titulo: 'Lanche', render: (l) => l.descricao }, { titulo: 'Código', render: (l) => l.codigoBarras }, { titulo: 'Qtd', direita: true, render: (l) => l.quantidade }, dinheiroCol('Total', (l) => l.total),
             ]} />
           </Secao>
           <Secao titulo="Parados há 60 dias (com estoque)">
@@ -517,7 +524,7 @@ function DetalheProduto({ id }) {
           <div className="space-y-3">
             <div>
               <div className="text-lg font-semibold">{p.descricao}</div>
-              <div className="text-xs text-slate-500">Código de barras: {p.codigoBarras ?? '—'} · Local: {p.local ?? '—'} · Unidade: {p.unidade ?? '—'} {p.fiscal && <Selo texto="com nota fiscal" tom="azul" />}</div>
+              <div className="text-xs text-slate-500">Código de barras: {p.codigoBarras ?? '—'} · Local: {p.local ?? '—'} · Unidade: {p.unidade ?? '—'} {p.fiscal && <Selo texto="com nota fiscal" tom="azul" />} {p.lanche && <Selo texto="lanche — fora do estoque" tom="amarelo" />}</div>
             </div>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Cartao titulo="Em estoque" valor={p.quantidade} tom={p.quantidade <= 0 ? 'ruim' : 'normal'} detalhe={`valor ${moeda(p.valorEmEstoque)}`} />

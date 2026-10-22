@@ -325,3 +325,40 @@ describe('busca de produtos', () => {
     expect((await app.inject({ method: 'GET', url: '/api/painel/produtos?id=999', headers: { cookie } })).statusCode).toBe(404);
   });
 });
+
+describe('itens de lanche (códigos 200 a 500) ficam fora do estoque', () => {
+  it('não entram em valor de estoque, estoque baixo, parados nem "sem estoque", e aparecem à parte', async () => {
+    const { hoje } = await carregarDados();
+    const L = loja.id;
+    // um lanche com estoque de mentira (9999) vendido 3x, e outro lanche com quantidade 0
+    await pool.query(
+      `INSERT INTO espelho.produtos (loja_id, id, descricao, quantidade, preco, codigo_barras, preco_fornecedor) VALUES
+         ($1, 50, 'X-BURGUER', '9999', '10.00', '205', '4.00'), ($1, 51, 'CAFE PRETO', '0', '2.50', '300', '1.00'), ($1, 52, 'PRODUTO COMUM 200L', '5', '3.00', '2000', '1.00')`, [L]);
+    await pool.query(
+      `INSERT INTO espelho.produtos_vendidos (loja_id, id, id_produto, id_venda, quantidade, preco_vendido) VALUES ($1, 90, 50, 1, '3', '10.00')`, [L]);
+    const { cookie } = await sessao();
+
+    const e = await obter(cookie, '/api/painel/estoque?limite=100000');
+    expect(e.resumo.produtos).toBe(4);                              // os 3 de antes + o "2000" (não é lanche); lanches não contam
+    expect(e.resumo.valorACusto).toBe(36 + 20 + 5);                  // sem os 9999 × 4,00 do lanche; o produto comum de 5 un. a 1,00 entra
+    expect(e.baixoEstoque.map((p) => p.descricao)).not.toContain('X-BURGUER');
+    expect(e.baixoEstoque.map((p) => p.descricao)).not.toContain('CAFE PRETO');
+    expect(e.parados60Dias.map((p) => p.descricao)).not.toContain('X-BURGUER');
+    expect(e.maisVendidos30Dias.map((p) => p.descricao)).not.toContain('X-BURGUER');
+    expect(e.lanches.produtos).toBe(2);
+    expect(e.lanches.faixa).toEqual({ de: 200, ate: 500 });
+    expect(e.lanches.faturamento30Dias).toBe(30);
+    expect(e.lanches.maisVendidos30Dias[0]).toMatchObject({ descricao: 'X-BURGUER', codigoBarras: '205', quantidade: 3, total: 30 });
+
+    const resumo = await obter(cookie, '/api/painel/resumo');
+    expect(resumo.produtosSemEstoque).toBe(1);                       // só o "SEM ESTOQUE" de antes; o lanche com 0 não conta
+
+    const porTipo = await obter(cookie, `/api/painel/vendas?agrupar=tipo&de=${dia(hoje, -30)}&ate=${hoje}`);
+    expect(porTipo.serie.find((x) => x.chave === 'Lanches')).toMatchObject({ total: 30 });
+    expect(porTipo.serie.find((x) => x.chave === 'Mercadorias')).toMatchObject({ total: 40 });
+
+    const detalhe = await obter(cookie, '/api/painel/produtos?id=50');
+    expect(detalhe.produto.lanche).toBe(true);
+    expect((await obter(cookie, '/api/painel/produtos?id=52')).produto.lanche).toBe(false);   // "2000" está fora da faixa
+  });
+});

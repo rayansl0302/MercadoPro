@@ -37,7 +37,7 @@ const SQL_ITENS_A_RECEBER = `
          v.valor_final - COALESCE((SELECT sum(e.total) FROM espelho.entradas_vendas e WHERE e.loja_id = v.loja_id AND e.id_venda = v.id), 0)
   FROM espelho.vendas2 v WHERE v.loja_id = $1 AND v.forma_pagamento = 'Prazo' AND ($2::int IS NULL OR v.id_empresa = $2)`;
 
-export function registrarRotasConsulta(app, { pool, exigirSessao, lojaUnica }) {
+export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUnica }) {
   const comLoja = async (req) => {
     await exigirSessao(req);
     await lojaUnica(req);
@@ -110,7 +110,7 @@ export function registrarRotasConsulta(app, { pool, exigirSessao, lojaUnica }) {
        WHERE f.loja_id = $1 AND painel.ts_seguro(c.fechado_em)::date >= $2::date`,
       [L, inicioMes],
     );
-    const semEstoque = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND coalesce(quantidade, 0) <= 0', [L]);
+    const semEstoque = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND coalesce(quantidade, 0) <= 0 AND NOT painel.eh_lanche(codigo_barras, $2, $3)', [L, config.lancheMin, config.lancheMax]);
 
     const p = pagar.rows[0];
     return {
@@ -135,7 +135,19 @@ export function registrarRotasConsulta(app, { pool, exigirSessao, lojaUnica }) {
   app.get('/api/painel/vendas', async (req) => {
     await comLoja(req);
     const per = await periodo(pool, req);
-    const agrupar = z.enum(['dia', 'mes', 'hora', 'forma', 'operador']).default('dia').parse(req.query?.agrupar);
+    const agrupar = z.enum(['dia', 'mes', 'hora', 'forma', 'operador', 'tipo']).default('dia').parse(req.query?.agrupar);
+    if (agrupar === 'tipo') {
+      const t = await pool.query(
+        `SELECT CASE WHEN painel.eh_lanche(p.codigo_barras, $5, $6) THEN 'Lanches' ELSE 'Mercadorias' END AS chave,
+                count(DISTINCT v.id)::int AS qtd, coalesce(sum(pv.quantidade * pv.preco_vendido), 0) AS total
+         FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
+         LEFT JOIN espelho.produtos p ON p.loja_id = pv.loja_id AND p.id = pv.id_produto
+         WHERE v.loja_id = $1 AND ($4::int IS NULL OR v.id_empresa = $4) AND painel.ts_seguro(v.data_hora)::date BETWEEN $2::date AND $3::date
+         GROUP BY 1 ORDER BY 1`,
+        [req.loja.id, per.de, per.ate, per.empresa, config.lancheMin, config.lancheMax],
+      );
+      return { periodo: per, agrupar, serie: t.rows.map((x) => ({ chave: x.chave, qtd: x.qtd, total: dinheiro(x.total), aPrazo: 0 })) };
+    }
     const chave = {
       dia: "to_char(painel.ts_seguro(v.data_hora), 'YYYY-MM-DD')",
       mes: "to_char(painel.ts_seguro(v.data_hora), 'YYYY-MM')",
@@ -345,30 +357,41 @@ export function registrarRotasConsulta(app, { pool, exigirSessao, lojaUnica }) {
     const L = req.loja.id;
     const baixo = await pool.query(
       `SELECT id, descricao, quantidade, un_comercial, preco, preco_fornecedor FROM espelho.produtos
-       WHERE loja_id = $1 AND coalesce(quantidade, 0) <= $2 ORDER BY quantidade NULLS FIRST, descricao LIMIT 100`,
-      [L, limite],
+       WHERE loja_id = $1 AND coalesce(quantidade, 0) <= $2 AND NOT painel.eh_lanche(codigo_barras, $3, $4)
+       ORDER BY quantidade NULLS FIRST, descricao LIMIT 100`,
+      [L, limite, config.lancheMin, config.lancheMax],
     );
     const parados = await pool.query(
       `SELECT p.id, p.descricao, p.quantidade, p.preco FROM espelho.produtos p
-       WHERE p.loja_id = $1 AND p.quantidade > 0 AND NOT EXISTS (
+       WHERE p.loja_id = $1 AND p.quantidade > 0 AND NOT painel.eh_lanche(p.codigo_barras, $3, $4) AND NOT EXISTS (
          SELECT 1 FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
          WHERE pv.loja_id = p.loja_id AND pv.id_produto = p.id AND painel.ts_seguro(v.data_hora)::date > ($2::date - 60))
        ORDER BY p.quantidade * p.preco DESC NULLS LAST LIMIT 50`,
-      [L, dia],
+      [L, dia, config.lancheMin, config.lancheMax],
     );
     const maisVendidos = await pool.query(
       `SELECT p.id, p.descricao, sum(pv.quantidade) AS qtd, sum(pv.quantidade * pv.preco_vendido) AS total
        FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
        JOIN espelho.produtos p ON p.loja_id = pv.loja_id AND p.id = pv.id_produto
-       WHERE pv.loja_id = $1 AND painel.ts_seguro(v.data_hora)::date > ($2::date - 30)
+       WHERE pv.loja_id = $1 AND painel.ts_seguro(v.data_hora)::date > ($2::date - 30) AND NOT painel.eh_lanche(p.codigo_barras, $3, $4)
        GROUP BY p.id, p.descricao ORDER BY total DESC LIMIT 20`,
-      [L, dia],
+      [L, dia, config.lancheMin, config.lancheMax],
     );
+    // lanches: vendidos nos últimos 30 dias, separados da mercadoria
+    const lanches = await pool.query(
+      `SELECT p.id, p.descricao, p.codigo_barras, sum(pv.quantidade) AS qtd, sum(pv.quantidade * pv.preco_vendido) AS total
+       FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
+       JOIN espelho.produtos p ON p.loja_id = pv.loja_id AND p.id = pv.id_produto
+       WHERE pv.loja_id = $1 AND painel.ts_seguro(v.data_hora)::date > ($2::date - 30) AND painel.eh_lanche(p.codigo_barras, $3, $4)
+       GROUP BY p.id, p.descricao, p.codigo_barras ORDER BY total DESC LIMIT 30`,
+      [L, dia, config.lancheMin, config.lancheMax],
+    );
+    const qtdLanches = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND painel.eh_lanche(codigo_barras, $2, $3)', [L, config.lancheMin, config.lancheMax]);
     const valores = await pool.query(
       `SELECT coalesce(sum(quantidade * preco) FILTER (WHERE quantidade > 0), 0) AS a_preco_de_venda,
               coalesce(sum(quantidade * preco_fornecedor) FILTER (WHERE quantidade > 0 AND preco_fornecedor > 0), 0) AS a_custo,
-              count(*)::int AS produtos FROM espelho.produtos WHERE loja_id = $1`,
-      [L],
+              count(*)::int AS produtos FROM espelho.produtos WHERE loja_id = $1 AND NOT painel.eh_lanche(codigo_barras, $2, $3)`,
+      [L, config.lancheMin, config.lancheMax],
     );
     const v = valores.rows[0];
     return {
@@ -377,6 +400,13 @@ export function registrarRotasConsulta(app, { pool, exigirSessao, lojaUnica }) {
       baixoEstoque: baixo.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco), preco_fornecedor: x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor) })),
       parados60Dias: parados.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco) })),
       maisVendidos30Dias: maisVendidos.rows.map((x) => ({ id: x.id, descricao: x.descricao, quantidade: inteiro(x.qtd), total: dinheiro(x.total) })),
+      // lanches ficam de fora de todos os números de estoque acima (a quantidade deles é fixa, não é estoque real)
+      lanches: {
+        faixa: { de: config.lancheMin, ate: config.lancheMax },
+        produtos: qtdLanches.rows[0].n,
+        faturamento30Dias: dinheiro(lanches.rows.reduce((s, x) => s + Number(x.total), 0)),
+        maisVendidos30Dias: lanches.rows.map((x) => ({ id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, quantidade: inteiro(x.qtd), total: dinheiro(x.total) })),
+      },
     };
   });
 
@@ -403,7 +433,7 @@ export function registrarRotasConsulta(app, { pool, exigirSessao, lojaUnica }) {
       const custo = x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor);
       return {
         produto: {
-          id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, local: x.local, fiscal: x.nf,
+          id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, lanche: (await pool.query('SELECT painel.eh_lanche($1, $2, $3) AS e', [x.codigo_barras, config.lancheMin, config.lancheMax])).rows[0].e, unidade: x.un_comercial, local: x.local, fiscal: x.nf,
           quantidade: inteiro(x.quantidade), preco, custo, margemPercentual: custo && custo > 0 ? Math.round(((preco - custo) / custo) * 1000) / 10 : null,
           valorEmEstoque: dinheiro(inteiro(x.quantidade) * preco), adicionadoEm: x.adicionado_em, atualizadoEm: x.atualizado_em,
         },
