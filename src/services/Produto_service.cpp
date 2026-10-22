@@ -1,4 +1,5 @@
 #include "Produto_service.h"
+#include "../util/lanches.h"
 #include <QSqlQuery>
 #include <cmath>
 Produto_Service::Produto_Service(QObject *parent)
@@ -258,8 +259,15 @@ Produto_Service::Resultado Produto_Service::atualizarLocalProduto(qlonglong id, 
     return {true, ProdutoErro::Nenhum, ""};
 }
 
+// Lanche (código de barras de 200 a 500) é produção: o estoque dele é fixo (ex.: 9999) e não é controlado.
+bool Produto_Service::ehLanche(qlonglong idprod){
+    return Lanches::codigoEhLanche(repo.getProduto(idprod).codigoBarras, Lanches::faixaConfigurada());
+}
+
 Produto_Service::Resultado Produto_Service::updateAumentarQuantidadeProduto(qlonglong idprod,
                                                                             double quantia ){
+    if(ehLanche(idprod))
+        return {true, ProdutoErro::Nenhum, "Lanche: estoque não controlado."};
     if(!repo.updateAumentarQuantidadeProduto(idprod, quantia)){
         return {false, ProdutoErro::Update, "Erro ao atualizar quantia produto."};
     }else{
@@ -292,6 +300,8 @@ Produto_Service::Resultado Produto_Service::atualizarCamposMap(qlonglong id, con
 
 Produto_Service::Resultado Produto_Service::updateDiminuirQuantidadeProduto(qlonglong idprod,
                                                                             double quantia ){
+    if(ehLanche(idprod))
+        return {true, ProdutoErro::Nenhum, "Lanche: estoque não controlado."};
     if(!repo.updateDiminuirQuantidadeProduto(idprod, quantia)){
         return {false, ProdutoErro::Update, "Erro ao atualizar quantia produto."};
     }else{

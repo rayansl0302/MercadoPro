@@ -22,6 +22,7 @@ private slots:
     void servidor_fora_do_ar_nao_trava_nem_levanta_erro();
     void versao_igual_ou_menor_nao_baixa_nada();
     void nenhuma_versao_publicada_404_nao_e_erro();
+    void venda_e_devolucao_de_lanche_nao_mexem_no_estoque_mas_mercadoria_sim();
 };
 
 #endif // TEST_LANCHES_H

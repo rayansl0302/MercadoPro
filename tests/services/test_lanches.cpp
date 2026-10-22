@@ -11,6 +11,8 @@
 #include "util/lanches.h"
 #include "util/comandalanche.h"
 #include "infra/atualizador_service.h"
+#include "services/Produto_service.h"
+#include "dto/Produto_dto.h"
 
 namespace {
 
@@ -286,4 +288,42 @@ void TestLanches::nenhuma_versao_publicada_404_nao_e_erro()
     a->resetarEstadoParaTeste();
     QCOMPARE(esperar(a), QString("sem"));
     QVERIFY(!s.pedidos.contains("/exe"));
+}
+
+void TestLanches::venda_e_devolucao_de_lanche_nao_mexem_no_estoque_mas_mercadoria_sim()
+{
+    Produto_Service servico;
+    auto novo = [&](const QString &desc, const QString &codigo, double qtd) {
+        ProdutoDTO p;
+        p.quantidade = qtd;
+        p.descricao = desc;
+        p.preco = 10;
+        p.codigoBarras = codigo;
+        p.nf = false;
+        p.uCom = "UN";
+        p.precoFornecedor = 4;
+        p.percentLucro = 20;
+        p.ncm = "00000000";
+        p.csosn = "102";
+        p.pis = "49";
+        if (!servico.inserir(p).ok)
+            return qlonglong(-1);
+        return servico.getProdutoPeloCodBarras(codigo).id;
+    };
+    const qlonglong idLanche = novo("X-BURGUER TESTE ESTOQUE", "205", 9999);
+    const qlonglong idComum = novo("MERCADORIA TESTE ESTOQUE", "7898765431001", 10);
+    QVERIFY(idLanche > 0 && idComum > 0);
+    QVERIFY(servico.ehLanche(idLanche));
+    QVERIFY(!servico.ehLanche(idComum));
+
+    // venda: o lanche continua com 9999; a mercadoria baixa
+    QVERIFY(servico.updateDiminuirQuantidadeProduto(idLanche, 3).ok);
+    QVERIFY(servico.updateDiminuirQuantidadeProduto(idComum, 3).ok);
+    QCOMPARE(servico.getProduto(idLanche).quantidade, 9999.0);
+    QCOMPARE(servico.getProduto(idComum).quantidade, 7.0);
+    // devolução/cancelamento: o lanche não passa de 9999; a mercadoria volta
+    QVERIFY(servico.updateAumentarQuantidadeProduto(idLanche, 3).ok);
+    QVERIFY(servico.updateAumentarQuantidadeProduto(idComum, 3).ok);
+    QCOMPARE(servico.getProduto(idLanche).quantidade, 9999.0);
+    QCOMPARE(servico.getProduto(idComum).quantidade, 10.0);
 }

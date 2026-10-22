@@ -61,6 +61,8 @@ public:
   QStringList obterSugestoesLocal();
   Resultado atualizarLocalProduto(qlonglong id, const QString &novoLocal);
   Produto_Service::Resultado updateAumentarQuantidadeProduto(qlonglong idprod, double quantia);
+  // true se o produto é de lanche (código de barras na faixa 200-500): não tem controle de estoque
+  bool ehLanche(qlonglong idprod);
   ProdutoDTO getProduto(qlonglong id);
   ProdutoDTO getProdutoPeloCodBarras(const QString &codigo);
   ProdutoDTO getProdutoPelaDescricao(const QString &descricao);
