@@ -25,6 +25,8 @@ private slots:
     void pedido_de_lancar_conta_parcelada_e_pedido_invalido_e_recusado();
     void so_um_computador_sincroniza_e_a_trava_vencida_e_assumida();
     void nuvem_desligada_nao_faz_nada();
+    void queda_passageira_so_vira_erro_na_terceira_vez_seguida_e_volta_ao_normal();
+    void impressao_digital_muda_quando_uma_venda_e_cancelada_ou_o_estoque_mexe();
 };
 
 #endif // TEST_NUVEM_H

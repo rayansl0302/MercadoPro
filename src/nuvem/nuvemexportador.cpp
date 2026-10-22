@@ -63,6 +63,33 @@ QString NuvemExportador::checksum(const QList<LinhaExportada> &linhas)
     return QString::fromLatin1(hash.result().toHex());
 }
 
+QString NuvemExportador::impressaoDigital()
+{
+    const NuvemContrato &contrato = NuvemContrato::instancia();
+    if (!contrato.valido() || !DatabaseConnection_service::open())
+        return QString();
+    QSqlDatabase db = DatabaseConnection_service::db();
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    for (const TabelaContrato &t : contrato.tabelas()) {
+        QStringList campos{"count(*)"};
+        if (t.pk.size() == 1)
+            campos << QStringLiteral("max(%1)").arg(t.pk.first());
+        for (const ColunaContrato &col : t.colunas)
+            if (col.nome == QLatin1String("atualizado_em"))
+                campos << QStringLiteral("max(atualizado_em)");
+        QSqlQuery q(db);
+        if (!q.exec(QStringLiteral("SELECT %1 FROM %2").arg(campos.join(", "), t.nome)) || !q.next())
+            return QString();
+        hash.addData(t.nome.toUtf8());
+        for (int i = 0; i < campos.size(); ++i) {
+            hash.addData(QByteArrayView("\x1f", 1));
+            hash.addData(q.value(i).toString().toUtf8());
+        }
+        hash.addData(QByteArrayView("\x1e", 1));
+    }
+    return QString::fromLatin1(hash.result().toHex());
+}
+
 Exportacao NuvemExportador::exportarTudo()
 {
     Exportacao r;

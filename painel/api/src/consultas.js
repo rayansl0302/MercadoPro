@@ -181,6 +181,36 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     return { periodo: per, vendas: r.rows.map((x) => ({ ...x, valor_final: dinheiro(x.valor_final) })) };
   });
 
+  // detalhe de uma venda: dados, itens vendidos e entradas (parcelas) — só do que está no espelho (venda cancelada não existe mais)
+  app.get('/api/painel/vendas/:id', async (req) => {
+    await comLoja(req);
+    const id = z.coerce.number().int().positive().parse(req.params.id);
+    const L = req.loja.id;
+    const v = await pool.query(
+      `SELECT v.id, v.cliente, v.data_hora, v.forma_pagamento, v.total, v.valor_final, v.desconto, v.taxa, v.valor_recebido, v.troco, v.esta_pago, v.id_empresa, v.id_caixa,
+              coalesce(o.nome, CASE WHEN v.id_operador_sessao = 0 THEN 'Gerente (PIN geral)' ELSE NULL END) AS operador
+       FROM espelho.vendas2 v LEFT JOIN espelho.operadores o ON o.loja_id = v.loja_id AND o.id = v.id_operador_sessao
+       WHERE v.loja_id = $1 AND v.id = $2`,
+      [L, id],
+    );
+    if (!v.rowCount) throw new ErroHttp(404, 'Venda não encontrada (talvez tenha sido cancelada).');
+    const itens = await pool.query(
+      `SELECT pv.id, pv.id_produto, p.descricao, p.codigo_barras, pv.quantidade, pv.preco_vendido,
+              (pv.quantidade * pv.preco_vendido) AS total, painel.eh_lanche(p.codigo_barras, $3, $4) AS lanche
+       FROM espelho.produtos_vendidos pv LEFT JOIN espelho.produtos p ON p.loja_id = pv.loja_id AND p.id = pv.id_produto
+       WHERE pv.loja_id = $1 AND pv.id_venda = $2 ORDER BY pv.id`,
+      [L, id, config.lancheMin, config.lancheMax],
+    );
+    const x = v.rows[0];
+    return {
+      venda: { ...x, total: dinheiro(x.total), valor_final: dinheiro(x.valor_final), desconto: dinheiro(x.desconto), taxa: dinheiro(x.taxa), valor_recebido: dinheiro(x.valor_recebido), troco: dinheiro(x.troco) },
+      itens: itens.rows.map((i) => ({
+        id: i.id, produto: i.descricao ?? 'Produto removido do cadastro', codigoBarras: i.codigo_barras, lanche: Boolean(i.lanche),
+        quantidade: inteiro(i.quantidade), precoVendido: dinheiro(i.preco_vendido), total: dinheiro(i.total),
+      })),
+    };
+  });
+
   // ------------------------------------------------------------------ operadores
   app.get('/api/painel/operadores', async (req) => {
     await comLoja(req);

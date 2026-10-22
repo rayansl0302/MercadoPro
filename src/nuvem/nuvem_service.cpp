@@ -15,6 +15,8 @@
 #include <QDebug>
 
 namespace {
+constexpr int kFalhasParaAvisar = 3;                         // queda de conexão só vira "erro" na 3ª vez seguida
+constexpr int kMinimoEntreEnviosPorMudancaSeg = 5 * 60;   // envio por mudança: no máximo a cada 5 min
 constexpr int kTiqueMs = 60 * 1000;
 constexpr int kValidadeTravaSegundos = 180;
 
@@ -93,7 +95,14 @@ void Nuvem_service::tique()
     // envio completo só de tempos em tempos; entre eles, só os pedidos (leve, a cada minuto)
     const QDateTime ultimo = QDateTime::fromString(controle.estado("ultimo_envio_ok"), "yyyy-MM-dd HH:mm:ss");
     const bool horaDeEnviar = !ultimo.isValid() || ultimo.secsTo(QDateTime::currentDateTime()) >= cfg.intervaloMinutos * 60;
-    executar(horaDeEnviar);
+    // Mudou algo nos dados (venda feita ou cancelada em qualquer caixa, estoque, conta paga...)? Envia sem esperar a hora
+    // cheia, mas no máximo a cada 5 minutos. A checagem é barata (contagens), roda a cada minuto.
+    bool mudou = false;
+    if (!horaDeEnviar && ultimo.isValid() && ultimo.secsTo(QDateTime::currentDateTime()) >= kMinimoEntreEnviosPorMudancaSeg) {
+        const QString atual = NuvemExportador::impressaoDigital();
+        mudou = !atual.isEmpty() && atual != controle.estado("impressao_digital");
+    }
+    executar(horaDeEnviar || mudou);
 }
 
 Nuvem_service::Status Nuvem_service::status()
@@ -113,6 +122,15 @@ void Nuvem_service::falhar(ResultadoCiclo &r, const QString &mensagem)
 {
     r.ok = false;
     r.mensagem = mensagem;
+    // Queda de internet/servidor por um instante é normal. Só mostra erro (chip vermelho) quando se repete;
+    // até lá fica só no histórico como aviso. Erros "de verdade" (chave recusada, dados recusados) avisam na hora.
+    const bool passageira = mensagem.contains("Tempo esgotado", Qt::CaseInsensitive) || mensagem.contains("Sem conexão", Qt::CaseInsensitive);
+    const int seguidas = passageira ? controle.estado("falhas_seguidas", "0").toInt() + 1 : kFalhasParaAvisar;
+    controle.definirEstado("falhas_seguidas", QString::number(seguidas));
+    if (seguidas < kFalhasParaAvisar) {
+        controle.registrarLog("AVISO", QStringLiteral("%1 (tentativa %2 de %3; tenta de novo em 1 minuto)").arg(mensagem).arg(seguidas).arg(kFalhasParaAvisar));
+        return;
+    }
     controle.definirEstado("ultimo_erro", QStringLiteral("%1 — %2").arg(agora(), mensagem));
     controle.registrarLog("ERRO", mensagem);
 }
@@ -175,7 +193,9 @@ Nuvem_service::ResultadoCiclo Nuvem_service::executar(bool comDados)
     hb["versaoApp"] = QCoreApplication::applicationVersion();
     hb["contratoVersao"] = NuvemContrato::instancia().versao();
     hb["empresaAtiva"] = double(EmpresaAtiva::id());
-    const RespostaHttp respHb = cliente.enviar("POST", "/api/loja/heartbeat", hb, 20000);
+    RespostaHttp respHb = cliente.enviar("POST", "/api/loja/heartbeat", hb, 20000);
+    if (!respHb.ok() && respHb.status == 0 && !abortado)   // sem resposta (tempo esgotado/queda): tenta mais uma vez antes de desistir
+        respHb = cliente.enviar("POST", "/api/loja/heartbeat", hb, 15000);
     if (!respHb.ok()) {
         falhar(r, respHb.status == 401 ? QStringLiteral("A API recusou a chave da loja (token inválido).")
                                        : QStringLiteral("Sem conexão com a nuvem: %1").arg(respHb.mensagem()));
@@ -194,6 +214,7 @@ Nuvem_service::ResultadoCiclo Nuvem_service::executar(bool comDados)
 
     // 4. foto completa dos dados
     if ((comDados || r.pedidosAplicados > 0) && !abortado) {
+        const QString digitalAntes = NuvemExportador::impressaoDigital(); // antes de ler: mudança durante o envio gera outro envio
         QString erroDados;
         if (!enviarDados(cliente, &r.linhasEnviadas, &erroDados)) {
             falhar(r, erroDados);
@@ -201,6 +222,7 @@ Nuvem_service::ResultadoCiclo Nuvem_service::executar(bool comDados)
             return r;
         }
         controle.definirEstado("ultimo_envio_ok", agora());
+        controle.definirEstado("impressao_digital", digitalAntes);
     }
 
     r.ok = true;
@@ -208,6 +230,7 @@ Nuvem_service::ResultadoCiclo Nuvem_service::executar(bool comDados)
                      .arg(r.pedidosAplicados).arg(r.linhasEnviadas);
     controle.definirEstado("ultimo_ciclo_ok", agora());
     controle.definirEstado("ultimo_erro", QString());
+    controle.definirEstado("falhas_seguidas", "0");
     controle.definirEstado("ultimo_resumo", r.mensagem);
     if (r.pedidosAplicados > 0 || r.linhasEnviadas > 0)
         controle.registrarLog("INFO", r.mensagem);

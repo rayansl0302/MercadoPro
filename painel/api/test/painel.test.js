@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { configTeste, criarAppTeste, criarLoja, criarUsuario, enviarCiclo, limpar, linha, prepararBanco } from './ajuda.js';
 import { codigoTotp, gerarSegredoTotp } from '../src/seguranca.js';
+import { contrato } from '../src/contrato.js';
 
 let pool;
 let app;
@@ -108,7 +109,7 @@ const dia = (base, delta) => {
   return d.toISOString().slice(0, 10);
 };
 
-async function carregarDados() {
+async function carregarDados({ semVendas = [] } = {}) {
   const h = await hojeLoja();
   const hoje = new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate())).toISOString().slice(0, 10);
   const t = (delta, hora = '10:00:00') => `${dia(hoje, delta)} ${hora}`;
@@ -166,6 +167,12 @@ async function carregarDados() {
       linha('notas_fiscais', { id: 2, cstat: 'CONTINGENCIA', nnf: 2, serie: '1', modelo: '65', tp_amb: 1, valor_total: '50.00', dhemi: t(0, '11:00:00'), finalidade: 'NORMAL' }),
     ],
   };
+  if (semVendas.length) { // simula a loja cancelando vendas: a venda e os itens dela saem do que é enviado
+    const iv = contrato.tabela('vendas2').colunas.findIndex((c) => c.nome === 'id');
+    const ip = contrato.tabela('produtos_vendidos').colunas.findIndex((c) => c.nome === 'id_venda');
+    dados.vendas2 = dados.vendas2.filter((l) => !semVendas.includes(Number(l[iv])));
+    dados.produtos_vendidos = dados.produtos_vendidos.filter((l) => !semVendas.includes(Number(l[ip])));
+  }
   const r = await enviarCiclo(app, loja.token, dados);
   expect(r.resp.statusCode, JSON.stringify(r.resp.json())).toBe(200);
   return { hoje };
@@ -360,5 +367,24 @@ describe('itens de lanche (códigos 200 a 500) ficam fora do estoque', () => {
     const detalhe = await obter(cookie, '/api/painel/produtos?id=50');
     expect(detalhe.produto.lanche).toBe(true);
     expect((await obter(cookie, '/api/painel/produtos?id=52')).produto.lanche).toBe(false);   // "2000" está fora da faixa
+  });
+});
+
+describe('detalhe da venda e venda cancelada', () => {
+  it('mostra os itens vendidos de uma venda, e a venda cancelada some no envio seguinte', async () => {
+    const { hoje } = await carregarDados();
+    const { cookie } = await sessao();
+    const d = await obter(cookie, '/api/painel/vendas/1');
+    expect(d.venda).toMatchObject({ id: '1', forma_pagamento: 'Pix', valor_final: 100, operador: 'Maria' });
+    expect(d.itens).toHaveLength(1);
+    expect(d.itens[0]).toMatchObject({ produto: 'CAFÉ', quantidade: 2, precoVendido: 20, total: 40, lanche: false });
+    expect((await app.inject({ method: 'GET', url: '/api/painel/vendas/9999', headers: { cookie } })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'GET', url: '/api/painel/vendas/abc', headers: { cookie } })).statusCode).toBe(422);
+    expect((await obter(cookie, `/api/painel/vendas/lista?de=${hoje}&ate=${hoje}`)).vendas.map((x) => String(x.id))).toContain('1');
+
+    // a loja cancela a venda 1 (apaga venda e itens) e envia o ciclo seguinte: sai do painel
+    await carregarDados({ semVendas: [1] });
+    expect((await app.inject({ method: 'GET', url: '/api/painel/vendas/1', headers: { cookie } })).statusCode).toBe(404);
+    expect((await obter(cookie, `/api/painel/vendas/lista?de=${hoje}&ate=${hoje}`)).vendas.map((x) => String(x.id))).not.toContain('1');
   });
 });

@@ -32,6 +32,11 @@ class NuvemExportador
 public:
     Exportacao exportarTudo();
 
+    // "Impressão digital" barata dos dados (contagem, maior id e última alteração de cada tabela do contrato).
+    // Muda quando uma venda é feita ou cancelada, o estoque mexe, uma conta é paga etc. Serve para o envio
+    // perceber que há novidade sem ler tudo. Vazio se não foi possível calcular.
+    static QString impressaoDigital();
+
     // sha256 (hex minúsculo) de: valores separados por 0x1F, linhas terminadas em 0x1E, nulo = "\N".
     // A API recalcula do mesmo jeito para conferir que nada se perdeu no caminho.
     static QString checksum(const QList<LinhaExportada> &linhas);

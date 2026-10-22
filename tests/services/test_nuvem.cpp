@@ -599,3 +599,59 @@ void TestNuvem::nuvem_desligada_nao_faz_nada()
     QVERIFY(api.reqs.isEmpty());
     QVERIFY(!servico.status().ativa);
 }
+
+void TestNuvem::queda_passageira_so_vira_erro_na_terceira_vez_seguida_e_volta_ao_normal()
+{
+    // servidor fora do ar: porta fechada (a conexão é recusada na hora)
+    NuvemConfig morta;
+    morta.ativa = true;
+    morta.url = "http://127.0.0.1:1";
+    morta.token = "token-de-teste-1234567890";
+    morta.intervaloMinutos = 60;
+    morta.sincronizaNesteComputador = true;
+    Nuvem_service servico;
+    servico.definirConfigParaTeste(morta);
+    servico.definirTerminalParaTeste("CAIXA-A");
+
+    QVERIFY(!servico.executar(true).ok);
+    QVERIFY2(servico.status().ultimoErro.isEmpty(), "1ª queda não pode virar erro");
+    QVERIFY(!servico.executar(true).ok);
+    QVERIFY2(servico.status().ultimoErro.isEmpty(), "2ª queda também não");
+    QVERIFY(!servico.executar(true).ok);
+    QVERIFY2(!servico.status().ultimoErro.isEmpty(), "3ª queda seguida avisa");
+
+    // volta a conexão: o erro some e o contador zera
+    FakeApi api;
+    servico.definirConfigParaTeste(configPara(api));
+    const auto r = servico.executar(true);
+    QVERIFY2(r.ok, qPrintable(r.mensagem));
+    QVERIFY(servico.status().ultimoErro.isEmpty());
+    servico.definirConfigParaTeste(morta);
+    QVERIFY(!servico.executar(true).ok);
+    QVERIFY2(servico.status().ultimoErro.isEmpty(), "depois de recuperar, a contagem recomeça do zero");
+
+    // erro de verdade (chave recusada) avisa na hora
+    FakeApi recusa;
+    NuvemConfig errada = configPara(recusa);
+    errada.token = "chave-que-a-api-nao-conhece-0000";
+    servico.definirConfigParaTeste(errada);
+    QVERIFY(!servico.executar(true).ok);
+    QVERIFY(!servico.status().ultimoErro.isEmpty());
+}
+
+void TestNuvem::impressao_digital_muda_quando_uma_venda_e_cancelada_ou_o_estoque_mexe()
+{
+    const QString base = NuvemExportador::impressaoDigital();
+    QVERIFY(!base.isEmpty());
+    QCOMPARE(NuvemExportador::impressaoDigital(), base);           // sem mudança, igual
+
+    sql("INSERT INTO vendas2 (cliente, total, data_hora, forma_pagamento, valor_recebido, troco, taxa, valor_final, desconto, esta_pago, id_caixa, id_empresa) "
+        "VALUES ('x', 10, '2026-10-22 10:00:00', 'Pix', 10, 0, 0, 10, 0, 1, 1, 1)");
+    const QString comVenda = NuvemExportador::impressaoDigital();
+    QVERIFY(comVenda != base);                                    // venda nova
+
+    sql("DELETE FROM vendas2 WHERE cliente = 'x' AND data_hora = '2026-10-22 10:00:00'");
+    const QString cancelada = NuvemExportador::impressaoDigital();
+    QVERIFY(cancelada != comVenda);                               // venda cancelada (apagada) também muda
+    QCOMPARE(NuvemExportador::impressaoDigital(), cancelada);
+}

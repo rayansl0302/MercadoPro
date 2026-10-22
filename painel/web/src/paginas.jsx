@@ -42,6 +42,7 @@ export function VisaoGeral({ empresa, ir }) {
 // ------------------------------------------------------------------ vendas
 export function Vendas({ empresa }) {
   const [per, setPer] = useState(periodoInicial());
+  const [detalhe, setDetalhe] = useState(null);
   const [agrupar, setAgrupar] = useState('dia');
   const serie = useDados('/api/painel/vendas', { ...per, agrupar, empresa });
   const lista = useDados('/api/painel/vendas/lista', { ...per, empresa });
@@ -77,11 +78,45 @@ export function Vendas({ empresa }) {
               { titulo: 'Operador', render: (l) => l.operador ?? '—' },
               { titulo: 'Forma', render: (l) => <>{l.forma_pagamento ?? '—'} {l.forma_pagamento === 'Prazo' && !l.esta_pago && <Selo texto="fiado" tom="amarelo" />}</> },
               dinheiroCol('Valor', (l) => l.valor_final),
+              { titulo: '', direita: true, render: (l) => <button className="rounded border border-marca px-2 py-1 text-xs text-marca hover:bg-marca-claro" onClick={() => setDetalhe(l.id)}>Ver itens</button> },
             ]} />
           )}
         </Estado>
       </Secao>
+      {detalhe && <DetalheVenda id={detalhe} onFechar={() => setDetalhe(null)} />}
     </div>
+  );
+}
+
+// itens vendidos de uma venda (o que a loja tem agora: venda cancelada na loja some do painel no envio seguinte)
+function DetalheVenda({ id, onFechar }) {
+  const r = useDados(`/api/painel/vendas/${id}`, {});
+  return (
+    <Modal titulo={`Venda nº ${id}`} onFechar={onFechar}>
+      <Estado r={r}>
+        {({ venda: v, itens }) => (
+          <div className="space-y-3 text-sm">
+            <div className="text-slate-600">
+              {dataHoraLoja(v.data_hora)} · {v.operador ?? 'sem operador'} · {v.forma_pagamento ?? '—'}
+              {v.forma_pagamento === 'Prazo' && !v.esta_pago && <> <Selo texto="fiado" tom="amarelo" /></>}
+            </div>
+            <Tabela linhas={itens} vazio="Esta venda não tem itens registrados." colunas={[
+              { titulo: 'Produto', render: (l) => <>{l.produto}{l.lanche && <> <Selo texto="lanche" tom="amarelo" /></>}</> },
+              { titulo: 'Qtd', direita: true, render: (l) => l.quantidade },
+              dinheiroCol('Unit.', (l) => l.precoVendido),
+              dinheiroCol('Total', (l) => l.total),
+            ]} />
+            <div className="space-y-1 border-t border-slate-200 pt-2 text-right">
+              {v.desconto > 0 && <div>Desconto: {moeda(v.desconto)}</div>}
+              {v.taxa > 0 && <div>Taxa: {v.taxa}%</div>}
+              <div className="text-base font-semibold">Total: {moeda(v.valor_final)}</div>
+              {v.forma_pagamento === 'Dinheiro' && <div className="text-xs text-slate-500">Recebido {moeda(v.valor_recebido)} · troco {moeda(v.troco)}</div>}
+            </div>
+            <div className="flex justify-end"><button className="rounded bg-marca px-4 py-2 text-sm font-medium text-white" onClick={onFechar}>Fechar</button></div>
+          </div>
+        )}
+      </Estado>
+    </Modal>
   );
 }
 
