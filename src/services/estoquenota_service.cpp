@@ -27,6 +27,18 @@ bool EstoqueNota_service::ehGtinValido(const QString &codigo)
     return digitos.count('0') != tamanho;
 }
 
+bool EstoqueNota_service::digitoVerificadorGtinConfere(const QString &codigo)
+{
+    const QString d = codigo.trimmed();
+    if (!ehGtinValido(d))
+        return false;
+    const int n = d.size();
+    int soma = 0;
+    for (int i = 0; i < n - 1; ++i)      // da direita para a esquerda, a partir do número antes do dígito: peso 3, 1, 3, 1...
+        soma += d.at(n - 2 - i).digitValue() * (i % 2 == 0 ? 3 : 1);
+    return (10 - soma % 10) % 10 == d.at(n - 1).digitValue();
+}
+
 QList<ProdutoNotaDTO> EstoqueNota_service::itensPendentes(qlonglong idNota)
 {
     QList<ProdutoNotaDTO> pendentes;

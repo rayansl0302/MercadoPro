@@ -8,6 +8,8 @@ class TestEntradaNfeService : public QObject
     Q_OBJECT
 private slots:
     void nota_de_fornecedor_do_regime_normal_grava_itens_sem_csosn_como_nulo();
+    void digito_verificador_do_gtin_confere_ean8_ean13_e_upc();
+    void codigo_lido_e_gravado_no_item_pendente_mas_nao_no_que_ja_foi_lancado();
     void cleanup();
 
     void importa_xml_ok();

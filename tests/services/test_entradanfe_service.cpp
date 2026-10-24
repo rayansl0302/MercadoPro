@@ -6,6 +6,7 @@
 #include "services/notafiscal_service.h"
 #include "util/chaveacessoutil.h"
 #include "util/nfxmlutil.h"
+#include "services/estoquenota_service.h"
 #include "services/produtonota_service.h"
 #include <QFile>
 #include "infra/databaseconnection_service.h"
@@ -460,4 +461,48 @@ void TestEntradaNfeService::nota_de_fornecedor_do_regime_normal_grava_itens_sem_
     QVERIFY2(q.value(1).isNull(), "csosn NULL");
     QVERIFY2(q.value(2).isNull(), "pis ausente também vira NULL");
     QCOMPARE(q.value(3).toString(), QString("40"));
+}
+
+void TestEntradaNfeService::digito_verificador_do_gtin_confere_ean8_ean13_e_upc()
+{
+    for (const char *ok : {"7891000100103", "4006381333931", "7898079990017", "96385074", "036000291452"})
+        QVERIFY2(EstoqueNota_service::digitoVerificadorGtinConfere(ok), ok);
+    for (const char *ruim : {"7891000100104", "4006381333932", "SEM GTIN", "", "123", "00000000", "78910001001O3"})
+        QVERIFY2(!EstoqueNota_service::digitoVerificadorGtinConfere(ruim), ruim);
+    QVERIFY(EstoqueNota_service::digitoVerificadorGtinConfere(" 7891000100103 "));   // espaços do leitor
+}
+
+void TestEntradaNfeService::codigo_lido_e_gravado_no_item_pendente_mas_nao_no_que_ja_foi_lancado()
+{
+    ProdutoNota_service servico;
+    auto novo = [](const QString &desc, int nitem) {
+        ProdutoNotaDTO p;
+        p.descricao = desc;
+        p.nitem = nitem;
+        p.quantidade = 2;
+        p.preco = 3.5;
+        p.codigoBarras = "SEM GTIN";
+        p.uCom = "UN";
+        p.cfop = "5102";
+        return p;
+    };
+    QVERIFY(servico.inserirListaProdutos({novo("ITEM LEITURA A", 1), novo("ITEM LEITURA B", 2)}).ok);
+
+    QSqlQuery q(DatabaseConnection_service::db());
+    auto idDe = [&](const QString &desc) {
+        q.exec(QString("SELECT id FROM produtos_nota WHERE descricao = '%1'").arg(desc));
+        return q.next() ? q.value(0).toLongLong() : -1LL;
+    };
+    const qlonglong a = idDe("ITEM LEITURA A"), b = idDe("ITEM LEITURA B");
+    QVERIFY(a > 0 && b > 0);
+
+    QVERIFY(servico.atualizarCodigoBarras(a, " 7891000100103 "));
+    QCOMPARE(servico.getProdutoNota(a).codigoBarras, QString("7891000100103"));       // espaços do leitor removidos
+    QCOMPARE(servico.getProdutoNota(b).codigoBarras, QString("SEM GTIN"));            // o outro item não é tocado
+
+    // item já lançado no estoque: o código não muda mais
+    QVERIFY(servico.marcarComoAdicionado(b));
+    QVERIFY(!servico.atualizarCodigoBarras(b, "4006381333931"));
+    QCOMPARE(servico.getProdutoNota(b).codigoBarras, QString("SEM GTIN"));
+    QVERIFY(!servico.atualizarCodigoBarras(999999999, "7891000100103"));              // id que não existe
 }

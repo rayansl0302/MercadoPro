@@ -54,6 +54,10 @@ QString ProdutoNota_service::getXmlPathPorId(qlonglong id){
     return prodNotaRepo.getXmlPathPorId(id);
 }
 
+bool ProdutoNota_service::atualizarCodigoBarras(qlonglong id, const QString &codigo){
+    return prodNotaRepo.atualizarCodigoBarras(id, codigo);
+}
+
 bool ProdutoNota_service::marcarComoAdicionado(qlonglong id){
     return prodNotaRepo.marcarComoAdicionado(id);
 }

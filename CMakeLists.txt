@@ -363,6 +363,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/nuvem/nuvem.qrc
         src/nuvemdialog.h src/nuvemdialog.cpp
         src/backupdialog.h src/backupdialog.cpp
+        src/lercodigosnotadialog.h src/lercodigosnotadialog.cpp
         src/services/contasreceber_service.h src/services/contasreceber_service.cpp
         src/services/contaspagar_service.h src/services/contaspagar_service.cpp
         src/loginoperador.h src/loginoperador.cpp src/loginoperador.ui

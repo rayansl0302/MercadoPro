@@ -2,6 +2,7 @@
 #define ENTRADAS_H
 
 #include <QWidget>
+#include <QPushButton>
 #include <QSqlDatabase>
 #include <QLocale>
 #include <QSqlQueryModel>
@@ -92,6 +93,8 @@ private:
     void carregarTabela();
     void carregarProdutosDaNota(qlonglong id_nf);
     void addProdSemCodBarras(QString idProd, QString codBarras);
+    void lerCodigosDosItens();
+    QPushButton *btnLerCodigos = nullptr;
     void devolverProdutos(QList<ProdutoNotaDTO> &produtosNota);
     double calcularPrecoItemSN(const QString &xmlPath, int nItem);
     void addProdComCodBarras(QString idProd, QString codBarras);

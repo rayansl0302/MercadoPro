@@ -29,6 +29,7 @@ public:
     ProdutoNotaDTO getProdutoNota(qlonglong id);
     QString getXmlPathPorId(qlonglong id);
     bool marcarComoAdicionado(qlonglong id);
+    bool atualizarCodigoBarras(qlonglong id, const QString &codigo);
     QVariantMap getProdutoNotaComXmlPath(qlonglong id);
     bool marcarComoDevolvido(qlonglong id, qlonglong idNfDevol);
 private:

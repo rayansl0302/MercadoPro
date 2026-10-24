@@ -1,4 +1,6 @@
 #include "entradas.h"
+#include "lercodigosnotadialog.h"
+#include <QPushButton>
 #include "ui_entradas.h"
 #include "nota/acbrmanager.h"
 #include "configuracao.h"
@@ -69,6 +71,12 @@ Entradas::Entradas(QWidget *parent)
             &QItemSelectionModel::selectionChanged,
             this,
             [this]() { atualizarBotoesAcao(); });
+    // botão do assistente de leitura dos códigos de barras (as notas costumam vir "SEM GTIN")
+    btnLerCodigos = new QPushButton("Ler códigos de barras...", this);
+    btnLerCodigos->setToolTip("Leia com o leitor o código da embalagem de cada item da nota");
+    ui->hl_itens_acoes->insertWidget(0, btnLerCodigos);
+    connect(btnLerCodigos, &QPushButton::clicked, this, &Entradas::lerCodigosDosItens);
+
     connect(modelEntradas, &QSqlQueryModel::modelReset, this, [this]() {
         ui->Lbl_QtdNotas->setText(modelEntradas->rowCount() == 0
                                       ? "Nenhuma nota no período"
@@ -222,6 +230,8 @@ void Entradas::atualizarBotoesAcao()
     ui->Btn_AdicionarTodos->setEnabled(temNota && estoqueNotaServ.contarPendentes(id_nf_selec).pendentes > 0);
     ui->Btn_Devolucao->setEnabled(temSelecao);
     ui->Btn_VerDanfe->setEnabled(id_nf_selec > 0);
+    if (btnLerCodigos)
+        btnLerCodigos->setEnabled(temNota);
 }
 
 void Entradas::adicionarSelecionadoAoEstoque()
@@ -456,6 +466,18 @@ void Entradas::enviarEmailNFe(QString nomeCliente, QString emailCliente,
     catch (const std::exception& e) {
         qDebug() << "email não enviado NFE";
     }
+}
+
+// Abre o assistente que lê, com o leitor, o código de barras da embalagem de cada item da nota
+void Entradas::lerCodigosDosItens()
+{
+    if (id_nf_selec <= 0 || modelProdutosNota->rowCount() == 0) {
+        QMessageBox::information(this, "Ler códigos de barras", "Selecione uma nota que tenha itens.");
+        return;
+    }
+    LerCodigosNotaDialog dlg(id_nf_selec, this);
+    dlg.exec();
+    carregarProdutosDaNota(id_nf_selec);   // a lista mostra os códigos novos e o resumo é recalculado
 }
 
 void Entradas::addProdSemCodBarras(QString idProd, QString codBarras){

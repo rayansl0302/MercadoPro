@@ -216,6 +216,25 @@ bool ProdutoNota_repository::marcarComoAdicionado(qlonglong id){
     return true;
 }
 
+// Grava o código de barras lido no item da nota. Só mexe em item que ainda não foi lançado no estoque.
+bool ProdutoNota_repository::atualizarCodigoBarras(qlonglong id, const QString &codigo){
+    if(!DatabaseConnection_service::open()){
+        qDebug() << "erro ao abrir banco atualizarCodigoBarras";
+        return false;
+    }
+    QSqlQuery query(db);
+    query.prepare("UPDATE produtos_nota SET codigo_barras = :codigo, atualizado_em = :atualizadoem "
+                  "WHERE id = :id AND (adicionado IS NULL OR adicionado = false)");
+    query.bindValue(":codigo", codigo.trimmed());
+    query.bindValue(":atualizadoem", DataUtil::getDataAgoraUS());
+    query.bindValue(":id", id);
+    if(!query.exec()){
+        qDebug() << "atualizarCodigoBarras: query falhou" << query.lastError().text();
+        return false;
+    }
+    return query.numRowsAffected() > 0;
+}
+
 bool ProdutoNota_repository::marcarComoDevolvido(qlonglong id, qlonglong idNfDevol){
     if(!DatabaseConnection_service::open()){
         qDebug() << "erro ao abrir banco marcarComoDevolvido";

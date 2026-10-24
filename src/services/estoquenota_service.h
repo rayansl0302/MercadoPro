@@ -33,6 +33,8 @@ public:
     ResumoEstoqueNota adicionarPendentes(qlonglong idNota);
 
     static bool ehGtinValido(const QString &codigo);
+    // true se o último número é o dígito verificador certo do GTIN (EAN-8/12/13/14). Falso também para código inválido.
+    static bool digitoVerificadorGtinConfere(const QString &codigo);
 
 private:
     ProdutoNota_service prodNotaServ;
