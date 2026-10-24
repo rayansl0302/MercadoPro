@@ -7,6 +7,7 @@ class TestEntradaNfeService : public QObject
 {
     Q_OBJECT
 private slots:
+    void nota_de_fornecedor_do_regime_normal_grava_itens_sem_csosn_como_nulo();
     void cleanup();
 
     void importa_xml_ok();

@@ -76,16 +76,23 @@ bool ProdutoNota_repository::inserir(ProdutoNotaDTO produtoNota){
     q.bindValue(":cod_barras",   produtoNota.codigoBarras);
     q.bindValue(":un_comercial", produtoNota.uCom);
     q.bindValue(":ncm",          produtoNota.ncm);
-    q.bindValue(":csosn",        produtoNota.csosn);
-    q.bindValue(":pis",          produtoNota.pis);
+    // Fornecedor do regime normal não tem CSOSN (usa CST); PIS pode vir vazio. No PostgreSQL essas colunas são
+    // inteiras e recusam texto vazio ("invalid input syntax for type integer"): vazio ou não numérico vira NULL.
+    auto inteiroOuNulo = [](const QString &texto) {
+        bool ok = false;
+        const int v = texto.trimmed().toInt(&ok);
+        return ok ? QVariant(v) : QVariant();
+    };
+    q.bindValue(":csosn",        inteiroOuNulo(produtoNota.csosn));
+    q.bindValue(":pis",          inteiroOuNulo(produtoNota.pis));
     q.bindValue(":cfop",         produtoNota.cfop);
     q.bindValue(":aliquota",     produtoNota.aliquotaIcms);
     q.bindValue(":cst_icms",     produtoNota.cstIcms);
     q.bindValue(":tem_st",       produtoNota.temSt);
     q.bindValue(":status",       "OK");
     q.bindValue(":adicionado", false);
-    q.bindValue(":adicionado_em", data);
-    q.bindValue(":atualizado_em", data);
+    q.bindValue(":adicionadoem", data);
+    q.bindValue(":atualizadoem", data);
 
 
     if (!q.exec()) {

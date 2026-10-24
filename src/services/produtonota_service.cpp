@@ -1,4 +1,5 @@
 #include "produtonota_service.h"
+#include "../infra/databaseconnection_service.h"
 #include <QFile>
 #include <QDomDocument>
 
@@ -14,11 +15,22 @@ ProdutoNota_service::Resultado ProdutoNota_service::inserirListaProdutos(QList<P
         return {false, ProdutoNotaErro::CampoVazio ,"Nenhum produto encontrado no XML"};
     }
 
+    // Tudo ou nada: se um item falhar, nenhum fica gravado. Sem isso a nota ficava com parte dos itens e a
+    // nova tentativa de importar pulava os itens ("a nota já tem itens"), deixando a nota incompleta.
+    QSqlDatabase conexao = DatabaseConnection_service::db();
+    const bool abriu = DatabaseConnection_service::open();
+    const bool transacao = abriu && conexao.transaction();
     for (const ProdutoNotaDTO &p : lista) {
         if(!prodNotaRepo.inserir(p)){
+            if (transacao)
+                conexao.rollback();
             return {false, ProdutoNotaErro::InsercaoInvalida,
                     "Erro ao inserir o produto: " + p.descricao};
         }
+    }
+    if (transacao && !conexao.commit()) {
+        conexao.rollback();
+        return {false, ProdutoNotaErro::InsercaoInvalida, "Não foi possível concluir a gravação dos itens da nota."};
     }
 
     return {true, ProdutoNotaErro::Nenhum, ""};

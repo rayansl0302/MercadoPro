@@ -5,6 +5,9 @@
 #include "services/entradanfe_service.h"
 #include "services/notafiscal_service.h"
 #include "util/chaveacessoutil.h"
+#include "util/nfxmlutil.h"
+#include "services/produtonota_service.h"
+#include <QFile>
 #include "infra/databaseconnection_service.h"
 
 namespace {
@@ -414,4 +417,47 @@ void TestEntradaNfeService::busca_nota_cancelada_na_sefaz_e_recusada()
     QCOMPARE(r.erro, EntradaNfeErro::NaoAutorizada);
     QVERIFY(r.msg.contains("cancelada"));
     QCOMPARE(contar(QString("SELECT COUNT(*) FROM notas_fiscais WHERE chnfe = '%1'").arg(chave)), 0LL);
+}
+
+void TestEntradaNfeService::nota_de_fornecedor_do_regime_normal_grava_itens_sem_csosn_como_nulo()
+{
+    // Nota de fornecedor do regime normal (CRT 3): ICMS com CST (20, 40), sem CSOSN, e itens sem GTIN.
+    // No PostgreSQL a coluna csosn é inteira e recusa texto vazio: isso derrubava a importação inteira.
+    const QByteArray xml =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><nfeProc versao=\"4.00\" xmlns=\"http://www.portalfiscal.inf.br/nfe\"><NFe><infNFe versao=\"4.00\">"
+        "<det nItem=\"1\"><prod><cProd>599</cProd><cEAN>SEM GTIN</cEAN><xProd>ACUCAR CRISTAL TESTE REGIME NORMAL</xProd><NCM>17019900</NCM>"
+        "<CFOP>5102</CFOP><uCom>KG</uCom><qCom>90.0000</qCom><vUnCom>2.8800000000</vUnCom></prod>"
+        "<imposto><ICMS><ICMS20><orig>0</orig><CST>20</CST><pICMS>20.5000</pICMS></ICMS20></ICMS><PIS><PISNT><CST>06</CST></PISNT></PIS></imposto></det>"
+        "<det nItem=\"2\"><prod><cProd>393</cProd><cEAN>SEM GTIN</cEAN><xProd>ARROZ BRANCO TESTE REGIME NORMAL</xProd><NCM>10063021</NCM>"
+        "<CFOP>5102</CFOP><uCom>KG</uCom><qCom>90.0000</qCom><vUnCom>4.3000000000</vUnCom></prod>"
+        "<imposto><ICMS><ICMS40><orig>0</orig><CST>40</CST></ICMS40></ICMS></imposto></det>"   // sem grupo de PIS: pis vazio também
+        "</infNFe></NFe></nfeProc>";
+    QTemporaryDir tmp;
+    QVERIFY(tmp.isValid());
+    const QString caminho = tmp.filePath("regime_normal.xml");
+    {
+        QFile f(caminho);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write(xml);
+    }
+    NfXmlUtil util;
+    const QList<ProdutoNotaDTO> itens = util.carregarProdutosDaNFe(caminho, 0);
+    QCOMPARE(itens.size(), 2);
+    QVERIFY(itens.at(0).csosn.isEmpty());          // regime normal: sem CSOSN
+    QCOMPARE(itens.at(0).cstIcms, QString("20"));
+
+    ProdutoNota_service servico;
+    const auto r = servico.inserirListaProdutos(itens);
+    QVERIFY2(r.ok, qPrintable(r.msg));
+
+    QSqlQuery q(DatabaseConnection_service::db());
+    QVERIFY(q.exec("SELECT descricao, csosn, pis, cst_icms FROM produtos_nota WHERE descricao LIKE '%TESTE REGIME NORMAL' ORDER BY nitem"));
+    QVERIFY(q.next());
+    QVERIFY2(q.value(1).isNull(), "csosn deve ficar NULL, e não texto vazio");
+    QCOMPARE(q.value(2).toInt(), 6);                 // PISNT CST 06
+    QCOMPARE(q.value(3).toString(), QString("20"));
+    QVERIFY(q.next());
+    QVERIFY2(q.value(1).isNull(), "csosn NULL");
+    QVERIFY2(q.value(2).isNull(), "pis ausente também vira NULL");
+    QCOMPARE(q.value(3).toString(), QString("40"));
 }
