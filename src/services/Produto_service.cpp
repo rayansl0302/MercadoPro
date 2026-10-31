@@ -264,10 +264,19 @@ bool Produto_Service::ehLanche(qlonglong idprod){
     return Lanches::codigoEhLanche(repo.getProduto(idprod).codigoBarras, Lanches::faixaConfigurada());
 }
 
+bool Produto_Service::semControleDeEstoque(qlonglong idprod){
+    const ProdutoDTO p = repo.getProduto(idprod);
+    return p.semControleEstoque || Lanches::codigoEhLanche(p.codigoBarras, Lanches::faixaConfigurada());
+}
+
+QList<ProdutoDTO> Produto_Service::listarComCodigoInterno(){
+    return repo.listarComCodigoInterno();
+}
+
 Produto_Service::Resultado Produto_Service::updateAumentarQuantidadeProduto(qlonglong idprod,
                                                                             double quantia ){
-    if(ehLanche(idprod))
-        return {true, ProdutoErro::Nenhum, "Lanche: estoque não controlado."};
+    if(semControleDeEstoque(idprod))
+        return {true, ProdutoErro::Nenhum, "Produto sem controle de estoque."};
     if(!repo.updateAumentarQuantidadeProduto(idprod, quantia)){
         return {false, ProdutoErro::Update, "Erro ao atualizar quantia produto."};
     }else{
@@ -300,8 +309,8 @@ Produto_Service::Resultado Produto_Service::atualizarCamposMap(qlonglong id, con
 
 Produto_Service::Resultado Produto_Service::updateDiminuirQuantidadeProduto(qlonglong idprod,
                                                                             double quantia ){
-    if(ehLanche(idprod))
-        return {true, ProdutoErro::Nenhum, "Lanche: estoque não controlado."};
+    if(semControleDeEstoque(idprod))
+        return {true, ProdutoErro::Nenhum, "Produto sem controle de estoque."};
     if(!repo.updateDiminuirQuantidadeProduto(idprod, quantia)){
         return {false, ProdutoErro::Update, "Erro ao atualizar quantia produto."};
     }else{

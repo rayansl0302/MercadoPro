@@ -28,6 +28,8 @@ public:
     void listarProdutos(QSqlQueryModel *model);
     void pesquisar(const QStringList &palavras, const QString &textoNormalizado, QSqlQueryModel *model);
     ProdutoDTO getProdutoPeloCodBarras(const QString &codigo);
+    // produtos cujo código de barras foi gerado pelo sistema (3562 + 5 números), por descrição
+    QList<ProdutoDTO> listarComCodigoInterno();
     ProdutoDTO getProdutoPelaDescricao(const QString &descricao);
     bool updateDiminuirQuantidadeProduto(qlonglong idprod, double quantia);
     QVariantMap getProdutoPorCodBarrasMap(const QString &codigo);

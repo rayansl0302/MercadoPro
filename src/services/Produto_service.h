@@ -63,6 +63,9 @@ public:
   Produto_Service::Resultado updateAumentarQuantidadeProduto(qlonglong idprod, double quantia);
   // true se o produto é de lanche (código de barras na faixa 200-500): não tem controle de estoque
   bool ehLanche(qlonglong idprod);
+  // true se a venda/devolução não deve mexer no estoque: lanche (código 200-500) ou produto marcado "sem controle de estoque"
+  bool semControleDeEstoque(qlonglong idprod);
+  QList<ProdutoDTO> listarComCodigoInterno();
   ProdutoDTO getProduto(qlonglong id);
   ProdutoDTO getProdutoPeloCodBarras(const QString &codigo);
   ProdutoDTO getProdutoPelaDescricao(const QString &descricao);

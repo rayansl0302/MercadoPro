@@ -141,6 +141,7 @@ private slots:
     void abrirContasReceber() { contasReceberClicked(); }
     void nuvemClicked();
     void backupClicked();
+    void exportarProdutosCodigoInterno();
     void atualizarIndicadorNuvem();
     void contasReceberClicked(qlonglong idCliente = 0);
     void contasPagarClicked(const QString &statusInicial = QString());
@@ -188,7 +189,7 @@ private:
     void setarIconesJanela();
     //QModelIndex selected_index;
 
-    const int ultimaVersaoSchema = 23;
+    const int ultimaVersaoSchema = 24;
 
     // operador comum só entra em histórico, cadastro de operadores, configurações e
     // relatórios gerenciais depois de informar o PIN do gerente

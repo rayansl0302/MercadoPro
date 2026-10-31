@@ -1,4 +1,6 @@
 #include "inserirproduto.h"
+#include <QBoxLayout>
+#include <QCheckBox>
 #include "ui_inserirproduto.h"
 #include <QMessageBox>
 #include <QRandomGenerator>
@@ -16,6 +18,14 @@ InserirProduto::InserirProduto(QWidget *parent)
     , ui(new Ui::InserirProduto)
 {
     ui->setupUi(this);
+
+    // produto sem controle de estoque (ovos, a granel...): venda e devolução não mexem na quantidade
+    chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque deste produto (ex.: ovos, itens a granel)"), this);
+    chSemEstoque->setToolTip(QStringLiteral("Marcado: vender ou devolver não altera a quantidade, e o painel online não soma o produto no estoque."));
+    if (auto *lay = qobject_cast<QBoxLayout *>(ui->Check_Nf->parentWidget() ? ui->Check_Nf->parentWidget()->layout() : nullptr))
+        lay->insertWidget(lay->indexOf(ui->Check_Nf) + 1, chSemEstoque);
+    else
+        chSemEstoque->hide();
     ui->tabWidget->setCurrentIndex(0);
     connect(ui->Btn_Cancelar, &QPushButton::clicked, this, &QWidget::close);
 
@@ -79,6 +89,8 @@ void InserirProduto::preencherCamposProduto(const ProdutoDTO &prod)
     ui->Ledit_PrecoFinal->setText(prod.preco > 0 ? portugues.toString(prod.preco, 'f', 2) : "");
     ui->Ledit_CBarras->setText(prod.codigoBarras);
     ui->Check_Nf->setChecked(prod.nf);
+    if (chSemEstoque)
+        chSemEstoque->setChecked(prod.semControleEstoque);
     ui->Ledit_PrecoFornecedor->setText(prod.precoFornecedor > 0 ? portugues.toString(prod.precoFornecedor, 'f', 2) : "");
     ui->Ledit_PercentualLucro->setText(portugues.toString(prod.percentLucro));
     ui->Ledit_NCM->setText(prod.ncm);
@@ -129,6 +141,7 @@ void InserirProduto::on_Btn_Enviar_clicked()
     p.preco = portugues.toDouble(ui->Ledit_PrecoFinal->text());
     p.codigoBarras = ui->Ledit_CBarras->text();
     p.nf = ui->Check_Nf->isChecked();
+    p.semControleEstoque = chSemEstoque && chSemEstoque->isChecked();
     p.uCom = ui->CBox_UCom->currentText();
     p.precoFornecedor = portugues.toDouble(ui->Ledit_PrecoFornecedor->text());
     p.percentLucro = portugues.toDouble(ui->Ledit_PercentualLucro->text());

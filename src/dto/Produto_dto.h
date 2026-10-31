@@ -10,6 +10,8 @@ struct ProdutoDTO {
     double preco;
     QString codigoBarras;
     bool nf;
+    // sem controle de estoque (ovos, a granel, lanches): venda e devolução não mexem na quantidade
+    bool semControleEstoque = false;
     QString uCom;
     double precoFornecedor;
     double percentLucro;

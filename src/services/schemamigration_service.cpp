@@ -2142,6 +2142,33 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 23:
+        {
+            // versao 24: produto sem controle de estoque (ovos, itens a granel, lanches). Vendas e devoluções
+            // não mexem na quantidade, e o painel online não soma o produto no estoque.
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 24", dbSchemaVersion};
+            }
+            QSqlQuery query(db);
+            if (!query.exec("ALTER TABLE produtos ADD COLUMN sem_controle_estoque BOOLEAN NOT NULL DEFAULT false")) {
+                qDebug() << "Erro migracao 24:" << query.lastError().text();
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro na migracao 24 (sem controle de estoque)", dbSchemaVersion};
+            }
+            if (!setSchemaVersion(24)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 24", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 24", dbSchemaVersion};
+            }
+            dbSchemaVersion = 24;
+            qDebug() << "Migracao para versao 24 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;

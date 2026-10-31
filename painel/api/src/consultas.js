@@ -110,7 +110,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
        WHERE f.loja_id = $1 AND painel.ts_seguro(c.fechado_em)::date >= $2::date`,
       [L, inicioMes],
     );
-    const semEstoque = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND coalesce(quantidade, 0) <= 0 AND NOT painel.eh_lanche(codigo_barras, $2, $3)', [L, config.lancheMin, config.lancheMax]);
+    const semEstoque = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND coalesce(quantidade, 0) <= 0 AND NOT painel.sem_estoque(codigo_barras, sem_controle_estoque, $2, $3)', [L, config.lancheMin, config.lancheMax]);
 
     const p = pagar.rows[0];
     return {
@@ -387,13 +387,13 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     const L = req.loja.id;
     const baixo = await pool.query(
       `SELECT id, descricao, quantidade, un_comercial, preco, preco_fornecedor FROM espelho.produtos
-       WHERE loja_id = $1 AND coalesce(quantidade, 0) <= $2 AND NOT painel.eh_lanche(codigo_barras, $3, $4)
+       WHERE loja_id = $1 AND coalesce(quantidade, 0) <= $2 AND NOT painel.sem_estoque(codigo_barras, sem_controle_estoque, $3, $4)
        ORDER BY quantidade NULLS FIRST, descricao LIMIT 100`,
       [L, limite, config.lancheMin, config.lancheMax],
     );
     const parados = await pool.query(
       `SELECT p.id, p.descricao, p.quantidade, p.preco FROM espelho.produtos p
-       WHERE p.loja_id = $1 AND p.quantidade > 0 AND NOT painel.eh_lanche(p.codigo_barras, $3, $4) AND NOT EXISTS (
+       WHERE p.loja_id = $1 AND p.quantidade > 0 AND NOT painel.sem_estoque(p.codigo_barras, p.sem_controle_estoque, $3, $4) AND NOT EXISTS (
          SELECT 1 FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
          WHERE pv.loja_id = p.loja_id AND pv.id_produto = p.id AND painel.ts_seguro(v.data_hora)::date > ($2::date - 60))
        ORDER BY p.quantidade * p.preco DESC NULLS LAST LIMIT 50`,
@@ -403,7 +403,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       `SELECT p.id, p.descricao, sum(pv.quantidade) AS qtd, sum(pv.quantidade * pv.preco_vendido) AS total
        FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
        JOIN espelho.produtos p ON p.loja_id = pv.loja_id AND p.id = pv.id_produto
-       WHERE pv.loja_id = $1 AND painel.ts_seguro(v.data_hora)::date > ($2::date - 30) AND NOT painel.eh_lanche(p.codigo_barras, $3, $4)
+       WHERE pv.loja_id = $1 AND painel.ts_seguro(v.data_hora)::date > ($2::date - 30) AND NOT painel.sem_estoque(p.codigo_barras, p.sem_controle_estoque, $3, $4)
        GROUP BY p.id, p.descricao ORDER BY total DESC LIMIT 20`,
       [L, dia, config.lancheMin, config.lancheMax],
     );
@@ -416,11 +416,23 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
        GROUP BY p.id, p.descricao, p.codigo_barras ORDER BY total DESC LIMIT 30`,
       [L, dia, config.lancheMin, config.lancheMax],
     );
+    // produtos marcados "sem controle de estoque" na loja (ovos, a granel...), fora os lanches (que têm seção própria)
+    const semControle = await pool.query(
+      `SELECT p.id, p.descricao, p.codigo_barras,
+              coalesce(sum(pv.quantidade) FILTER (WHERE v.id IS NOT NULL AND painel.ts_seguro(v.data_hora)::date > ($2::date - 30)), 0) AS qtd,
+              coalesce(sum(pv.quantidade * pv.preco_vendido) FILTER (WHERE v.id IS NOT NULL AND painel.ts_seguro(v.data_hora)::date > ($2::date - 30)), 0) AS total
+       FROM espelho.produtos p
+       LEFT JOIN espelho.produtos_vendidos pv ON pv.loja_id = p.loja_id AND pv.id_produto = p.id
+       LEFT JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
+       WHERE p.loja_id = $1 AND coalesce(p.sem_controle_estoque, false) AND NOT painel.eh_lanche(p.codigo_barras, $3, $4)
+       GROUP BY p.id, p.descricao, p.codigo_barras ORDER BY total DESC, p.descricao LIMIT 100`,
+      [L, dia, config.lancheMin, config.lancheMax],
+    );
     const qtdLanches = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND painel.eh_lanche(codigo_barras, $2, $3)', [L, config.lancheMin, config.lancheMax]);
     const valores = await pool.query(
       `SELECT coalesce(sum(quantidade * preco) FILTER (WHERE quantidade > 0), 0) AS a_preco_de_venda,
               coalesce(sum(quantidade * preco_fornecedor) FILTER (WHERE quantidade > 0 AND preco_fornecedor > 0), 0) AS a_custo,
-              count(*)::int AS produtos FROM espelho.produtos WHERE loja_id = $1 AND NOT painel.eh_lanche(codigo_barras, $2, $3)`,
+              count(*)::int AS produtos FROM espelho.produtos WHERE loja_id = $1 AND NOT painel.sem_estoque(codigo_barras, sem_controle_estoque, $2, $3)`,
       [L, config.lancheMin, config.lancheMax],
     );
     const v = valores.rows[0];
@@ -430,6 +442,10 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       baixoEstoque: baixo.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco), preco_fornecedor: x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor) })),
       parados60Dias: parados.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco) })),
       maisVendidos30Dias: maisVendidos.rows.map((x) => ({ id: x.id, descricao: x.descricao, quantidade: inteiro(x.qtd), total: dinheiro(x.total) })),
+      semControle: {
+        produtos: semControle.rowCount,
+        itens: semControle.rows.map((x) => ({ id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, quantidade30Dias: inteiro(x.qtd), total30Dias: dinheiro(x.total) })),
+      },
       // lanches ficam de fora de todos os números de estoque acima (a quantidade deles é fixa, não é estoque real)
       lanches: {
         faixa: { de: config.lancheMin, ate: config.lancheMax },
@@ -463,7 +479,8 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       const custo = x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor);
       return {
         produto: {
-          id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, lanche: (await pool.query('SELECT painel.eh_lanche($1, $2, $3) AS e', [x.codigo_barras, config.lancheMin, config.lancheMax])).rows[0].e, unidade: x.un_comercial, local: x.local, fiscal: x.nf,
+          id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, lanche: (await pool.query('SELECT painel.eh_lanche($1, $2, $3) AS e', [x.codigo_barras, config.lancheMin, config.lancheMax])).rows[0].e,
+          semControleEstoque: Boolean(x.sem_controle_estoque), unidade: x.un_comercial, local: x.local, fiscal: x.nf,
           quantidade: inteiro(x.quantidade), preco, custo, margemPercentual: custo && custo > 0 ? Math.round(((preco - custo) / custo) * 1000) / 10 : null,
           valorEmEstoque: dinheiro(inteiro(x.quantidade) * preco), adicionadoEm: x.adicionado_em, atualizadoEm: x.atualizado_em,
         },

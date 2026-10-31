@@ -70,6 +70,10 @@
 #include "nuvem/nuvem_service.h"
 #include "infra/atualizador_service.h"
 #include "backupdialog.h"
+#include <QUrl>
+#include <QFileDialog>
+#include <QDesktopServices>
+#include "util/catalogobarras.h"
 #include "util/tema.h"
 #include "services/backup_service.h"
 #include <QProgressDialog>
@@ -700,6 +704,40 @@ void MainWindow::nuvemClicked()
     atualizarIndicadorNuvem();
 }
 
+// PDF com o nome, o preço e o código de barras impresso dos produtos cujo código foi gerado pelo sistema
+// (sem código na embalagem): o operador de caixa passa o leitor direto na folha.
+void MainWindow::exportarProdutosCodigoInterno()
+{
+    Produto_Service produtos;
+    const QList<ProdutoDTO> lista = produtos.listarComCodigoInterno();
+    if (lista.isEmpty()) {
+        QMessageBox::information(this, "Produtos com código interno",
+                                 "Nenhum produto tem código de barras gerado pelo sistema (códigos começando com 3562).");
+        return;
+    }
+    const QString padrao = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/produtos-codigo-interno.pdf";
+    QString caminho = QFileDialog::getSaveFileName(this, "Salvar o PDF dos produtos com código interno", padrao, "PDF (*.pdf)");
+    if (caminho.isEmpty())
+        return;
+    if (!caminho.endsWith(".pdf", Qt::CaseInsensitive))
+        caminho += ".pdf";
+
+    QList<CatalogoBarras::Item> itens;
+    for (const ProdutoDTO &p : lista)
+        itens.append({p.descricao, p.uCom, p.preco, p.codigoBarras});
+    const QString empresa = Config_service().carregarTudo().nomeEmpresa;
+
+    QString erro;
+    if (!CatalogoBarras::gerarPdf(caminho, "Produtos com código interno", empresa, itens, &erro)) {
+        QMessageBox::warning(this, "Produtos com código interno", erro);
+        return;
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(caminho));
+    QMessageBox::information(this, "Produtos com código interno",
+                             QStringLiteral("PDF gerado com %1 produto(s) em %2 página(s).\nImprima e deixe com o operador do caixa.")
+                                 .arg(lista.size()).arg(CatalogoBarras::paginas(lista.size())));
+}
+
 void MainWindow::backupClicked()
 {
     if (!exigirGerente(QStringLiteral("O backup do banco de dados")))
@@ -780,6 +818,10 @@ void MainWindow::montarMenuCaixa()
     menuCaixa->addAction("Operadores...", this, &MainWindow::operadoresClicked);
     // alterarPinGerente já confirma com o PIN atual antes de trocar
     menuCaixa->addAction("PIN do gerente...", this, [this]() { Operadores::alterarPinGerente(this); });
+    // Exportar > produtos com código de barras gerado pelo sistema (PDF para o operador de caixa)
+    ui->menuExportar->addAction(QStringLiteral("Produtos com código interno (PDF para o caixa)..."), this,
+                                [this]() { exportarProdutosCodigoInterno(); });
+
     // Ajuda > Verificar atualizações (mostra a versão instalada)
     ui->menuAjuda->addSeparator();
     ui->menuAjuda->addAction(QStringLiteral("Verificar atualizações... (versão %1)").arg(Atualizador_service::versaoAtual()),

@@ -388,3 +388,33 @@ describe('detalhe da venda e venda cancelada', () => {
     expect((await obter(cookie, `/api/painel/vendas/lista?de=${hoje}&ate=${hoje}`)).vendas.map((x) => String(x.id))).not.toContain('1');
   });
 });
+
+describe('produto marcado "sem controle de estoque" (ovos)', () => {
+  it('sai dos números de estoque, aparece em seção própria e não é confundido com lanche', async () => {
+    await carregarDados();
+    const L = loja.id;
+    await pool.query(
+      `INSERT INTO espelho.produtos (loja_id, id, descricao, quantidade, preco, codigo_barras, preco_fornecedor, sem_controle_estoque) VALUES
+         ($1, 60, 'OVOS BRANCOS', '300', '0.80', '7898000000011', '0.50', true),
+         ($1, 61, 'OVOS SEM ESTOQUE', '0', '0.80', '7898000000028', '0.50', true),
+         ($1, 62, 'PRODUTO NORMAL', '4', '5.00', '7898000000035', '3.00', false)`, [L]);
+    await pool.query(
+      `INSERT INTO espelho.produtos_vendidos (loja_id, id, id_produto, id_venda, quantidade, preco_vendido) VALUES ($1, 91, 60, 1, '12', '0.80')`, [L]);
+    const { cookie } = await sessao();
+
+    const e = await obter(cookie, '/api/painel/estoque?limite=100000');
+    expect(e.resumo.produtos).toBe(4);                              // CAFÉ, SEM ESTOQUE, PARADO + PRODUTO NORMAL; os ovos não contam
+    expect(e.resumo.valorACusto).toBe(36 + 20 + 12);                 // + 4 x 3,00 do produto normal; os 300 ovos (150,00) ficam de fora
+    for (const lista of [e.baixoEstoque, e.parados60Dias, e.maisVendidos30Dias])
+      expect(lista.map((x) => x.descricao)).not.toContain('OVOS BRANCOS');
+    expect(e.baixoEstoque.map((x) => x.descricao)).not.toContain('OVOS SEM ESTOQUE');
+    expect(e.semControle.produtos).toBe(2);
+    expect(e.semControle.itens[0]).toMatchObject({ descricao: 'OVOS BRANCOS', quantidade30Dias: 12, total30Dias: 9.6 });
+    expect(e.lanches.produtos).toBe(0);                              // ovos não são lanche
+
+    expect((await obter(cookie, '/api/painel/resumo')).produtosSemEstoque).toBe(1);   // só o "SEM ESTOQUE" de antes
+    const detalhe = await obter(cookie, '/api/painel/produtos?id=60');
+    expect(detalhe.produto).toMatchObject({ semControleEstoque: true, lanche: false });
+    expect((await obter(cookie, '/api/painel/produtos?id=62')).produto.semControleEstoque).toBe(false);
+  });
+});

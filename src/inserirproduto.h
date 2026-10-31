@@ -42,6 +42,7 @@ private:
     void atualizarInfoNcm(bool avisar);
 
     Ui::InserirProduto *ui;
+    class QCheckBox *chSemEstoque = nullptr;
     QSet<QString> generatedNumbers;
     QLocale portugues;
     QSqlDatabase db = QSqlDatabase::database();

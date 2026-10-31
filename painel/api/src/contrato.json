@@ -1,5 +1,5 @@
 {
-  "versao": 1,
+  "versao": 2,
   "observacao": "Contrato entre o QEstoqueLoja e a API do painel. Só as colunas listadas aqui saem da loja (lista de permissão): colunas novas do banco NÃO sobem até entrarem aqui. Nunca listar PIN, hash, salt, caminhos de arquivo, CPF, endereço ou e-mail. Valores trafegam sempre como texto (ou null); tipos: int, dec, real, text, bool, ts.",
   "tabelas": {
     "empresas": {
@@ -30,7 +30,8 @@
         {"n": "id", "t": "int"}, {"n": "quantidade", "t": "real"}, {"n": "descricao", "t": "text"},
         {"n": "preco", "t": "dec"}, {"n": "codigo_barras", "t": "text"}, {"n": "nf", "t": "bool"},
         {"n": "un_comercial", "t": "text"}, {"n": "preco_fornecedor", "t": "dec"}, {"n": "porcent_lucro", "t": "real"},
-        {"n": "local", "t": "text"}, {"n": "adicionado_em", "t": "ts"}, {"n": "atualizado_em", "t": "ts"}
+        {"n": "local", "t": "text"}, {"n": "sem_controle_estoque", "t": "bool"},
+        {"n": "adicionado_em", "t": "ts"}, {"n": "atualizado_em", "t": "ts"}
       ]
     },
     "vendas2": {

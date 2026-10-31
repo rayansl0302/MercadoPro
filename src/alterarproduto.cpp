@@ -1,4 +1,6 @@
 #include "alterarproduto.h"
+#include <QBoxLayout>
+#include <QCheckBox>
 #include "ui_alterarproduto.h"
 #include "mainwindow.h"
 #include "QSqlQuery"
@@ -12,6 +14,14 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     ui(new Ui::AlterarProduto)
 {
     ui->setupUi(this);
+
+    // produto sem controle de estoque (ovos, a granel...): venda e devolução não mexem na quantidade
+    chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque deste produto (ex.: ovos, itens a granel)"), this);
+    chSemEstoque->setToolTip(QStringLiteral("Marcado: vender ou devolver não altera a quantidade, e o painel online não soma o produto no estoque."));
+    if (auto *lay = qobject_cast<QBoxLayout *>(ui->Check_AltNf->parentWidget() ? ui->Check_AltNf->parentWidget()->layout() : nullptr))
+        lay->insertWidget(lay->indexOf(ui->Check_AltNf) + 1, chSemEstoque);
+    else
+        chSemEstoque->hide();
     util->setParent(this);
     db = QSqlDatabase::database();
 
@@ -64,6 +74,8 @@ void AlterarProduto::TrazerInfo(const ProdutoDTO &produto)
     ui->Ledit_AltPreco->setText(portugues.toString(produto.preco, 'f', 2));
     ui->Ledit_AltBarras->setText(produto.codigoBarras);
     ui->Check_AltNf->setChecked(produto.nf);
+    if (chSemEstoque)
+        chSemEstoque->setChecked(produto.semControleEstoque);
     ui->Ledit_AltPrecoFornecedor->setText(produto.precoFornecedor != 0.0
                                               ? portugues.toString(produto.precoFornecedor, 'f', 2)
                                               : QString());
@@ -87,6 +99,7 @@ void AlterarProduto::TrazerInfo(const ProdutoDTO &produto)
      p.preco = portugues.toDouble(ui->Ledit_AltPreco->text());
      p.codigoBarras = ui->Ledit_AltBarras->text();
      p.nf = ui->Check_AltNf->isChecked();
+     p.semControleEstoque = chSemEstoque && chSemEstoque->isChecked();
      p.precoFornecedor = portugues.toDouble(ui->Ledit_AltPrecoFornecedor->text());
      p.percentLucro = portugues.toDouble(ui->Ledit_AltPercentualLucro->text());
      p.uCom = ui->CBox_AltUCom->currentText();

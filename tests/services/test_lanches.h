@@ -27,6 +27,9 @@ private slots:
     void comanda_traz_ingredientes_e_separa_chapa_de_bebidas();
     void cardapio_padrao_tem_os_14_itens_com_ingredientes_e_grupo();
     void cardapio_do_usuario_e_interpretado_e_arquivo_quebrado_nao_derruba();
+    void produto_marcado_sem_controle_de_estoque_nao_move_estoque_mesmo_fora_da_faixa_de_lanches();
+    void pdf_dos_produtos_com_codigo_interno_e_gerado_com_barras_e_paginas();
+    void lista_de_codigos_internos_so_traz_o_formato_gerado_pelo_sistema();
 };
 
 #endif // TEST_LANCHES_H

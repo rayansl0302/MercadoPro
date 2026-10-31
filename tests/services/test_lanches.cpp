@@ -11,6 +11,8 @@
 #include "util/lanches.h"
 #include "util/comandalanche.h"
 #include "util/cardapiolanches.h"
+#include "util/catalogobarras.h"
+#include <QTemporaryDir>
 #include "infra/atualizador_service.h"
 #include "services/Produto_service.h"
 #include "dto/Produto_dto.h"
@@ -419,4 +421,95 @@ void TestLanches::cardapio_do_usuario_e_interpretado_e_arquivo_quebrado_nao_derr
     QVERIFY(CardapioLanches::carregarDeJson("{ quebrado", &erro2).isEmpty());
     QVERIFY(!erro2.isEmpty());
     QVERIFY(CardapioLanches::carregarDeJson("[1,2]", &erro2).isEmpty());
+}
+
+void TestLanches::produto_marcado_sem_controle_de_estoque_nao_move_estoque_mesmo_fora_da_faixa_de_lanches()
+{
+    Produto_Service servico;
+    ProdutoDTO p;
+    p.quantidade = 120;
+    p.descricao = "OVOS TESTE SEM CONTROLE";
+    p.preco = 0.8;
+    p.codigoBarras = "7898765439991";      // código comum: fora da faixa de lanches
+    p.nf = false;
+    p.uCom = "UN";
+    p.precoFornecedor = 0.5;
+    p.percentLucro = 60;
+    p.ncm = "04072100";
+    p.csosn = "102";
+    p.pis = "49";
+    p.semControleEstoque = true;
+    QVERIFY(servico.inserir(p).ok);
+    const qlonglong id = servico.getProdutoPeloCodBarras("7898765439991").id;
+    QVERIFY(id > 0);
+    QVERIFY(servico.getProduto(id).semControleEstoque);           // a marca foi gravada e lida de volta
+    QVERIFY(!servico.ehLanche(id));                               // não é lanche...
+    QVERIFY(servico.semControleDeEstoque(id));                    // ...mas não controla estoque
+    QVERIFY(servico.updateDiminuirQuantidadeProduto(id, 30).ok);
+    QCOMPARE(servico.getProduto(id).quantidade, 120.0);
+    QVERIFY(servico.updateAumentarQuantidadeProduto(id, 10).ok);
+    QCOMPARE(servico.getProduto(id).quantidade, 120.0);
+
+    // desmarcar volta ao controle normal
+    QVERIFY(servico.atualizarCamposMap(id, {{"sem_controle_estoque", false}}, false).ok);
+    QVERIFY(!servico.getProduto(id).semControleEstoque);
+    QVERIFY(servico.updateDiminuirQuantidadeProduto(id, 20).ok);
+    QCOMPARE(servico.getProduto(id).quantidade, 100.0);
+}
+
+void TestLanches::pdf_dos_produtos_com_codigo_interno_e_gerado_com_barras_e_paginas()
+{
+    QCOMPARE(CatalogoBarras::paginas(0), 1);
+    QCOMPARE(CatalogoBarras::paginas(14), 1);
+    QCOMPARE(CatalogoBarras::paginas(15), 2);
+    QCOMPARE(CatalogoBarras::paginas(29), 3);
+
+    QList<CatalogoBarras::Item> itens;
+    for (int i = 0; i < 30; ++i)
+        itens.append({QString("PRODUTO DE TESTE NUMERO %1 COM UM NOME BEM COMPRIDO PARA QUEBRAR").arg(i), "UN", 1.5 + i, QString("3562%1").arg(i, 5, 10, QLatin1Char('0'))});
+    QTemporaryDir tmp;
+    QVERIFY(tmp.isValid());
+    const QString arquivo = tmp.filePath("codigos.pdf");
+    QString erro;
+    QVERIFY2(CatalogoBarras::gerarPdf(arquivo, "Produtos com código interno", "Loja Teste", itens, &erro), qPrintable(erro));
+    QFile f(arquivo);
+    QVERIFY(f.open(QIODevice::ReadOnly));
+    const QByteArray conteudo = f.readAll();
+    QVERIFY(conteudo.startsWith("%PDF"));
+    QVERIFY2(conteudo.size() > 20000, "o PDF deve ter conteúdo (textos e imagens dos códigos de barras)");
+    // pasta que não existe: falha com mensagem, sem travar
+    QVERIFY(!CatalogoBarras::gerarPdf(tmp.filePath("nao/existe/x.pdf"), "t", "", itens, &erro));
+    QVERIFY(!erro.isEmpty());
+}
+
+void TestLanches::lista_de_codigos_internos_so_traz_o_formato_gerado_pelo_sistema()
+{
+    Produto_Service servico;
+    auto novo = [&](const QString &desc, const QString &codigo) {
+        ProdutoDTO p;
+        p.quantidade = 1;
+        p.descricao = desc;
+        p.preco = 2;
+        p.codigoBarras = codigo;
+        p.nf = false;
+        p.uCom = "UN";
+        p.precoFornecedor = 1;
+        p.percentLucro = 10;
+        p.ncm = "00000000";
+        p.csosn = "102";
+        p.pis = "49";
+        QVERIFY(servico.inserir(p).ok);
+    };
+    novo("LISTA CODIGO INTERNO OK", "356212345");       // 3562 + 5 números: gerado pelo sistema
+    novo("LISTA CODIGO PARECIDO CURTO", "35621234");     // 8 números
+    novo("LISTA CODIGO PARECIDO LONGO", "3562123456");   // 10 números
+    novo("LISTA CODIGO LETRA", "3562ABCDE");
+    novo("LISTA EAN COMUM", "7891000100103");
+    const auto lista = servico.listarComCodigoInterno();
+    QStringList nomes;
+    for (const auto &p : lista)
+        nomes << p.descricao;
+    QVERIFY(nomes.contains("LISTA CODIGO INTERNO OK"));
+    for (const char *fora : {"LISTA CODIGO PARECIDO CURTO", "LISTA CODIGO PARECIDO LONGO", "LISTA CODIGO LETRA", "LISTA EAN COMUM"})
+        QVERIFY2(!nomes.contains(fora), fora);
 }

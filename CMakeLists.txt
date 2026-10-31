@@ -181,6 +181,7 @@ set(QESTOQUE_SOURCES
     src/util/lanches.cpp
     src/util/comandalanche.cpp
     src/util/cardapiolanches.cpp
+    src/util/catalogobarras.cpp
     src/util/cardapio.qrc
 
 
@@ -325,6 +326,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/util/lanches.h src/util/lanches.cpp
         src/util/comandalanche.h src/util/comandalanche.cpp
         src/util/cardapiolanches.h src/util/cardapiolanches.cpp
+        src/util/catalogobarras.h src/util/catalogobarras.cpp
         src/util/cardapio.qrc
         src/infra/databaseconnection_service.h src/infra/databaseconnection_service.cpp
         src/services/schemamigration_service.cpp src/services/schemamigration_service.h
