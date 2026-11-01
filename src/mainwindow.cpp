@@ -712,7 +712,7 @@ void MainWindow::exportarProdutosCodigoInterno()
     const QList<ProdutoDTO> lista = produtos.listarComCodigoInterno();
     if (lista.isEmpty()) {
         QMessageBox::information(this, "Produtos com código interno",
-                                 "Nenhum produto tem código de barras gerado pelo sistema (códigos começando com 3562).");
+                                 "Todos os produtos têm código de barras de embalagem (EAN/GTIN); não há código interno para listar.");
         return;
     }
     const QString padrao = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/produtos-codigo-interno.pdf";

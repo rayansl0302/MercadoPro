@@ -28,7 +28,7 @@ public:
     void listarProdutos(QSqlQueryModel *model);
     void pesquisar(const QStringList &palavras, const QString &textoNormalizado, QSqlQueryModel *model);
     ProdutoDTO getProdutoPeloCodBarras(const QString &codigo);
-    // produtos cujo código de barras foi gerado pelo sistema (3562 + 5 números), por descrição
+    // produtos sem código de embalagem (GTIN/EAN válido): código gerado, curto ou manual; por descrição
     QList<ProdutoDTO> listarComCodigoInterno();
     ProdutoDTO getProdutoPelaDescricao(const QString &descricao);
     bool updateDiminuirQuantidadeProduto(qlonglong idprod, double quantia);

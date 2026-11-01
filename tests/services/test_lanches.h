@@ -29,7 +29,7 @@ private slots:
     void cardapio_do_usuario_e_interpretado_e_arquivo_quebrado_nao_derruba();
     void produto_marcado_sem_controle_de_estoque_nao_move_estoque_mesmo_fora_da_faixa_de_lanches();
     void pdf_dos_produtos_com_codigo_interno_e_gerado_com_barras_e_paginas();
-    void lista_de_codigos_internos_so_traz_o_formato_gerado_pelo_sistema();
+    void lista_de_codigos_internos_traz_tudo_que_nao_e_gtin_valido();
 };
 
 #endif // TEST_LANCHES_H

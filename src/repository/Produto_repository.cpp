@@ -6,6 +6,7 @@
 #include "../services/Produto_service.h"
 #include "../infra/databaseconnection_service.h"
 #include "../util/dbutil.h"
+#include "../services/estoquenota_service.h"
 #include "../util/datautil.h"
 
 Produto_Repository::Produto_Repository(QObject *parent)
@@ -382,14 +383,15 @@ QList<ProdutoDTO> Produto_Repository::listarComCodigoInterno(){
     }
     QSqlQuery query(db);
     if(!query.exec("SELECT id, descricao, preco, codigo_barras, un_comercial FROM produtos "
-                   "WHERE codigo_barras LIKE '3562%' ORDER BY descricao")){
+                   "ORDER BY descricao")){
         qDebug() << "Query listarComCodigoInterno falhou";
         return lista;
     }
     static const QRegularExpression codigoInterno("^3562\\d{5}$");   // o formato que o sistema gera (CodigoBarrasUtil)
     while(query.next()){
         const QString codigo = query.value("codigo_barras").toString().trimmed();
-        if(!codigoInterno.match(codigo).hasMatch())
+        // código de embalagem (GTIN/EAN válido) o leitor já lê; o resto é código interno (gerado, curto, manual...)
+        if(codigo.isEmpty() || EstoqueNota_service::digitoVerificadorGtinConfere(codigo))
             continue;
         ProdutoDTO p;
         p.id = query.value("id").toLongLong();

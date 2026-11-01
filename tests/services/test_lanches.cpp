@@ -482,7 +482,7 @@ void TestLanches::pdf_dos_produtos_com_codigo_interno_e_gerado_com_barras_e_pagi
     QVERIFY(!erro.isEmpty());
 }
 
-void TestLanches::lista_de_codigos_internos_so_traz_o_formato_gerado_pelo_sistema()
+void TestLanches::lista_de_codigos_internos_traz_tudo_que_nao_e_gtin_valido()
 {
     Produto_Service servico;
     auto novo = [&](const QString &desc, const QString &codigo) {
@@ -500,16 +500,18 @@ void TestLanches::lista_de_codigos_internos_so_traz_o_formato_gerado_pelo_sistem
         p.pis = "49";
         QVERIFY(servico.inserir(p).ok);
     };
-    novo("LISTA CODIGO INTERNO OK", "356212345");       // 3562 + 5 números: gerado pelo sistema
-    novo("LISTA CODIGO PARECIDO CURTO", "35621234");     // 8 números
-    novo("LISTA CODIGO PARECIDO LONGO", "3562123456");   // 10 números
-    novo("LISTA CODIGO LETRA", "3562ABCDE");
-    novo("LISTA EAN COMUM", "7891000100103");
+    novo("LISTA CODIGO GERADO", "356212345");            // gerado pelo sistema
+    novo("LISTA CODIGO CURTO", "6");                      // código manual curto
+    novo("LISTA CODIGO LETRA", "LIXA01");
+    novo("LISTA GTIN SEM DIGITO OK", "7891000100104");    // 13 números com dígito verificador errado
+    novo("LISTA EAN COMUM", "7891000100103");             // EAN-13 válido: já está na embalagem
+    novo("LISTA EAN8", "96385074");                       // EAN-8 válido
     const auto lista = servico.listarComCodigoInterno();
     QStringList nomes;
     for (const auto &p : lista)
         nomes << p.descricao;
-    QVERIFY(nomes.contains("LISTA CODIGO INTERNO OK"));
-    for (const char *fora : {"LISTA CODIGO PARECIDO CURTO", "LISTA CODIGO PARECIDO LONGO", "LISTA CODIGO LETRA", "LISTA EAN COMUM"})
+    for (const char *dentro : {"LISTA CODIGO GERADO", "LISTA CODIGO CURTO", "LISTA CODIGO LETRA", "LISTA GTIN SEM DIGITO OK"})
+        QVERIFY2(nomes.contains(dentro), dentro);
+    for (const char *fora : {"LISTA EAN COMUM", "LISTA EAN8"})
         QVERIFY2(!nomes.contains(fora), fora);
 }
