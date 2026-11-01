@@ -477,6 +477,16 @@ void TestLanches::pdf_dos_produtos_com_codigo_interno_e_gerado_com_barras_e_pagi
     const QByteArray conteudo = f.readAll();
     QVERIFY(conteudo.startsWith("%PDF"));
     QVERIFY2(conteudo.size() > 20000, "o PDF deve ter conteúdo (textos e imagens dos códigos de barras)");
+    // formato lista: 25 por página
+    QCOMPARE(CatalogoBarras::paginas(25, CatalogoBarras::Formato::Lista), 1);
+    QCOMPARE(CatalogoBarras::paginas(26, CatalogoBarras::Formato::Lista), 2);
+    const QString lista = tmp.filePath("lista.pdf");
+    QVERIFY2(CatalogoBarras::gerarPdf(lista, "Produtos com código interno", "Loja Teste", itens, &erro, CatalogoBarras::Formato::Lista), qPrintable(erro));
+    QFile fl(lista);
+    QVERIFY(fl.open(QIODevice::ReadOnly));
+    const QByteArray conteudoLista = fl.readAll();
+    QVERIFY(conteudoLista.startsWith("%PDF"));
+    QVERIFY(conteudoLista.size() > 20000);
     // pasta que não existe: falha com mensagem, sem travar
     QVERIFY(!CatalogoBarras::gerarPdf(tmp.filePath("nao/existe/x.pdf"), "t", "", itens, &erro));
     QVERIFY(!erro.isEmpty());

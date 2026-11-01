@@ -1,3 +1,4 @@
+#include <QTabBar>
 #include "alterarproduto.h"
 #include <QBoxLayout>
 #include <QCheckBox>
@@ -16,12 +17,11 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     ui->setupUi(this);
 
     // produto sem controle de estoque (ovos, a granel...): venda e devolução não mexem na quantidade
-    chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque deste produto (ex.: ovos, itens a granel)"), this);
+    // a aba "Principal" é posicionada manualmente (sem layout): a caixa fica logo abaixo do grupo "Preços"
+    chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque (ovos, a granel)"), ui->groupBox->parentWidget());
     chSemEstoque->setToolTip(QStringLiteral("Marcado: vender ou devolver não altera a quantidade, e o painel online não soma o produto no estoque."));
-    if (auto *lay = qobject_cast<QBoxLayout *>(ui->Check_AltNf->parentWidget() ? ui->Check_AltNf->parentWidget()->layout() : nullptr))
-        lay->insertWidget(lay->indexOf(ui->Check_AltNf) + 1, chSemEstoque);
-    else
-        chSemEstoque->hide();
+    chSemEstoque->setGeometry(ui->groupBox->x(), ui->groupBox->geometry().bottom() + 12, ui->groupBox->width(), 24);
+    ui->tabWidget->setMinimumHeight(chSemEstoque->geometry().bottom() + ui->tabWidget->tabBar()->height() + 24);
     util->setParent(this);
     db = QSqlDatabase::database();
 

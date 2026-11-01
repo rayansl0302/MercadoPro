@@ -20,10 +20,11 @@ InserirProduto::InserirProduto(QWidget *parent)
     ui->setupUi(this);
 
     // produto sem controle de estoque (ovos, a granel...): venda e devolução não mexem na quantidade
-    chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque deste produto (ex.: ovos, itens a granel)"), this);
+    chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque deste produto (ovos, a granel)"), this);
     chSemEstoque->setToolTip(QStringLiteral("Marcado: vender ou devolver não altera a quantidade, e o painel online não soma o produto no estoque."));
-    if (auto *lay = qobject_cast<QBoxLayout *>(ui->Check_Nf->parentWidget() ? ui->Check_Nf->parentWidget()->layout() : nullptr))
-        lay->insertWidget(lay->indexOf(ui->Check_Nf) + 1, chSemEstoque);
+    // aba "Principal": antes do espaçador final do layout
+    if (auto *lay = qobject_cast<QBoxLayout *>(ui->tabWidget->widget(0)->layout()))
+        lay->insertWidget(qMax(0, lay->count() - 1), chSemEstoque);
     else
         chSemEstoque->hide();
     ui->tabWidget->setCurrentIndex(0);

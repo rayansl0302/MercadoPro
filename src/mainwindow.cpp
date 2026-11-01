@@ -715,7 +715,19 @@ void MainWindow::exportarProdutosCodigoInterno()
                                  "Todos os produtos têm código de barras de embalagem (EAN/GTIN); não há código interno para listar.");
         return;
     }
-    const QString padrao = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/produtos-codigo-interno.pdf";
+    QMessageBox escolha(QMessageBox::Question, "Produtos com código interno",
+                        QStringLiteral("Como deseja o PDF dos %1 produto(s)?\n\n• Cartões: um cartão grande por produto (14 por página).\n• Lista: uma linha por produto, mais compacta (25 por página).").arg(lista.size()),
+                        QMessageBox::NoButton, this);
+    auto *botaoCartoes = escolha.addButton("Cartões", QMessageBox::AcceptRole);
+    auto *botaoLista = escolha.addButton("Lista", QMessageBox::AcceptRole);
+    escolha.addButton("Cancelar", QMessageBox::RejectRole);
+    escolha.exec();
+    if (escolha.clickedButton() != botaoCartoes && escolha.clickedButton() != botaoLista)
+        return;
+    const CatalogoBarras::Formato formato = escolha.clickedButton() == botaoLista ? CatalogoBarras::Formato::Lista : CatalogoBarras::Formato::Cartoes;
+
+    const QString padrao = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
+            + (formato == CatalogoBarras::Formato::Lista ? "/produtos-codigo-interno-lista.pdf" : "/produtos-codigo-interno.pdf");
     QString caminho = QFileDialog::getSaveFileName(this, "Salvar o PDF dos produtos com código interno", padrao, "PDF (*.pdf)");
     if (caminho.isEmpty())
         return;
@@ -728,14 +740,14 @@ void MainWindow::exportarProdutosCodigoInterno()
     const QString empresa = Config_service().carregarTudo().nomeEmpresa;
 
     QString erro;
-    if (!CatalogoBarras::gerarPdf(caminho, "Produtos com código interno", empresa, itens, &erro)) {
+    if (!CatalogoBarras::gerarPdf(caminho, "Produtos com código interno", empresa, itens, &erro, formato)) {
         QMessageBox::warning(this, "Produtos com código interno", erro);
         return;
     }
     QDesktopServices::openUrl(QUrl::fromLocalFile(caminho));
     QMessageBox::information(this, "Produtos com código interno",
                              QStringLiteral("PDF gerado com %1 produto(s) em %2 página(s).\nImprima e deixe com o operador do caixa.")
-                                 .arg(lista.size()).arg(CatalogoBarras::paginas(lista.size())));
+                                 .arg(lista.size()).arg(CatalogoBarras::paginas(lista.size(), formato)));
 }
 
 void MainWindow::backupClicked()

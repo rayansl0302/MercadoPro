@@ -17,14 +17,20 @@ struct Item {
 };
 
 constexpr int kCartoesPorPagina = 14;   // 2 colunas x 7 linhas, A4 em pé
+constexpr int kLinhasPorPagina = 25;     // formato lista: uma linha por produto, A4 em pé
+
+enum class Formato {
+    Cartoes,   // um cartão grande por produto (2 colunas)
+    Lista      // tabela compacta: produto, un., preço, código e barras em cada linha
+};
 
 // Quantas páginas o PDF terá para essa quantidade de itens (no mínimo 1).
-int paginas(int quantidadeDeItens);
+int paginas(int quantidadeDeItens, Formato formato = Formato::Cartoes);
 
 // Gera o PDF em "caminho". Retorna false (com o motivo em "erro") se não foi possível.
 // Os itens são impressos na ordem recebida.
 bool gerarPdf(const QString &caminho, const QString &titulo, const QString &empresa,
-              const QList<Item> &itens, QString *erro = nullptr);
+              const QList<Item> &itens, QString *erro = nullptr, Formato formato = Formato::Cartoes);
 
 } // namespace CatalogoBarras
 
