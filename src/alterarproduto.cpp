@@ -21,7 +21,11 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque (ovos, a granel)"), ui->groupBox->parentWidget());
     chSemEstoque->setToolTip(QStringLiteral("Marcado: vender ou devolver não altera a quantidade, e o painel online não soma o produto no estoque."));
     chSemEstoque->setGeometry(ui->groupBox->x(), ui->groupBox->geometry().bottom() + 12, ui->groupBox->width(), 24);
-    ui->tabWidget->setMinimumHeight(chSemEstoque->geometry().bottom() + ui->tabWidget->tabBar()->height() + 24);
+    // produto de uso da loja (limpeza, sacolas...): o painel online não soma no estoque
+    chUsoLoja = new QCheckBox(QStringLiteral("Produto de uso da loja (limpeza, sacolas...)"), ui->groupBox->parentWidget());
+    chUsoLoja->setToolTip(QStringLiteral("Marcado: o painel online não soma o produto no valor do estoque; ele aparece numa seção separada."));
+    chUsoLoja->setGeometry(chSemEstoque->x(), chSemEstoque->geometry().bottom() + 6, chSemEstoque->width(), 24);
+    ui->tabWidget->setMinimumHeight(chUsoLoja->geometry().bottom() + ui->tabWidget->tabBar()->height() + 24);
     util->setParent(this);
     db = QSqlDatabase::database();
 
@@ -76,6 +80,8 @@ void AlterarProduto::TrazerInfo(const ProdutoDTO &produto)
     ui->Check_AltNf->setChecked(produto.nf);
     if (chSemEstoque)
         chSemEstoque->setChecked(produto.semControleEstoque);
+    if (chUsoLoja)
+        chUsoLoja->setChecked(produto.usoLoja);
     ui->Ledit_AltPrecoFornecedor->setText(produto.precoFornecedor != 0.0
                                               ? portugues.toString(produto.precoFornecedor, 'f', 2)
                                               : QString());
@@ -100,6 +106,7 @@ void AlterarProduto::TrazerInfo(const ProdutoDTO &produto)
      p.codigoBarras = ui->Ledit_AltBarras->text();
      p.nf = ui->Check_AltNf->isChecked();
      p.semControleEstoque = chSemEstoque && chSemEstoque->isChecked();
+     p.usoLoja = chUsoLoja && chUsoLoja->isChecked();
      p.precoFornecedor = portugues.toDouble(ui->Ledit_AltPrecoFornecedor->text());
      p.percentLucro = portugues.toDouble(ui->Ledit_AltPercentualLucro->text());
      p.uCom = ui->CBox_AltUCom->currentText();

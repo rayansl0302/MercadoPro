@@ -12,6 +12,8 @@ struct ProdutoDTO {
     bool nf;
     // sem controle de estoque (ovos, a granel, lanches): venda e devolução não mexem na quantidade
     bool semControleEstoque = false;
+    // uso da loja (material de limpeza, sacolas...): o painel online não soma o produto nos números de estoque
+    bool usoLoja = false;
     QString uCom;
     double precoFornecedor;
     double percentLucro;

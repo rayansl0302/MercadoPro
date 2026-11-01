@@ -2169,6 +2169,32 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 24:
+        {
+            // versao 25: produto de uso da loja (material de limpeza, sacolas...): fora dos números de estoque do painel.
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 25", dbSchemaVersion};
+            }
+            QSqlQuery query(db);
+            if (!query.exec("ALTER TABLE produtos ADD COLUMN uso_loja BOOLEAN NOT NULL DEFAULT false")) {
+                qDebug() << "Erro migracao 25:" << query.lastError().text();
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro na migracao 25 (uso da loja)", dbSchemaVersion};
+            }
+            if (!setSchemaVersion(25)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 25", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 25", dbSchemaVersion};
+            }
+            dbSchemaVersion = 25;
+            qDebug() << "Migracao para versao 25 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;

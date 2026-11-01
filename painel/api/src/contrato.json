@@ -30,7 +30,7 @@
         {"n": "id", "t": "int"}, {"n": "quantidade", "t": "real"}, {"n": "descricao", "t": "text"},
         {"n": "preco", "t": "dec"}, {"n": "codigo_barras", "t": "text"}, {"n": "nf", "t": "bool"},
         {"n": "un_comercial", "t": "text"}, {"n": "preco_fornecedor", "t": "dec"}, {"n": "porcent_lucro", "t": "real"},
-        {"n": "local", "t": "text"}, {"n": "sem_controle_estoque", "t": "bool"},
+        {"n": "local", "t": "text"}, {"n": "sem_controle_estoque", "t": "bool"}, {"n": "uso_loja", "t": "bool"},
         {"n": "adicionado_em", "t": "ts"}, {"n": "atualizado_em", "t": "ts"}
       ]
     },

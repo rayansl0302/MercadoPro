@@ -49,6 +49,7 @@ private slots:
 protected:
     Ui::AlterarProduto *ui;
     class QCheckBox *chSemEstoque = nullptr;
+    class QCheckBox *chUsoLoja = nullptr;
 
 private:
     QSet<QString> generatedNumbers;

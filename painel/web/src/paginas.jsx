@@ -383,6 +383,15 @@ export function Estoque() {
               { titulo: 'Produto', render: (l) => l.descricao }, { titulo: 'Qtd', direita: true, render: (l) => l.quantidade }, dinheiroCol('Total', (l) => l.total),
             ]} />
           </Secao>
+          {d.usoLoja.produtos > 0 && (
+            <Secao titulo="Uso da loja (limpeza, sacolas...)">
+              <p className="mb-3 text-sm text-slate-600">Produtos marcados na loja como "de uso da loja": não entram nos números de estoque acima.</p>
+              <Tabela linhas={d.usoLoja.itens} colunas={[
+                { titulo: 'Produto', render: (l) => l.descricao }, { titulo: 'Código', render: (l) => l.codigoBarras ?? '—' },
+                { titulo: 'Qtd', direita: true, render: (l) => l.quantidade }, dinheiroCol('Preço', (l) => l.preco),
+              ]} />
+            </Secao>
+          )}
           {d.semControle.produtos > 0 && (
             <Secao titulo="Sem controle de estoque (ovos, itens a granel...) · últimos 30 dias">
               <p className="mb-3 text-sm text-slate-600">Produtos marcados na loja como "não controlar o estoque": não entram nos números de estoque acima.</p>
@@ -568,7 +577,7 @@ function DetalheProduto({ id }) {
           <div className="space-y-3">
             <div>
               <div className="text-lg font-semibold">{p.descricao}</div>
-              <div className="text-xs text-slate-500">Código de barras: {p.codigoBarras ?? '—'} · Local: {p.local ?? '—'} · Unidade: {p.unidade ?? '—'} {p.fiscal && <Selo texto="com nota fiscal" tom="azul" />} {p.lanche && <Selo texto="lanche — fora do estoque" tom="amarelo" />} {p.semControleEstoque && !p.lanche && <Selo texto="sem controle de estoque" tom="amarelo" />}</div>
+              <div className="text-xs text-slate-500">Código de barras: {p.codigoBarras ?? '—'} · Local: {p.local ?? '—'} · Unidade: {p.unidade ?? '—'} {p.fiscal && <Selo texto="com nota fiscal" tom="azul" />} {p.lanche && <Selo texto="lanche — fora do estoque" tom="amarelo" />} {p.semControleEstoque && !p.lanche && <Selo texto="sem controle de estoque" tom="amarelo" />} {p.usoLoja && !p.lanche && <Selo texto="uso da loja — fora do estoque" tom="amarelo" />}</div>
             </div>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Cartao titulo="Em estoque" valor={p.quantidade} tom={p.quantidade <= 0 ? 'ruim' : 'normal'} detalhe={`valor ${moeda(p.valorEmEstoque)}`} />

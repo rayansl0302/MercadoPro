@@ -22,11 +22,17 @@ InserirProduto::InserirProduto(QWidget *parent)
     // produto sem controle de estoque (ovos, a granel...): venda e devolução não mexem na quantidade
     chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque deste produto (ovos, a granel)"), this);
     chSemEstoque->setToolTip(QStringLiteral("Marcado: vender ou devolver não altera a quantidade, e o painel online não soma o produto no estoque."));
+    // produto de uso da loja (limpeza, sacolas...): o painel online não soma no estoque
+    chUsoLoja = new QCheckBox(QStringLiteral("Produto de uso da loja (limpeza, sacolas...)"), this);
+    chUsoLoja->setToolTip(QStringLiteral("Marcado: o painel online não soma o produto no valor do estoque; ele aparece numa seção separada."));
     // aba "Principal": antes do espaçador final do layout
-    if (auto *lay = qobject_cast<QBoxLayout *>(ui->tabWidget->widget(0)->layout()))
+    if (auto *lay = qobject_cast<QBoxLayout *>(ui->tabWidget->widget(0)->layout())) {
         lay->insertWidget(qMax(0, lay->count() - 1), chSemEstoque);
-    else
+        lay->insertWidget(qMax(0, lay->count() - 1), chUsoLoja);
+    } else {
         chSemEstoque->hide();
+        chUsoLoja->hide();
+    }
     ui->tabWidget->setCurrentIndex(0);
     connect(ui->Btn_Cancelar, &QPushButton::clicked, this, &QWidget::close);
 
@@ -92,6 +98,8 @@ void InserirProduto::preencherCamposProduto(const ProdutoDTO &prod)
     ui->Check_Nf->setChecked(prod.nf);
     if (chSemEstoque)
         chSemEstoque->setChecked(prod.semControleEstoque);
+    if (chUsoLoja)
+        chUsoLoja->setChecked(prod.usoLoja);
     ui->Ledit_PrecoFornecedor->setText(prod.precoFornecedor > 0 ? portugues.toString(prod.precoFornecedor, 'f', 2) : "");
     ui->Ledit_PercentualLucro->setText(portugues.toString(prod.percentLucro));
     ui->Ledit_NCM->setText(prod.ncm);
@@ -143,6 +151,7 @@ void InserirProduto::on_Btn_Enviar_clicked()
     p.codigoBarras = ui->Ledit_CBarras->text();
     p.nf = ui->Check_Nf->isChecked();
     p.semControleEstoque = chSemEstoque && chSemEstoque->isChecked();
+    p.usoLoja = chUsoLoja && chUsoLoja->isChecked();
     p.uCom = ui->CBox_UCom->currentText();
     p.precoFornecedor = portugues.toDouble(ui->Ledit_PrecoFornecedor->text());
     p.percentLucro = portugues.toDouble(ui->Ledit_PercentualLucro->text());

@@ -457,6 +457,39 @@ void TestLanches::produto_marcado_sem_controle_de_estoque_nao_move_estoque_mesmo
     QCOMPARE(servico.getProduto(id).quantidade, 100.0);
 }
 
+void TestLanches::produto_de_uso_da_loja_e_gravado_e_lido_sem_mudar_o_estoque()
+{
+    Produto_Service servico;
+    ProdutoDTO p;
+    p.quantidade = 50;
+    p.descricao = "SACOLA USO DA LOJA";
+    p.preco = 0.1;
+    p.codigoBarras = "7898765439008";
+    p.nf = false;
+    p.uCom = "UN";
+    p.precoFornecedor = 0.05;
+    p.percentLucro = 100;
+    p.ncm = "39232100";
+    p.csosn = "102";
+    p.pis = "49";
+    p.usoLoja = true;
+    QVERIFY(servico.inserir(p).ok);
+    const qlonglong id = servico.getProdutoPeloCodBarras("7898765439008").id;
+    QVERIFY(id > 0);
+    QVERIFY(servico.getProduto(id).usoLoja);
+    QVERIFY(servico.getProdutoPeloCodBarras("7898765439008").usoLoja);
+    QVERIFY(!servico.getProduto(id).semControleEstoque);          // uso da loja não é "sem controle": o estoque continua andando
+    QVERIFY(servico.updateDiminuirQuantidadeProduto(id, 5).ok);
+    QCOMPARE(servico.getProduto(id).quantidade, 45.0);
+
+    // alterar pelo cadastro (DTO completo) mantém e desmarca
+    ProdutoDTO alterado = servico.getProduto(id);
+    QVERIFY(alterado.usoLoja);
+    alterado.usoLoja = false;
+    QVERIFY(servico.alterarVerificarCodigoBarras(alterado, alterado.codigoBarras, QString::number(id)).ok);
+    QVERIFY(!servico.getProduto(id).usoLoja);
+}
+
 void TestLanches::pdf_dos_produtos_com_codigo_interno_e_gerado_com_barras_e_paginas()
 {
     QCOMPARE(CatalogoBarras::paginas(0), 1);

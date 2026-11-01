@@ -418,3 +418,29 @@ describe('produto marcado "sem controle de estoque" (ovos)', () => {
     expect((await obter(cookie, '/api/painel/produtos?id=62')).produto.semControleEstoque).toBe(false);
   });
 });
+
+describe('produto marcado "uso da loja"', () => {
+  it('sai dos números de estoque, aparece em seção própria e continua com o estoque controlado', async () => {
+    await carregarDados();
+    const L = loja.id;
+    await pool.query(
+      `INSERT INTO espelho.produtos (loja_id, id, descricao, quantidade, preco, codigo_barras, preco_fornecedor, uso_loja) VALUES
+         ($1, 70, 'SACOLA PLASTICA', '500', '0.10', '7898000000042', '0.05', true),
+         ($1, 71, 'DESINFETANTE USO LOJA', '0', '9.00', '7898000000059', '6.00', true),
+         ($1, 72, 'PRODUTO NORMAL DE NOVO', '4', '5.00', '7898000000066', '3.00', false)`, [L]);
+    const { cookie } = await sessao();
+
+    const e = await obter(cookie, '/api/painel/estoque?limite=100000');
+    expect(e.resumo.produtos).toBe(4);                              // CAFÉ, SEM ESTOQUE, PARADO + PRODUTO NORMAL; os de uso da loja não contam
+    expect(e.resumo.valorACusto).toBe(36 + 20 + 12);                 // + 4 x 3,00; a sacola (25,00) fica de fora
+    for (const lista of [e.baixoEstoque, e.parados60Dias, e.maisVendidos30Dias])
+      expect(lista.map((x) => x.descricao)).not.toContain('SACOLA PLASTICA');
+    expect(e.baixoEstoque.map((x) => x.descricao)).not.toContain('DESINFETANTE USO LOJA');
+    expect(e.usoLoja.produtos).toBe(2);
+    expect(e.usoLoja.itens.map((x) => x.descricao)).toEqual(['DESINFETANTE USO LOJA', 'SACOLA PLASTICA']);
+    expect(e.usoLoja.itens[1]).toMatchObject({ quantidade: 500, preco: 0.1 });
+    expect(e.semControle.itens.map((x) => x.descricao)).not.toContain('SACOLA PLASTICA');   // não vai para a seção dos ovos
+    expect((await obter(cookie, '/api/painel/produtos?id=70')).produto).toMatchObject({ usoLoja: true, lanche: false });
+    expect((await obter(cookie, '/api/painel/produtos?id=72')).produto.usoLoja).toBe(false);
+  });
+});
