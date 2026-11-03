@@ -2,6 +2,7 @@
 #include "services/empresa_service.h"
 #include "util/icones.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDateEdit>
 #include <QDialogButtonBox>
@@ -105,9 +106,15 @@ NovaContaDialog::NovaContaDialog(const ContaPagarDTO &conta, QWidget *parent)
     form->addRow("Fornecedor", edFornecedor);
     form->addRow("Categoria", cbCategoria);
     form->addRow("Documento", edDocumento);
-    form->addRow("Valor total *", spValor);
+    lblValor = new QLabel("Valor total *");
+    form->addRow(lblValor, spValor);
     form->addRow(edicao ? "Vencimento *" : "1º vencimento *", dtVencimento);
     form->addRow("Parcelas", spParcelas);
+    chValorPorParcela = new QCheckBox("O valor informado é de cada parcela (conta recorrente)");
+    chValorPorParcela->setToolTip("Marque para contas que se repetem com o mesmo valor, como salário ou aluguel:\n"
+                                  "o valor digitado é lançado em todas as parcelas, sem dividir.");
+    chValorPorParcela->setVisible(!edicao);
+    form->addRow(QString(), chValorPorParcela);
     form->addRow("Intervalo", cbPeriodicidade);
     form->addRow("Observação", edObservacao);
 
@@ -136,6 +143,7 @@ NovaContaDialog::NovaContaDialog(const ContaPagarDTO &conta, QWidget *parent)
     connect(dtVencimento, &QDateEdit::dateChanged, this, &NovaContaDialog::atualizarPrevia);
     connect(spParcelas, &QSpinBox::valueChanged, this, &NovaContaDialog::atualizarPrevia);
     connect(cbPeriodicidade, &QComboBox::currentIndexChanged, this, &NovaContaDialog::atualizarPrevia);
+    connect(chValorPorParcela, &QCheckBox::toggled, this, &NovaContaDialog::atualizarPrevia);
     atualizarPrevia();
     edDescricao->setFocus();
 }
@@ -155,7 +163,9 @@ ContaPagarDTO NovaContaDialog::conta() const
     c.fornecedor = edFornecedor->text().trimmed();
     c.categoria = cbCategoria->currentText().trimmed();
     c.documento = edDocumento->text().trimmed();
-    c.valor = spValor->value();
+    // "valor de cada parcela": o serviço divide o total, então entregamos valor × parcelas (divide exato)
+    c.valor = chValorPorParcela->isChecked() && idConta <= 0 ? qRound64(spValor->value() * 100.0) * spParcelas->value() / 100.0
+                                                              : spValor->value();
     c.vencimento = dtVencimento->date().toString(Qt::ISODate);
     c.observacao = edObservacao->toPlainText().trimmed();
     return c;
@@ -164,11 +174,13 @@ ContaPagarDTO NovaContaDialog::conta() const
 void NovaContaDialog::atualizarPrevia()
 {
     const int n = spParcelas->value();
+    const bool porParcela = chValorPorParcela->isChecked();
+    lblValor->setText(porParcela ? "Valor da parcela *" : "Valor total *");
     if (idConta > 0 || n <= 1 || spValor->value() <= 0) {
         lblPrevia->setVisible(false);
         return;
     }
-    const QList<double> valores = ContasPagar_service::dividirValor(spValor->value(), n);
+    const QList<double> valores = ContasPagar_service::dividirValor(conta().valor, n);
     QStringList datas;
     const QDate primeiro = dtVencimento->date();
     for (int i = 0; i < qMin(n, 6); ++i) {

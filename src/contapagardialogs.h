@@ -5,6 +5,7 @@
 #include "dto/ContasPagar_dto.h"
 #include "services/contaspagar_service.h"
 
+class QCheckBox;
 class QComboBox;
 class QDateEdit;
 class QDoubleSpinBox;
@@ -35,6 +36,8 @@ private:
     QDoubleSpinBox *spValor;
     QDateEdit *dtVencimento;
     QSpinBox *spParcelas;
+    QCheckBox *chValorPorParcela;
+    QLabel *lblValor;
     QComboBox *cbPeriodicidade;
     QPlainTextEdit *edObservacao;
     QLabel *lblPrevia;
