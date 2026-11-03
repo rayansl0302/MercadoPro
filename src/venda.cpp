@@ -2,6 +2,7 @@
 #include "seletormaquinacartao.h"
 #include <QComboBox>
 #include <QLabel>
+#include <QScrollArea>
 #include <QVBoxLayout>
 #include "util/tema.h"
 #include "operadores.h"
@@ -355,6 +356,25 @@ venda::venda(QWidget *parent) :
     ui->lbl_taxa->setToolTip(QStringLiteral("Custo da loja: não é somada ao valor, o cliente paga o preço da gôndola."));
     seletorMaquina = new SeletorMaquinaCartao(cbMaquina, lblMaquina, this);
     ui->Ledit_Taxa->setReadOnly(seletorMaquina->temMaquinas());   // com máquinas cadastradas, a taxa vem do cadastro
+    ui->frame_Taxa->setMaximumWidth(QWIDGETSIZE_MAX);               // o nome da máquina não pode ser cortado
+    ui->lbl_pag_titulo->setWordWrap(true);
+
+    // Fonte/escala maiores deixavam os cartões do pagamento altos demais e o conteúdo era cortado ou sobreposto.
+    // A página passa a ficar dentro de uma área de rolagem e cada cartão cresce até caber o que tem dentro.
+    {
+        const int posicao = ui->stack_Pages->indexOf(ui->page_Pagamento);
+        ui->stack_Pages->removeWidget(ui->page_Pagamento);
+        rolagemPagamento = new QScrollArea;
+        rolagemPagamento->setObjectName("rolagemPagamento");
+        rolagemPagamento->setFrameShape(QFrame::NoFrame);
+        rolagemPagamento->setWidgetResizable(true);
+        rolagemPagamento->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        rolagemPagamento->setStyleSheet("QScrollArea#rolagemPagamento { background: transparent; }");
+        rolagemPagamento->viewport()->setAutoFillBackground(false);
+        ui->page_Pagamento->setAutoFillBackground(false);
+        rolagemPagamento->setWidget(ui->page_Pagamento);
+        ui->stack_Pages->insertWidget(posicao, rolagemPagamento);
+    }
     connect(seletorMaquina, &SeletorMaquinaCartao::escolhaMudou, this, [this]() {
         const int forma = ui->CBox_FormaPagamento->currentIndex();
         if (forma == 2)
@@ -663,6 +683,7 @@ void venda::descontoTaxa()
 void venda::on_CBox_FormaPagamento_activated(int index)
 {
     seletorMaquina->mostrar(index == 2 || index == 3);
+    QTimer::singleShot(0, this, [this]() { igualarCartoesPagamento(); });   // a máquina e a taxa mudam a altura do cartão
 
     switch (index) {
     case 0: // dinheiro
@@ -970,8 +991,12 @@ void venda::igualarCartoesPagamento()
     if (ui->hl_p2->spacing() != espaco)
         ui->hl_p2->setSpacing(espaco);
     const QMargins margem = ui->hl_p2->contentsMargins();
-    const int disponivel = ui->page_Pagamento->height() - margem.top() - margem.bottom() - espaco;
-    const int altura = qMax(160, disponivel / 2);
+    const int disponivel = rolagemPagamento->viewport()->height() - margem.top() - margem.bottom() - espaco;
+    int altura = qMax(160, disponivel / 2);
+    // cada cartão precisa ao menos do que tem dentro (fonte maior, máquina e taxa no cartão...)
+    for (QWidget *cartao : {static_cast<QWidget *>(ui->frame_Campos), static_cast<QWidget *>(ui->frame_Resumo),
+                            static_cast<QWidget *>(ui->frame_Pagar), static_cast<QWidget *>(ui->frame_Troco)})
+        altura = qMax(altura, cartao->minimumSizeHint().height());
     if (ui->frame_Campos->height() == altura && ui->frame_Pagar->height() == altura)
         return;
     ui->frame_Campos->setFixedHeight(altura);

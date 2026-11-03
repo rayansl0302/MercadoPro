@@ -95,6 +95,8 @@ private slots:
 private:
     // maquininha de cartão: o cliente paga o preço de gôndola, a taxa da máquina escolhida é custo da loja
     class SeletorMaquinaCartao *seletorMaquina = nullptr;
+    // a tela de pagamento rola quando a fonte/escala deixa os cartões maiores que a janela
+    class QScrollArea *rolagemPagamento = nullptr;
     void mostrarTaxaMaquina(const QString &forma, double taxaPadrao);
     QSqlQueryModel *modeloProdutos = new QSqlQueryModel;
     QStandardItemModel *modeloSelecionados = new QStandardItemModel;
