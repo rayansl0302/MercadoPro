@@ -503,16 +503,16 @@ describe('produto para a etiqueta de balança', () => {
          ($1, 80, 'QUEIJO MUSSARELA', '10', '39.90', '4521', 'KG'),
          ($1, 81, 'DUPLICADO A', '1', '5.00', '9999', 'UN'),
          ($1, 82, 'DUPLICADO B', '1', '6.00', '9999', 'UN')`, [L]);
-    const { cookie } = await sessao();
-    const ok = await obter(cookie, '/api/painel/balanca/produto?codigo=4521');
+    const ok = (await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=4521' })).json();
     expect(ok.produto).toEqual({ id: 80, descricao: 'QUEIJO MUSSARELA', codigoBarras: '4521', unidade: 'KG', precoKg: 39.9 });
-    expect((await app.inject({ method: 'GET', url: '/api/painel/balanca/produto?codigo=000', headers: { cookie } })).statusCode).toBe(404);
-    expect((await app.inject({ method: 'GET', url: '/api/painel/balanca/produto?codigo=9999', headers: { cookie } })).statusCode).toBe(409);
-    expect((await app.inject({ method: 'GET', url: '/api/painel/balanca/produto', headers: { cookie } })).statusCode).toBe(422);
+    expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=000' })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=9999' })).statusCode).toBe(409);
+    expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto' })).statusCode).toBe(422);
   });
 
-  it('exige login', async () => {
-    const r = await app.inject({ method: 'GET', url: '/api/painel/balanca/produto?codigo=1' });
-    expect(r.statusCode).toBe(401);
+  it('é aberta (sem login), mas o resto do painel continua exigindo', async () => {
+    expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=1' })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'GET', url: '/api/painel/estoque' })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/api/painel/balanca/produto?codigo=1' })).statusCode).toBe(404);
   });
 });

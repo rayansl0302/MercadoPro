@@ -183,6 +183,29 @@ export function criarApp({ pool, config }) {
     });
   }
 
+  // ---- etiqueta de balança (/balanca): rota ABERTA, sem login, de propósito (só leitura; devolve apenas
+  // id, nome, unidade e preço de UM produto achado pelo código de barras exato; nada de custo, estoque ou vendas)
+  const tentativas = new Map();   // ip -> { inicio, n }: limite simples contra varredura do cadastro
+  app.get('/api/publico/balanca/produto', async (req) => {
+    const agora = Date.now();
+    const t = tentativas.get(req.ip);
+    if (!t || agora - t.inicio > 60000) tentativas.set(req.ip, { inicio: agora, n: 1 });
+    else if (++t.n > 60) throw new ErroHttp(429, 'Muitas consultas seguidas. Aguarde um minuto.');
+    if (tentativas.size > 5000) for (const [ip, v] of tentativas) if (agora - v.inicio > 60000) tentativas.delete(ip);
+    const q = z.object({ codigo: z.string().trim().min(1).max(50) }).parse(req.query ?? {});
+    const l = await pool.query('SELECT id FROM painel.lojas WHERE ativa ORDER BY id LIMIT 1');
+    if (!l.rowCount) throw new ErroHttp(404, 'Nenhuma loja cadastrada.');
+    const r = await pool.query(
+      `SELECT id, descricao, codigo_barras, un_comercial, preco FROM espelho.produtos
+       WHERE loja_id = $1 AND codigo_barras = $2 ORDER BY id LIMIT 2`,
+      [l.rows[0].id, q.codigo],
+    );
+    if (!r.rowCount) throw new ErroHttp(404, 'Produto não encontrado com esse código.');
+    if (r.rowCount > 1) throw new ErroHttp(409, 'Há mais de um produto com esse código de barras: corrija o cadastro na loja.');
+    const x = r.rows[0];
+    return { produto: { id: Number(x.id), descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, precoKg: Math.round(Number(x.preco ?? 0) * 100) / 100 } };
+  });
+
   app.get('/saude', async () => ({ ok: true }));
   return app;
 }

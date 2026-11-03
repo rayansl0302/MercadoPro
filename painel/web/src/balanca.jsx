@@ -130,7 +130,7 @@ export function Balanca() {
     if (!c) { setErro('Digite o código do produto.'); return; }
     setBuscando(true); setErro('');
     try {
-      const r = await api.get('/api/painel/balanca/produto', { codigo: c });
+      const r = await api.get('/api/publico/balanca/produto', { codigo: c });
       setProduto(r.produto);
       setPasso(2);
     } catch (x) { setErro(x.message); } finally { setBuscando(false); }
