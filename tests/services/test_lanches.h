@@ -29,6 +29,7 @@ private slots:
     void cardapio_do_usuario_e_interpretado_e_arquivo_quebrado_nao_derruba();
     void produto_marcado_sem_controle_de_estoque_nao_move_estoque_mesmo_fora_da_faixa_de_lanches();
     void produto_de_uso_da_loja_e_gravado_e_lido_sem_mudar_o_estoque();
+    void produto_de_balanca_e_gravado_lido_e_listado_so_os_marcados();
     void pdf_dos_produtos_com_codigo_interno_e_gerado_com_barras_e_paginas();
     void lista_de_codigos_internos_traz_tudo_que_nao_e_gtin_valido();
 };

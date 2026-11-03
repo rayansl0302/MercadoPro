@@ -2283,6 +2283,32 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 27:
+        {
+            // versao 28: produto de balança (vendido por peso). Marca quais produtos entram no PDF do balcão.
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 28", dbSchemaVersion};
+            }
+            QSqlQuery query(db);
+            if (!query.exec("ALTER TABLE produtos ADD COLUMN balanca BOOLEAN NOT NULL DEFAULT false")) {
+                qDebug() << "Erro migracao 28:" << query.lastError().text();
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro na migracao 28 (produto de balanca)", dbSchemaVersion};
+            }
+            if (!setSchemaVersion(28)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 28", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 28", dbSchemaVersion};
+            }
+            dbSchemaVersion = 28;
+            qDebug() << "Migracao para versao 28 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;

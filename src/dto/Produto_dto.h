@@ -14,6 +14,8 @@ struct ProdutoDTO {
     bool semControleEstoque = false;
     // uso da loja (material de limpeza, sacolas...): o painel online não soma o produto nos números de estoque
     bool usoLoja = false;
+    // produto de balança (vendido por peso): entra na lista impressa para o balcão (Exportar > Produtos de balança)
+    bool balanca = false;
     QString uCom;
     double precoFornecedor;
     double percentLucro;

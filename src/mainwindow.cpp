@@ -722,7 +722,28 @@ void MainWindow::exportarProdutosCodigoInterno()
                                  "Todos os produtos têm código de barras de embalagem (EAN/GTIN); não há código interno para listar.");
         return;
     }
-    QMessageBox escolha(QMessageBox::Question, "Produtos com código interno",
+    exportarCatalogoPdf(lista, "Produtos com código interno", "produtos-codigo-interno",
+                        "Imprima e deixe com o operador do caixa.");
+}
+
+// PDF dos produtos marcados "de balança": nome, preço e código de barras para o balcão (leitor ou digitação)
+void MainWindow::exportarProdutosBalanca()
+{
+    Produto_Service produtos;
+    const QList<ProdutoDTO> lista = produtos.listarDeBalanca();
+    if (lista.isEmpty()) {
+        QMessageBox::information(this, "Produtos de balança",
+                                 "Nenhum produto está marcado como \"Produto de balança\".\n\nMarque em Alterar produto (ou ao cadastrar) os produtos vendidos por peso.");
+        return;
+    }
+    exportarCatalogoPdf(lista, "Produtos de balança", "produtos-balanca",
+                        "Imprima e deixe no balcão para achar o código sem procurar no sistema.");
+}
+
+void MainWindow::exportarCatalogoPdf(const QList<ProdutoDTO> &lista, const QString &titulo, const QString &arquivoBase,
+                                     const QString &textoFinal)
+{
+    QMessageBox escolha(QMessageBox::Question, titulo,
                         QStringLiteral("Como deseja o PDF dos %1 produto(s)?\n\n• Cartões: um cartão grande por produto (14 por página).\n• Lista: uma linha por produto, mais compacta (25 por página).").arg(lista.size()),
                         QMessageBox::NoButton, this);
     auto *botaoCartoes = escolha.addButton("Cartões", QMessageBox::AcceptRole);
@@ -734,8 +755,8 @@ void MainWindow::exportarProdutosCodigoInterno()
     const CatalogoBarras::Formato formato = escolha.clickedButton() == botaoLista ? CatalogoBarras::Formato::Lista : CatalogoBarras::Formato::Cartoes;
 
     const QString padrao = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
-            + (formato == CatalogoBarras::Formato::Lista ? "/produtos-codigo-interno-lista.pdf" : "/produtos-codigo-interno.pdf");
-    QString caminho = QFileDialog::getSaveFileName(this, "Salvar o PDF dos produtos com código interno", padrao, "PDF (*.pdf)");
+            + "/" + arquivoBase + (formato == CatalogoBarras::Formato::Lista ? "-lista.pdf" : ".pdf");
+    QString caminho = QFileDialog::getSaveFileName(this, "Salvar o PDF: " + titulo, padrao, "PDF (*.pdf)");
     if (caminho.isEmpty())
         return;
     if (!caminho.endsWith(".pdf", Qt::CaseInsensitive))
@@ -747,14 +768,14 @@ void MainWindow::exportarProdutosCodigoInterno()
     const QString empresa = Config_service().carregarTudo().nomeEmpresa;
 
     QString erro;
-    if (!CatalogoBarras::gerarPdf(caminho, "Produtos com código interno", empresa, itens, &erro, formato)) {
-        QMessageBox::warning(this, "Produtos com código interno", erro);
+    if (!CatalogoBarras::gerarPdf(caminho, titulo, empresa, itens, &erro, formato)) {
+        QMessageBox::warning(this, titulo, erro);
         return;
     }
     QDesktopServices::openUrl(QUrl::fromLocalFile(caminho));
-    QMessageBox::information(this, "Produtos com código interno",
-                             QStringLiteral("PDF gerado com %1 produto(s) em %2 página(s).\nImprima e deixe com o operador do caixa.")
-                                 .arg(lista.size()).arg(CatalogoBarras::paginas(lista.size(), formato)));
+    QMessageBox::information(this, titulo,
+                             QStringLiteral("PDF gerado com %1 produto(s) em %2 página(s).\n%3")
+                                 .arg(lista.size()).arg(CatalogoBarras::paginas(lista.size(), formato)).arg(textoFinal));
 }
 
 void MainWindow::backupClicked()
@@ -840,6 +861,8 @@ void MainWindow::montarMenuCaixa()
     // Exportar > produtos com código de barras gerado pelo sistema (PDF para o operador de caixa)
     ui->menuExportar->addAction(QStringLiteral("Produtos com código interno (PDF para o caixa)..."), this,
                                 [this]() { exportarProdutosCodigoInterno(); });
+    ui->menuExportar->addAction(QStringLiteral("Produtos de balança (PDF para o balcão)..."), this,
+                                [this]() { exportarProdutosBalanca(); });
 
     // Ajuda > Verificar atualizações (mostra a versão instalada)
     ui->menuAjuda->addSeparator();

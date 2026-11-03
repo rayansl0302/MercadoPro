@@ -66,6 +66,7 @@ public:
   // true se a venda/devolução não deve mexer no estoque: lanche (código 200-500) ou produto marcado "sem controle de estoque"
   bool semControleDeEstoque(qlonglong idprod);
   QList<ProdutoDTO> listarComCodigoInterno();
+  QList<ProdutoDTO> listarDeBalanca();
   ProdutoDTO getProduto(qlonglong id);
   ProdutoDTO getProdutoPeloCodBarras(const QString &codigo);
   ProdutoDTO getProdutoPelaDescricao(const QString &descricao);

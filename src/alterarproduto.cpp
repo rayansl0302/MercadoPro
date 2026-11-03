@@ -27,10 +27,14 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     chUsoLoja = new QCheckBox(QStringLiteral("Produto de uso da loja (limpeza, sacolas...)"), ui->groupBox->parentWidget());
     chUsoLoja->setToolTip(QStringLiteral("Marcado: o painel online não soma o produto no valor do estoque; ele aparece numa seção separada."));
     chUsoLoja->setGeometry(chSemEstoque->x(), chSemEstoque->geometry().bottom() + 6, chSemEstoque->width(), 24);
+    // produto de balança (vendido por peso): entra no PDF para o balcão
+    chBalanca = new QCheckBox(QStringLiteral("Produto de balança (vendido por peso)"), ui->groupBox->parentWidget());
+    chBalanca->setToolTip(QStringLiteral("Marcado: o produto sai na lista impressa para o balcão (menu Exportar > Produtos de balança)."));
+    chBalanca->setGeometry(chUsoLoja->x(), chUsoLoja->geometry().bottom() + 6, chUsoLoja->width(), 24);
     // dar saída de estoque para uso próprio (consumo, limpeza, quebra...) sem sair do cadastro
     btnSaidaUsoProprio = new QPushButton(QStringLiteral("Saída para uso próprio..."), ui->groupBox->parentWidget());
     btnSaidaUsoProprio->setToolTip(QStringLiteral("Tira uma quantidade do estoque para uso da loja e registra o motivo."));
-    btnSaidaUsoProprio->setGeometry(chUsoLoja->x(), chUsoLoja->geometry().bottom() + 10, 200, 32);
+    btnSaidaUsoProprio->setGeometry(chBalanca->x(), chBalanca->geometry().bottom() + 10, 200, 32);
     connect(btnSaidaUsoProprio, &QPushButton::clicked, this, [this]() {
         SaidaUsoProprioDialog dlg(idAlt.toLongLong(), this);
         if (dlg.exec() == QDialog::Accepted && dlg.registrou()) {
@@ -95,6 +99,8 @@ void AlterarProduto::TrazerInfo(const ProdutoDTO &produto)
         chSemEstoque->setChecked(produto.semControleEstoque);
     if (chUsoLoja)
         chUsoLoja->setChecked(produto.usoLoja);
+    if (chBalanca)
+        chBalanca->setChecked(produto.balanca);
     ui->Ledit_AltPrecoFornecedor->setText(produto.precoFornecedor != 0.0
                                               ? portugues.toString(produto.precoFornecedor, 'f', 2)
                                               : QString());
@@ -120,6 +126,7 @@ void AlterarProduto::TrazerInfo(const ProdutoDTO &produto)
      p.nf = ui->Check_AltNf->isChecked();
      p.semControleEstoque = chSemEstoque && chSemEstoque->isChecked();
      p.usoLoja = chUsoLoja && chUsoLoja->isChecked();
+     p.balanca = chBalanca && chBalanca->isChecked();
      p.precoFornecedor = portugues.toDouble(ui->Ledit_AltPrecoFornecedor->text());
      p.percentLucro = portugues.toDouble(ui->Ledit_AltPercentualLucro->text());
      p.uCom = ui->CBox_AltUCom->currentText();

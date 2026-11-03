@@ -47,11 +47,11 @@ bool Produto_Repository::inserir(const ProdutoDTO &p, QString &erroSQL)
     query.prepare(
         "INSERT INTO produtos "
         "(quantidade, descricao, preco, codigo_barras, nf, un_comercial, "
-        "preco_fornecedor, porcent_lucro, ncm, cest, aliquota_imposto, csosn, pis, sem_controle_estoque, uso_loja, "
+        "preco_fornecedor, porcent_lucro, ncm, cest, aliquota_imposto, csosn, pis, sem_controle_estoque, uso_loja, balanca, "
         "adicionado_em, atualizado_em) "
         "VALUES "
         "(:quantidade, :descricao, :preco, :codigo_barras, :nf, :un_comercial, "
-        ":preco_fornecedor, :porcent_lucro, :ncm, :cest, :aliquota_imposto, :csosn, :pis, :sem_controle_estoque, :uso_loja, "
+        ":preco_fornecedor, :porcent_lucro, :ncm, :cest, :aliquota_imposto, :csosn, :pis, :sem_controle_estoque, :uso_loja, :balanca, "
         ":adicionadoem, :atualizadoem)"
         );
 
@@ -70,6 +70,7 @@ bool Produto_Repository::inserir(const ProdutoDTO &p, QString &erroSQL)
     query.bindValue(":pis", p.pis);
     query.bindValue(":sem_controle_estoque", p.semControleEstoque);
     query.bindValue(":uso_loja", p.usoLoja);
+    query.bindValue(":balanca", p.balanca);
     query.bindValue(":adicionadoem", dataAgora);
     query.bindValue(":atualizadoem", dataAgora);
 
@@ -245,6 +246,7 @@ bool Produto_Repository::alterar(
             pis = :pis,
             sem_controle_estoque = :semcontrole,
             uso_loja = :usoloja,
+            balanca = :balanca,
             atualizado_em = :atualizadoem
         WHERE id = :id
     )");
@@ -265,6 +267,7 @@ bool Produto_Repository::alterar(
     query.bindValue(":pis", p.pis);
     query.bindValue(":semcontrole", p.semControleEstoque);
     query.bindValue(":usoloja", p.usoLoja);
+    query.bindValue(":balanca", p.balanca);
     query.bindValue(":atualizadoem", dataAgora);
 
 
@@ -346,7 +349,7 @@ ProdutoDTO Produto_Repository::getProduto(qlonglong id){
 
     QSqlQuery query(db);
     query.prepare("SELECT quantidade, descricao, preco, codigo_barras, nf, un_comercial, "
-                  "preco_fornecedor, porcent_lucro, ncm, cest, aliquota_imposto, csosn, pis, local, sem_controle_estoque, uso_loja, "
+                  "preco_fornecedor, porcent_lucro, ncm, cest, aliquota_imposto, csosn, pis, local, sem_controle_estoque, uso_loja, balanca, "
                   "adicionado_em, atualizado_em "
                   "FROM produtos WHERE id = :id");
     query.bindValue(":id", id);
@@ -365,6 +368,7 @@ ProdutoDTO Produto_Repository::getProduto(qlonglong id){
         prod.nf = query.value("nf").toBool();
         prod.semControleEstoque = query.value("sem_controle_estoque").toBool();
         prod.usoLoja = query.value("uso_loja").toBool();
+        prod.balanca = query.value("balanca").toBool();
         prod.percentLucro = query.value("porcent_lucro").toDouble();
         prod.pis = query.value("pis").toString();
         prod.preco = query.value("preco").toDouble();
@@ -408,6 +412,33 @@ QList<ProdutoDTO> Produto_Repository::listarComCodigoInterno(){
     return lista;
 }
 
+QList<ProdutoDTO> Produto_Repository::listarDeBalanca(){
+    QList<ProdutoDTO> lista;
+    if(!DatabaseConnection_service::open()){
+        qDebug() << "db nao aberto ao listarDeBalanca";
+        return lista;
+    }
+    QSqlQuery query(db);
+    query.prepare("SELECT id, descricao, preco, codigo_barras, un_comercial FROM produtos "
+                  "WHERE balanca = :balanca ORDER BY descricao");
+    query.bindValue(":balanca", true);
+    if(!query.exec()){
+        qDebug() << "Query listarDeBalanca falhou";
+        return lista;
+    }
+    while(query.next()){
+        ProdutoDTO p;
+        p.id = query.value("id").toLongLong();
+        p.descricao = query.value("descricao").toString();
+        p.preco = query.value("preco").toDouble();
+        p.codigoBarras = query.value("codigo_barras").toString().trimmed();
+        p.uCom = query.value("un_comercial").toString();
+        p.balanca = true;
+        lista.append(p);
+    }
+    return lista;
+}
+
 ProdutoDTO Produto_Repository::getProdutoPeloCodBarras(const QString &codigo){
     ProdutoDTO prod;
     if(!DatabaseConnection_service::open()){
@@ -432,6 +463,7 @@ ProdutoDTO Produto_Repository::getProdutoPeloCodBarras(const QString &codigo){
         prod.nf = query.value("nf").toBool();
         prod.semControleEstoque = query.value("sem_controle_estoque").toBool();
         prod.usoLoja = query.value("uso_loja").toBool();
+        prod.balanca = query.value("balanca").toBool();
         prod.uCom = query.value("un_comercial").toString();
         prod.precoFornecedor = query.value("preco_fornecedor").toDouble();
         prod.percentLucro = query.value("porcent_lucro").toDouble();

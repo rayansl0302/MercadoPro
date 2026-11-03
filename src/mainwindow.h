@@ -145,6 +145,9 @@ private slots:
     void nuvemClicked();
     void backupClicked();
     void exportarProdutosCodigoInterno();
+    void exportarProdutosBalanca();
+    void exportarCatalogoPdf(const QList<ProdutoDTO> &lista, const QString &titulo, const QString &arquivoBase,
+                             const QString &textoFinal);
     void atualizarIndicadorNuvem();
     void contasReceberClicked(qlonglong idCliente = 0);
     void contasPagarClicked(const QString &statusInicial = QString());
@@ -193,7 +196,7 @@ private:
     void setarIconesJanela();
     //QModelIndex selected_index;
 
-    const int ultimaVersaoSchema = 27;
+    const int ultimaVersaoSchema = 28;
 
     // operador comum só entra em histórico, cadastro de operadores, configurações e
     // relatórios gerenciais depois de informar o PIN do gerente

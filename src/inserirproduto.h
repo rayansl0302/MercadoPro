@@ -44,6 +44,7 @@ private:
     Ui::InserirProduto *ui;
     class QCheckBox *chSemEstoque = nullptr;
     class QCheckBox *chUsoLoja = nullptr;
+    class QCheckBox *chBalanca = nullptr;
     QSet<QString> generatedNumbers;
     QLocale portugues;
     QSqlDatabase db = QSqlDatabase::database();

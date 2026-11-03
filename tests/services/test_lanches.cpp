@@ -490,6 +490,54 @@ void TestLanches::produto_de_uso_da_loja_e_gravado_e_lido_sem_mudar_o_estoque()
     QVERIFY(!servico.getProduto(id).usoLoja);
 }
 
+void TestLanches::produto_de_balanca_e_gravado_lido_e_listado_so_os_marcados()
+{
+    Produto_Service servico;
+    auto novo = [&](const QString &desc, const QString &codigo, bool balanca) {
+        ProdutoDTO p;
+        p.quantidade = 10;
+        p.descricao = desc;
+        p.preco = 25.0;
+        p.codigoBarras = codigo;
+        p.nf = false;
+        p.uCom = "KG";
+        p.precoFornecedor = 12;
+        p.percentLucro = 100;
+        p.ncm = "08051000";
+        p.csosn = "102";
+        p.pis = "49";
+        p.balanca = balanca;
+        return servico.inserir(p).ok;
+    };
+    QVERIFY(novo("TOMATE BALANCA", "7898765440011", true));
+    QVERIFY(novo("BANANA BALANCA", "7898765440028", true));
+    QVERIFY(novo("ARROZ SACO", "7898765440035", false));
+
+    QVERIFY(servico.getProdutoPeloCodBarras("7898765440011").balanca);
+    QVERIFY(!servico.getProdutoPeloCodBarras("7898765440035").balanca);
+    const qlonglong id = servico.getProdutoPeloCodBarras("7898765440011").id;
+    QVERIFY(servico.getProduto(id).balanca);
+
+    QStringList nomes;
+    for (const ProdutoDTO &p : servico.listarDeBalanca())
+        nomes << p.descricao;
+    QVERIFY(nomes.contains("TOMATE BALANCA"));
+    QVERIFY(nomes.contains("BANANA BALANCA"));
+    QVERIFY(!nomes.contains("ARROZ SACO"));
+    QVERIFY(nomes.indexOf("BANANA BALANCA") < nomes.indexOf("TOMATE BALANCA"));   // por ordem de nome
+
+    // desmarcar tira da lista
+    ProdutoDTO alterado = servico.getProduto(id);
+    alterado.balanca = false;
+    QVERIFY(servico.alterarVerificarCodigoBarras(alterado, alterado.codigoBarras, QString::number(id)).ok);
+    QVERIFY(!servico.getProduto(id).balanca);
+    QStringList depois;
+    for (const ProdutoDTO &p : servico.listarDeBalanca())
+        depois << p.descricao;
+    QVERIFY(!depois.contains("TOMATE BALANCA"));
+    QVERIFY(depois.contains("BANANA BALANCA"));
+}
+
 void TestLanches::pdf_dos_produtos_com_codigo_interno_e_gerado_com_barras_e_paginas()
 {
     QCOMPARE(CatalogoBarras::paginas(0), 1);

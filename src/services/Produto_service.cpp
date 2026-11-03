@@ -273,6 +273,10 @@ QList<ProdutoDTO> Produto_Service::listarComCodigoInterno(){
     return repo.listarComCodigoInterno();
 }
 
+QList<ProdutoDTO> Produto_Service::listarDeBalanca(){
+    return repo.listarDeBalanca();
+}
+
 Produto_Service::Resultado Produto_Service::updateAumentarQuantidadeProduto(qlonglong idprod,
                                                                             double quantia ){
     if(semControleDeEstoque(idprod))

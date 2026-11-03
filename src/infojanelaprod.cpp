@@ -20,6 +20,8 @@ InfoJanelaProd::InfoJanelaProd(QWidget *parent, QString id)
         chSemEstoque->setEnabled(false);
     if (chUsoLoja)
         chUsoLoja->setEnabled(false);
+    if (chBalanca)
+        chBalanca->setEnabled(false);
     ui->Ledit_AltBarras->setReadOnly(true);
     ui->Ledit_AltDesc->setReadOnly(true);
     ui->Ledit_AltQuant->setReadOnly(true);
