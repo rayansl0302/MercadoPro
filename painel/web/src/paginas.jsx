@@ -216,11 +216,32 @@ export function ContasPagar(props) {
 
 function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
   const [status, setStatus] = useState('ABERTA');
-  const r = useDados('/api/painel/contas-pagar', { status, empresa });
+  const [mes, setMes] = useState(() => new Date().toLocaleDateString('sv-SE').slice(0, 7));   // YYYY-MM; '' = todos os meses
+  const periodo = mes ? { de: `${mes}-01`, ate: `${mes}-${String(new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate()).padStart(2, '0')}` } : {};
+  const r = useDados('/api/painel/contas-pagar', { status, empresa, ...periodo });
   const [baixando, setBaixando] = useState(null);
   const [lancando, setLancando] = useState(false);
+  const mudarMes = (delta) => {
+    const [a, m] = mes.split('-').map(Number);
+    const d = new Date(a, m - 1 + delta, 1);
+    setMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  };
+  const mesAtual = new Date().toLocaleDateString('sv-SE').slice(0, 7);
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        {mes ? (
+          <>
+            <button aria-label="Mês anterior" onClick={() => mudarMes(-1)} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-slate-200">‹</button>
+            <input type="month" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5" />
+            <button aria-label="Próximo mês" onClick={() => mudarMes(1)} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-slate-200">›</button>
+            {mes !== mesAtual && <button onClick={() => setMes(mesAtual)} className="rounded-lg px-3 py-1.5 text-marca hover:bg-marca-claro">Mês atual</button>}
+            <button onClick={() => setMes('')} className="rounded-lg px-3 py-1.5 text-slate-600 hover:bg-slate-100">Todos os meses</button>
+          </>
+        ) : (
+          <button onClick={() => setMes(mesAtual)} className="rounded-lg bg-white px-3 py-1.5 text-marca ring-1 ring-marca">Ver só o mês atual</button>
+        )}
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-1 text-sm">
           {[['ABERTA', 'Em aberto'], ['VENCIDA', 'Vencidas'], ['PAGA', 'Pagas'], ['TODAS', 'Todas']].map(([v, t]) => (

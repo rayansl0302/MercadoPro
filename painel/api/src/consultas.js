@@ -343,8 +343,10 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     );
     const porCategoria = await pool.query(
       `SELECT coalesce(nullif(categoria, ''), 'Sem categoria') AS categoria, count(*)::int AS qtd, coalesce(sum(valor), 0) AS total
-       FROM espelho.contas_pagar WHERE loja_id = $1 AND status = 'ABERTA' AND ($2::int IS NULL OR id_empresa = $2) GROUP BY 1 ORDER BY 3 DESC`,
-      [req.loja.id, q.empresa ?? null],
+       FROM espelho.contas_pagar WHERE loja_id = $1 AND status = 'ABERTA' AND ($2::int IS NULL OR id_empresa = $2)
+         AND ($3::date IS NULL OR painel.data_segura(vencimento) >= $3::date) AND ($4::date IS NULL OR painel.data_segura(vencimento) <= $4::date)
+       GROUP BY 1 ORDER BY 3 DESC`,
+      [req.loja.id, q.empresa ?? null, q.de ?? null, q.ate ?? null],
     );
     return {
       hoje: dia,
