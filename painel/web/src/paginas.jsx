@@ -227,21 +227,11 @@ function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
     setMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   };
   const mesAtual = new Date().toLocaleDateString('sv-SE').slice(0, 7);
+  const somaMes = (base, delta) => { const [a, m] = base.split('-').map(Number); const d = new Date(a, m - 1 + delta, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+  const nomeMes = (m) => new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const opcoesMes = [...new Set([...Array.from({ length: 30 }, (_, i) => somaMes(mesAtual, i - 6)), ...(mes ? [mes] : [])])].sort();   // 6 meses atrás até 23 à frente
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        {mes ? (
-          <>
-            <button aria-label="Mês anterior" onClick={() => mudarMes(-1)} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-slate-200">‹</button>
-            <input type="month" value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5" />
-            <button aria-label="Próximo mês" onClick={() => mudarMes(1)} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-slate-200">›</button>
-            {mes !== mesAtual && <button onClick={() => setMes(mesAtual)} className="rounded-lg px-3 py-1.5 text-marca hover:bg-marca-claro">Mês atual</button>}
-            <button onClick={() => setMes('')} className="rounded-lg px-3 py-1.5 text-slate-600 hover:bg-slate-100">Todos os meses</button>
-          </>
-        ) : (
-          <button onClick={() => setMes(mesAtual)} className="rounded-lg bg-white px-3 py-1.5 text-marca ring-1 ring-marca">Ver só o mês atual</button>
-        )}
-      </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-1 text-sm">
           {[['ABERTA', 'Em aberto'], ['VENCIDA', 'Vencidas'], ['PAGA', 'Pagas'], ['TODAS', 'Todas']].map(([v, t]) => (
@@ -256,6 +246,16 @@ function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
             {status === 'ABERTA' && d.porCategoria.length > 0 && (
               <Secao titulo="Em aberto por categoria"><Barras itens={d.porCategoria.map((c) => ({ rotulo: `${c.categoria} (${c.qtd})`, valor: c.total }))} formato={moeda} /></Secao>
             )}
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-slate-600">Mês:</span>
+              <button aria-label="Mês anterior" disabled={!mes} onClick={() => mudarMes(-1)} className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200 disabled:opacity-40">‹</button>
+              <select value={mes} onChange={(e) => setMes(e.target.value)} className="rounded-full border-0 bg-marca px-3 py-1 font-medium capitalize text-white ring-1 ring-marca">
+                <option value="">Todos os meses</option>
+                {opcoesMes.map((m) => <option key={m} value={m}>{nomeMes(m)}{m === mesAtual ? ' (atual)' : ''}</option>)}
+              </select>
+              <button aria-label="Próximo mês" disabled={!mes} onClick={() => mudarMes(1)} className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200 disabled:opacity-40">›</button>
+              {mes !== mesAtual && <button onClick={() => setMes(mesAtual)} className="rounded-full px-3 py-1 text-marca hover:bg-marca-claro">Voltar ao mês atual</button>}
+            </div>
             <Secao titulo="Contas">
               <Tabela linhas={d.contas} vazio="Nenhuma conta nesse filtro." colunas={[
                 { titulo: 'Vencimento', render: (l) => dataBr(l.vencimento) },
