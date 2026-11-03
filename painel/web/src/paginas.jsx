@@ -235,6 +235,16 @@ function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
   const noMesAtual = de === mesAtual.de && ate === mesAtual.ate;
   const filtrando = !noMesAtual || categoria || busca;
   const limpar = () => { setDe(mesAtual.de); setAte(mesAtual.ate); setCategoria(''); setBusca(''); };
+  const irParaMes = (delta) => {
+    const [ano, mm] = (de || mesAtual.de).split('-').map(Number);
+    const alvo = new Date(ano, mm - 1 + delta, 1);
+    const lim = limitesDoMes(`${alvo.getFullYear()}-${String(alvo.getMonth() + 1).padStart(2, '0')}-01`);
+    setDe(lim.de); setAte(lim.ate);
+  };
+  const umMesInteiro = de && ate && de.slice(0, 7) === ate.slice(0, 7) && de.endsWith('-01') && ate === limitesDoMes(de).ate;
+  const rotuloPeriodo = !de && !ate ? 'Todo o período'
+    : umMesInteiro ? new Date(Number(de.slice(0, 4)), Number(de.slice(5, 7)) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    : 'Período personalizado';
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -252,6 +262,11 @@ function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
               <Secao titulo="Em aberto por categoria"><Barras itens={d.porCategoria.map((c) => ({ rotulo: `${c.categoria} (${c.qtd})`, valor: c.total }))} formato={moeda} /></Secao>
             )}
             <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 text-sm ring-1 ring-slate-200">
+              <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+                <button onClick={() => irParaMes(-1)} className="rounded-lg bg-white px-3 py-1.5 font-medium ring-1 ring-slate-300 hover:bg-slate-50">‹ Mês anterior</button>
+                <span className="min-w-[9rem] text-center font-semibold capitalize">{rotuloPeriodo}</span>
+                <button onClick={() => irParaMes(1)} className="rounded-lg bg-white px-3 py-1.5 font-medium ring-1 ring-slate-300 hover:bg-slate-50">Próximo mês ›</button>
+              </div>
               <label className="block"><span className="mb-1 block text-xs text-slate-500">Vencimento de</span><input type="date" value={de} max={ate || undefined} onChange={(e) => setDe(e.target.value)} className="rounded border border-slate-300 px-2 py-1.5" /></label>
               <label className="block"><span className="mb-1 block text-xs text-slate-500">até</span><input type="date" value={ate} min={de || undefined} onChange={(e) => setAte(e.target.value)} className="rounded border border-slate-300 px-2 py-1.5" /></label>
               <label className="block"><span className="mb-1 block text-xs text-slate-500">Tipo</span>
