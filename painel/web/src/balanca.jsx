@@ -43,7 +43,10 @@ function useImpressora() {
       clienteRef.current = null;
       setEstado({ status: 'desconectada', nome: '', modelo: '' });
       const cancelou = /cancel|chosen|no device selected|nenhum/i.test(String(x?.message ?? x));
-      setErro(cancelou ? 'Nenhuma impressora foi escolhida.' : `Não foi possível conectar na impressora: ${x?.message ?? x}`);
+      const porta = via === 'usb' && /failed to open serial port|networkerror|access denied|in use/i.test(String(x?.message ?? x));
+      setErro(cancelou ? 'Nenhuma impressora foi escolhida.'
+        : porta ? 'O Windows não conseguiu abrir a porta USB escolhida. Confira: (1) feche o aplicativo da Niimbot e outras abas que usem a impressora; (2) na lista, escolha a porta que aparece quando a impressora é ligada (Gerenciador de Dispositivos > Portas COM); (3) desligue e ligue a impressora e tente de novo; (4) se nenhuma porta nova aparece, o cabo pode ser só de carga ou falta o driver: use o Bluetooth.'
+        : `Não foi possível conectar na impressora: ${x?.message ?? x}`);
       const tratado = new Error(String(x?.message ?? x));
       tratado.jaTratado = true;   // a mensagem para o operador já foi mostrada
       throw tratado;
