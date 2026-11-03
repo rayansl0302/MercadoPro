@@ -109,6 +109,7 @@ function DetalheVenda({ id, onFechar }) {
             <div className="space-y-1 border-t border-slate-200 pt-2 text-right">
               {v.desconto > 0 && <div>Desconto: {moeda(v.desconto)}</div>}
               {v.taxa > 0 && <div>Taxa: {v.taxa}%</div>}
+              {v.taxa_maquina > 0 && <div className="text-xs text-slate-500">Maquininha{v.maquina ? ` ${v.maquina}` : ''}: taxa {v.taxa_maquina}% · custo {moeda(v.custo_taxa)} (o cliente pagou o preço da gôndola)</div>}
               <div className="text-base font-semibold">Total: {moeda(v.valor_final)}</div>
               {v.forma_pagamento === 'Dinheiro' && <div className="text-xs text-slate-500">Recebido {moeda(v.valor_recebido)} · troco {moeda(v.troco)}</div>}
             </div>

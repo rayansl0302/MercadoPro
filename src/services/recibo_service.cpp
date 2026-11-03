@@ -241,7 +241,8 @@ bool Recibo_service::imprimirCupomPadrao(qlonglong idvenda, QString *erro)
         dados += linha(esquerdaDireita("Recebido (R$)", dinheiro(portugues, venda.valorRecebido)));
         dados += linha(esquerdaDireita("Troco (R$)", dinheiro(portugues, venda.troco)));
     } else if (venda.formaPagamento == "Crédito" || venda.formaPagamento == "Débito") {
-        dados += linha(esquerdaDireita("Taxa (%)", dinheiro(portugues, venda.taxa)));
+        if (venda.taxa > 0)   // vendas antigas, em que a taxa era somada ao valor
+            dados += linha(esquerdaDireita("Taxa (%)", dinheiro(portugues, venda.taxa)));
         dados += linha(esquerdaDireita("Valor final (R$)", dinheiro(portugues, venda.valorFinal)));
     } else if (venda.formaPagamento == "Prazo") {
         dados += linha(esquerdaDireita("Valor final (R$)", dinheiro(portugues, venda.valorFinal)));
@@ -260,7 +261,8 @@ bool Recibo_service::imprimirCupomPadrao(qlonglong idvenda, QString *erro)
                 dados += linha(esquerdaDireita("Recebido (R$)", dinheiro(portugues, entrada.valorRecebido)));
                 dados += linha(esquerdaDireita("Troco (R$)", dinheiro(portugues, entrada.troco)));
             } else if (entrada.formaPagamento == "Crédito" || entrada.formaPagamento == "Débito") {
-                dados += linha(esquerdaDireita("Taxa (%)", dinheiro(portugues, entrada.taxa)));
+                if (entrada.taxa > 0)
+                    dados += linha(esquerdaDireita("Taxa (%)", dinheiro(portugues, entrada.taxa)));
                 dados += linha(esquerdaDireita("Valor final (R$)", dinheiro(portugues, entrada.valorFinal)));
             }
             devendo -= entrada.total;

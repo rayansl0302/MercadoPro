@@ -41,7 +41,8 @@
         {"n": "total", "t": "dec"}, {"n": "forma_pagamento", "t": "text"}, {"n": "valor_recebido", "t": "dec"},
         {"n": "troco", "t": "dec"}, {"n": "taxa", "t": "dec"}, {"n": "valor_final", "t": "dec"},
         {"n": "desconto", "t": "dec"}, {"n": "esta_pago", "t": "bool"}, {"n": "id_cliente", "t": "int"},
-        {"n": "id_caixa", "t": "int"}, {"n": "id_operador_sessao", "t": "int"}, {"n": "id_empresa", "t": "int"}
+        {"n": "id_caixa", "t": "int"}, {"n": "id_operador_sessao", "t": "int"}, {"n": "id_empresa", "t": "int"},
+        {"n": "id_maquina", "t": "int"}, {"n": "taxa_maquina", "t": "dec"}
       ]
     },
     "produtos_vendidos": {
@@ -57,7 +58,7 @@
         {"n": "id", "t": "int"}, {"n": "id_venda", "t": "int"}, {"n": "total", "t": "dec"},
         {"n": "data_hora", "t": "ts"}, {"n": "forma_pagamento", "t": "text"}, {"n": "valor_final", "t": "dec"},
         {"n": "taxa", "t": "real"}, {"n": "desconto", "t": "dec"}, {"n": "id_caixa", "t": "int"},
-        {"n": "id_operador_sessao", "t": "int"}
+        {"n": "id_operador_sessao", "t": "int"}, {"n": "id_maquina", "t": "int"}, {"n": "taxa_maquina", "t": "dec"}
       ]
     },
     "caixas": {
@@ -130,6 +131,13 @@
         {"n": "parcela", "t": "int"}, {"n": "total_parcelas", "t": "int"}, {"n": "grupo", "t": "text"},
         {"n": "observacao", "t": "text"}, {"n": "motivo_cancelamento", "t": "text"},
         {"n": "id_operador_sessao", "t": "int"}, {"n": "criado_em", "t": "ts"}
+      ]
+    },
+    "maquinas_cartao": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "nome", "t": "text"}, {"n": "taxa_debito", "t": "dec"},
+        {"n": "taxa_credito", "t": "dec"}, {"n": "ativa", "t": "bool"}, {"n": "criada_em", "t": "ts"}
       ]
     },
     "saidas_uso_proprio": {

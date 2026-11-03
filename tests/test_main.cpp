@@ -22,6 +22,7 @@
 #include "services/test_nuvem.h"
 #include "services/test_lanches.h"
 #include "services/test_saidausoproprio.h"
+#include "services/test_maquinacartao.h"
 #include "services/test_backup.h"
 #include "services/test_tema.h"
 #include <QSqlDatabase>
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
     status |= QTest::qExec(new TestNuvem, argc, argv);
     status |= QTest::qExec(new TestLanches, argc, argv);
     status |= QTest::qExec(new TestSaidaUsoProprio, argc, argv);
+    status |= QTest::qExec(new TestMaquinaCartao, argc, argv);
     status |= QTest::qExec(new TestBackup, argc, argv);
     status |= QTest::qExec(new TestTema, argc, argv);
 

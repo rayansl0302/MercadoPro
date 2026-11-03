@@ -1,4 +1,8 @@
 #include "venda.h"
+#include "seletormaquinacartao.h"
+#include <QComboBox>
+#include <QLabel>
+#include <QVBoxLayout>
 #include "util/tema.h"
 #include "operadores.h"
 #include "services/contasreceber_service.h"
@@ -336,6 +340,28 @@ venda::venda(QWidget *parent) :
     // payment validators
     QDoubleValidator *validador = new QDoubleValidator(0.0, 9999.99, 2, this);
     ui->Ledit_Taxa->setValidator(validador);
+
+    // maquininha de cartão: combo acima da taxa, que passa a ser só a taxa da máquina (custo, não acréscimo)
+    auto *cbMaquina = new QComboBox(ui->frame_Taxa);
+    cbMaquina->setMinimumHeight(46);
+    cbMaquina->setStyleSheet("font-size: 15px; padding: 4px 8px;");
+    auto *lblMaquina = new QLabel(QStringLiteral("Maquininha"), ui->frame_Taxa);
+    lblMaquina->setStyleSheet(ui->lbl_taxa->styleSheet());
+    if (auto *vl = qobject_cast<QVBoxLayout *>(ui->frame_Taxa->layout())) {
+        vl->insertWidget(0, lblMaquina);
+        vl->insertWidget(1, cbMaquina);
+    }
+    ui->lbl_taxa->setText(QStringLiteral("Taxa da máquina (%)"));
+    ui->lbl_taxa->setToolTip(QStringLiteral("Custo da loja: não é somada ao valor, o cliente paga o preço da gôndola."));
+    seletorMaquina = new SeletorMaquinaCartao(cbMaquina, lblMaquina, this);
+    ui->Ledit_Taxa->setReadOnly(seletorMaquina->temMaquinas());   // com máquinas cadastradas, a taxa vem do cadastro
+    connect(seletorMaquina, &SeletorMaquinaCartao::escolhaMudou, this, [this]() {
+        const int forma = ui->CBox_FormaPagamento->currentIndex();
+        if (forma == 2)
+            mostrarTaxaMaquina("Crédito", configDTO.taxaCreditoFinanceiro);
+        else if (forma == 3)
+            mostrarTaxaMaquina("Débito", configDTO.taxaDebitoFinanceiro);
+    });
     ui->Ledit_Recebido->setValidator(new QDoubleValidator(0.0, 99999.99, 2, this));
     ui->Ledit_Desconto->setValidator(new QDoubleValidator(0.0, 99999.99, 2, this));
     QIntValidator *validadorInt = new QIntValidator(this);
@@ -558,7 +584,8 @@ void venda::configurarPaginaPagamento()
 
         ui->CheckPorcentagem->setChecked(rascunhoPendente.descontoPorcentagem);
         ui->Ledit_Desconto->setText(rascunhoPendente.desconto);
-        ui->Ledit_Taxa->setText(rascunhoPendente.taxa);
+        if (!seletorMaquina->temMaquinas())   // com máquinas cadastradas a taxa vem da máquina escolhida
+            ui->Ledit_Taxa->setText(rascunhoPendente.taxa);
         ui->Ledit_Recebido->setText(rascunhoPendente.recebido);
     } else {
         // defaults para nova venda: dinheiro — hide taxa, show troco
@@ -603,10 +630,17 @@ void venda::configurarPaginaNF()
 
 // ─── Payment form slots ───────────────────────────────────────────────────────
 
-float venda::obterValorFinal(QString taxa, QString desconto)
+// A taxa do cartão NÃO entra no valor: o cliente paga o preço de gôndola (total - desconto).
+// O parâmetro fica só por compatibilidade; a taxa é gravada como custo da loja.
+float venda::obterValorFinal(QString /*taxa*/, QString desconto)
 {
-    return (portugues.toFloat(Total()) - portugues.toFloat(desconto))
-           * (1 + portugues.toFloat(taxa) / 100);
+    return portugues.toFloat(Total()) - portugues.toFloat(desconto);
+}
+
+void venda::mostrarTaxaMaquina(const QString &forma, double taxaPadrao)
+{
+    seletorMaquina->mostrar(true);
+    ui->Ledit_Taxa->setText(portugues.toString(seletorMaquina->taxaDaForma(forma, taxaPadrao), 'f', 2));
 }
 
 void venda::descontoTaxa()
@@ -628,8 +662,7 @@ void venda::descontoTaxa()
 
 void venda::on_CBox_FormaPagamento_activated(int index)
 {
-    QString taxaDebito  = QString::number(configDTO.taxaDebitoFinanceiro);
-    QString taxaCredito = QString::number(configDTO.taxaCreditoFinanceiro);
+    seletorMaquina->mostrar(index == 2 || index == 3);
 
     switch (index) {
     case 0: // dinheiro
@@ -647,16 +680,16 @@ void venda::on_CBox_FormaPagamento_activated(int index)
         ui->frame_Recebido->hide(); ui->frame_Troco->hide();
         ui->Ledit_Taxa->show(); ui->frame_Taxa->show();
         ui->Ledit_Desconto->setText("0");
-        ui->Ledit_Taxa->setText(taxaCredito);
-        ui->Lbl_TotalTaxa->setText(portugues.toString(obterValorFinal(taxaCredito, "0"), 'f', 2));
+        mostrarTaxaMaquina("Crédito", configDTO.taxaCreditoFinanceiro);
+        ui->Lbl_TotalTaxa->setText(portugues.toString(obterValorFinal("0", "0"), 'f', 2));
         ui->Lbl_Total->setText(ui->Lbl_TotalTaxa->text());
         break;
     case 3: // débito
         ui->frame_Recebido->hide(); ui->frame_Troco->hide();
         ui->Ledit_Taxa->show(); ui->frame_Taxa->show();
         ui->Ledit_Desconto->setText("0");
-        ui->Ledit_Taxa->setText(taxaDebito);
-        ui->Lbl_TotalTaxa->setText(portugues.toString(obterValorFinal(taxaDebito, "0"), 'f', 2));
+        mostrarTaxaMaquina("Débito", configDTO.taxaDebitoFinanceiro);
+        ui->Lbl_TotalTaxa->setText(portugues.toString(obterValorFinal("0", "0"), 'f', 2));
         ui->Lbl_Total->setText(ui->Lbl_TotalTaxa->text());
         break;
     default:
@@ -747,7 +780,11 @@ void venda::terminarPagamento()
     newVenda.formaPagamento = forma;
     newVenda.estaPago       = (forma != "Prazo");
     newVenda.idCliente      = idClienteAtual;
-    newVenda.taxa           = portugues.toDouble(taxa);
+    // o cliente paga o preço de gôndola: a taxa do cartão não é somada ao valor, é custo da loja
+    const bool cartao = (forma == "Crédito" || forma == "Débito");
+    newVenda.taxa           = 0;
+    newVenda.taxaMaquina    = cartao ? portugues.toDouble(taxa) : 0;
+    newVenda.idMaquina      = cartao ? seletorMaquina->idMaquina() : 0;
     newVenda.total          = portugues.toDouble(Total());
     newVenda.troco          = portugues.toDouble(troco);
     newVenda.valorFinal     = portugues.toDouble(valor_final);

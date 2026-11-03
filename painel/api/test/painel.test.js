@@ -479,3 +479,17 @@ describe('saídas de estoque para uso próprio', () => {
     expect(e.usoProprio).toMatchObject({ saidas30Dias: 0, porMotivo: [], itens: [] });
   });
 });
+
+describe('venda no cartão com maquininha', () => {
+  it('mostra a máquina e o custo da taxa no detalhe da venda, sem somar a taxa ao valor pago', async () => {
+    const { hoje } = await carregarDados();
+    const L = loja.id;
+    await pool.query("INSERT INTO espelho.maquinas_cartao (loja_id, id, nome, taxa_debito, taxa_credito, ativa) VALUES ($1, 1, 'Stone', '1.50', '3.00', true)", [L]);
+    await pool.query("INSERT INTO espelho.vendas2 (loja_id, id, cliente, data_hora, forma_pagamento, total, valor_final, taxa, id_maquina, taxa_maquina, esta_pago) VALUES ($1, 500, 'Balcão', $2, 'Crédito', '200.00', '200.00', '0', 1, '3.00', true)", [L, `${hoje} 11:00:00`]);
+    const { cookie } = await sessao();
+    const d = await obter(cookie, '/api/painel/vendas/500');
+    expect(d.venda).toMatchObject({ valor_final: 200, taxa: 0, maquina: 'Stone', taxa_maquina: 3, custo_taxa: 6 });
+    const semMaquina = await obter(cookie, '/api/painel/vendas/1');
+    expect(semMaquina.venda).toMatchObject({ maquina: null, taxa_maquina: null, custo_taxa: null });
+  });
+});

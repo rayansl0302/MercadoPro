@@ -49,6 +49,9 @@ private slots:
 
 protected:
     float obterValorFinal(QString taxa, QString desconto);
+    // maquininha de cartão: o cliente paga o preço de gôndola, a taxa da máquina escolhida é custo da loja
+    class SeletorMaquinaCartao *seletorMaquina = nullptr;
+    void mostrarTaxaMaquina(const QString &forma, double taxaPadrao);
     void descontoTaxa();
     Ui::pagamento *ui;
     virtual void terminarPagamento();

@@ -147,6 +147,8 @@ set(QESTOQUE_SOURCES
     src/repository/empresa_repository.cpp
     src/repository/contasreceber_repository.cpp
     src/repository/saidausoproprio_repository.cpp
+    src/repository/maquinacartao_repository.cpp
+    src/services/maquinacartao_service.cpp
     src/services/saidausoproprio_service.cpp
     src/repository/relatorios_repository.cpp
     src/repository/contaspagar_repository.cpp
@@ -356,6 +358,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/repository/saidausoproprio_repository.h src/repository/saidausoproprio_repository.cpp
         src/services/saidausoproprio_service.h src/services/saidausoproprio_service.cpp
         src/dto/SaidaUsoProprio_dto.h
+        src/dto/MaquinaCartao_dto.h
+        src/repository/maquinacartao_repository.h src/repository/maquinacartao_repository.cpp
+        src/services/maquinacartao_service.h src/services/maquinacartao_service.cpp
+        src/seletormaquinacartao.h src/seletormaquinacartao.cpp
+        src/maquinascartaodialog.h src/maquinascartaodialog.cpp
         src/repository/contaspagar_repository.h src/repository/contaspagar_repository.cpp
         src/services/operador_service.h src/services/operador_service.cpp
         src/services/sessao_service.h src/services/sessao_service.cpp

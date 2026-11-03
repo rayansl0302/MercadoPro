@@ -87,6 +87,7 @@
 #include <QCloseEvent>
 #include "services/sessao_service.h"
 #include "saidausopropriodialog.h"
+#include "maquinascartaodialog.h"
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QDebug>
@@ -611,6 +612,7 @@ void MainWindow::montarMenuInicial()
                       [this]() { contasPagarClicked(QStringLiteral("NOVA")); });
     m->adicionarBotao("wallet", "Contas a receber", "Fiado e caderneta: o que os clientes devem",
                       [this]() { contasReceberClicked(); });
+    m->adicionarBotao("wallet", "Maquininhas de cartão", "Taxas de cada máquina e custo no mês", [this]() { maquinasCartaoClicked(); });
     m->adicionarBotao("building-2", "Trocar empresa", "Escolher o CNPJ das vendas e notas", [this]() { escolherEmpresaClicked(); });
 
     m->adicionarGrupo("Gestão e fiscal");
@@ -1500,6 +1502,12 @@ void MainWindow::saidaUsoProprio()
     SaidaUsoProprioDialog dlg(getIdProdSelected().toLongLong(), this);
     if (dlg.exec() == QDialog::Accepted && dlg.registrou())
         atualizarTableview();
+}
+
+void MainWindow::maquinasCartaoClicked()
+{
+    MaquinasCartaoDialog dlg(this);
+    dlg.exec();
 }
 
 void MainWindow::historicoSaidasUsoProprio()

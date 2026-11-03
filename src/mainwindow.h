@@ -104,6 +104,7 @@ private slots:
     void verProd();
     void saidaUsoProprio();
     void historicoSaidasUsoProprio();
+    void maquinasCartaoClicked();
 
 
     void on_actionDocumenta_o_triggered();
@@ -192,7 +193,7 @@ private:
     void setarIconesJanela();
     //QModelIndex selected_index;
 
-    const int ultimaVersaoSchema = 26;
+    const int ultimaVersaoSchema = 27;
 
     // operador comum só entra em histórico, cadastro de operadores, configurações e
     // relatórios gerenciais depois de informar o PIN do gerente

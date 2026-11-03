@@ -93,6 +93,9 @@ private slots:
     void on_CBox_ModeloEmit_currentIndexChanged(int index);
 
 private:
+    // maquininha de cartão: o cliente paga o preço de gôndola, a taxa da máquina escolhida é custo da loja
+    class SeletorMaquinaCartao *seletorMaquina = nullptr;
+    void mostrarTaxaMaquina(const QString &forma, double taxaPadrao);
     QSqlQueryModel *modeloProdutos = new QSqlQueryModel;
     QStandardItemModel *modeloSelecionados = new QStandardItemModel;
     Ui::venda *ui;

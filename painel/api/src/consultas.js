@@ -187,9 +187,10 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     const id = z.coerce.number().int().positive().parse(req.params.id);
     const L = req.loja.id;
     const v = await pool.query(
-      `SELECT v.id, v.cliente, v.data_hora, v.forma_pagamento, v.total, v.valor_final, v.desconto, v.taxa, v.valor_recebido, v.troco, v.esta_pago, v.id_empresa, v.id_caixa,
+      `SELECT v.id, v.cliente, v.data_hora, v.forma_pagamento, v.total, v.valor_final, v.desconto, v.taxa, v.valor_recebido, v.troco, v.esta_pago, v.id_empresa, v.id_caixa, v.taxa_maquina, m.nome AS maquina,
               coalesce(o.nome, CASE WHEN v.id_operador_sessao = 0 THEN 'Gerente (PIN geral)' ELSE NULL END) AS operador
        FROM espelho.vendas2 v LEFT JOIN espelho.operadores o ON o.loja_id = v.loja_id AND o.id = v.id_operador_sessao
+       LEFT JOIN espelho.maquinas_cartao m ON m.loja_id = v.loja_id AND m.id = v.id_maquina
        WHERE v.loja_id = $1 AND v.id = $2`,
       [L, id],
     );
@@ -203,7 +204,10 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     );
     const x = v.rows[0];
     return {
-      venda: { ...x, total: dinheiro(x.total), valor_final: dinheiro(x.valor_final), desconto: dinheiro(x.desconto), taxa: dinheiro(x.taxa), valor_recebido: dinheiro(x.valor_recebido), troco: dinheiro(x.troco) },
+      venda: { ...x, total: dinheiro(x.total), valor_final: dinheiro(x.valor_final), desconto: dinheiro(x.desconto), taxa: dinheiro(x.taxa), valor_recebido: dinheiro(x.valor_recebido), troco: dinheiro(x.troco),
+        // cartão: o cliente paga o preço de gôndola; a taxa da maquininha é custo da loja
+        taxa_maquina: x.taxa_maquina === null ? null : dinheiro(x.taxa_maquina),
+        custo_taxa: x.taxa_maquina === null ? null : dinheiro(Number(x.valor_final) * Number(x.taxa_maquina) / 100) },
       itens: itens.rows.map((i) => ({
         id: i.id, produto: i.descricao ?? 'Produto removido do cadastro', codigoBarras: i.codigo_barras, lanche: Boolean(i.lanche),
         quantidade: inteiro(i.quantidade), precoVendido: dinheiro(i.preco_vendido), total: dinheiro(i.total),

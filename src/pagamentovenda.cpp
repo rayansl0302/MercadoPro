@@ -1,3 +1,4 @@
+#include "seletormaquinacartao.h"
 #include "pagamentovenda.h"
 #include "subclass/waitdialog.h"
 #include <QTimer>
@@ -107,7 +108,11 @@ void pagamentoVenda::terminarPagamento(){
         newVenda.estaPago = true;
     }
     newVenda.idCliente = idCliente;
-    newVenda.taxa = portugues.toDouble(taxa);
+    // o cliente paga o preço de gôndola: a taxa do cartão não é somada ao valor, é custo da loja
+    const bool cartao = (forma_pagamento == "Crédito" || forma_pagamento == "Débito");
+    newVenda.taxa = 0;
+    newVenda.taxaMaquina = cartao ? portugues.toDouble(taxa) : 0;
+    newVenda.idMaquina = cartao ? seletorMaquina->idMaquina() : 0;
     newVenda.total = portugues.toDouble(totalGlobal);
     newVenda.troco = portugues.toDouble(troco);
     newVenda.valorFinal = portugues.toDouble(valor_final);

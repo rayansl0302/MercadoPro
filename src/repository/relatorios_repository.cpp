@@ -490,7 +490,8 @@ QMap<QString, double> Relatorios_repository::buscarLucroPeriodo(
     // custo_unitario   = p.preco * (1 - porcent_lucro/100)
     // lucro_item       = (pv.preco_vendido - custo_unitario) * quantidade
     // lucro_total_venda = SUM(lucro_item) -> lucro bruto da venda, sem desconto/taxa
-    // taxa_valor       = (total_pago - desconto_pago) * taxa/100 (repassada ao cartão,
+    // taxa_valor       = (total_pago - desconto_pago) * (taxa + taxa_maquina)/100 (taxa = acréscimo antigo repassado ao
+    //                    cliente; taxa_maquina = custo da maquininha, o cliente paga o preço de gôndola,
     //                    só quando a forma de pagamento daquele pagamento é credito/debito)
     //
     // vendas a vista (cash): a venda inteira é paga em uma unica tacada, entao o
@@ -525,7 +526,7 @@ QMap<QString, double> Relatorios_repository::buscarLucroPeriodo(
                        - COALESCE(v.desconto, 0)
                        - CASE
                              WHEN v.forma_pagamento IN ('Crédito', 'Débito')
-                             THEN (v.total - COALESCE(v.desconto, 0)) * COALESCE(v.taxa, 0) / 100.0
+                             THEN (v.total - COALESCE(v.desconto, 0)) * (COALESCE(v.taxa, 0) + COALESCE(v.taxa_maquina, 0)) / 100.0
                              ELSE 0
                          END
                    ) AS lucro_caixa
@@ -543,7 +544,7 @@ QMap<QString, double> Relatorios_repository::buscarLucroPeriodo(
                        * ev.valor_final / NULLIF(v.valor_final, 0)
                        - CASE
                              WHEN ev.forma_pagamento IN ('Crédito', 'Débito')
-                             THEN (ev.total - COALESCE(ev.desconto, 0)) * COALESCE(ev.taxa, 0) / 100.0
+                             THEN (ev.total - COALESCE(ev.desconto, 0)) * (COALESCE(ev.taxa, 0) + COALESCE(ev.taxa_maquina, 0)) / 100.0
                              ELSE 0
                          END
                    ) AS lucro_caixa
@@ -611,7 +612,7 @@ double Relatorios_repository::buscarLucroVenda(qlonglong idVenda)
                 - COALESCE(v.desconto, 0)
                 - CASE
                       WHEN v.forma_pagamento IN ('Crédito', 'Débito')
-                      THEN (v.total - COALESCE(v.desconto, 0)) * COALESCE(v.taxa, 0) / 100.0
+                      THEN (v.total - COALESCE(v.desconto, 0)) * (COALESCE(v.taxa, 0) + COALESCE(v.taxa_maquina, 0)) / 100.0
                       ELSE 0
                   END AS lucro_caixa
             FROM vendas2 v
@@ -625,7 +626,7 @@ double Relatorios_repository::buscarLucroVenda(qlonglong idVenda)
                 * ev.valor_final / NULLIF(v.valor_final, 0)
                 - CASE
                       WHEN ev.forma_pagamento IN ('Crédito', 'Débito')
-                      THEN (ev.total - COALESCE(ev.desconto, 0)) * COALESCE(ev.taxa, 0) / 100.0
+                      THEN (ev.total - COALESCE(ev.desconto, 0)) * (COALESCE(ev.taxa, 0) + COALESCE(ev.taxa_maquina, 0)) / 100.0
                       ELSE 0
                   END AS lucro_caixa
             FROM entradas_vendas ev

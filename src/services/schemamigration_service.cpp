@@ -2240,6 +2240,49 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 26:
+        {
+            // versao 27: maquininhas de cartão. O cliente paga sempre o preço de gôndola; a taxa da máquina
+            // escolhida na venda fica gravada como custo (vendas2/entradas_vendas.taxa_maquina, em %).
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 27", dbSchemaVersion};
+            }
+            const QString pk27 = DatabaseConnection_service::isPostgres() ? "SERIAL PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT";
+            const QStringList comandos27 = {
+                "CREATE TABLE IF NOT EXISTS maquinas_cartao ("
+                "  id " + pk27 + ","
+                "  nome TEXT NOT NULL,"
+                "  taxa_debito DECIMAL(5,2) NOT NULL DEFAULT 0,"
+                "  taxa_credito DECIMAL(5,2) NOT NULL DEFAULT 0,"
+                "  ativa BOOLEAN NOT NULL DEFAULT true,"
+                "  criada_em TEXT NOT NULL)",
+                "ALTER TABLE vendas2 ADD COLUMN id_maquina INTEGER",
+                "ALTER TABLE vendas2 ADD COLUMN taxa_maquina DECIMAL(5,2)",
+                "ALTER TABLE entradas_vendas ADD COLUMN id_maquina INTEGER",
+                "ALTER TABLE entradas_vendas ADD COLUMN taxa_maquina DECIMAL(5,2)"
+            };
+            for (const QString &sql : comandos27) {
+                QSqlQuery query(db);
+                if (!query.exec(sql)) {
+                    qDebug() << "Erro migracao 27:" << query.lastError().text() << "SQL:" << sql;
+                    db.rollback();
+                    return {false, SchemaErro::ErroMigracao, "Erro na migracao 27 (maquininhas de cartao)", dbSchemaVersion};
+                }
+            }
+            if (!setSchemaVersion(27)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 27", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 27", dbSchemaVersion};
+            }
+            dbSchemaVersion = 27;
+            qDebug() << "Migracao para versao 27 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;

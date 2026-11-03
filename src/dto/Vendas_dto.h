@@ -11,6 +11,9 @@ struct VendasDTO {
     double valorRecebido = 0;
     double troco = 0;
     double taxa = 0;
+    // maquininha usada no cartão (0 = nenhuma escolhida) e a taxa dela em %. É CUSTO da loja: não entra no valorFinal.
+    qlonglong idMaquina = 0;
+    double taxaMaquina = 0;
     double valorFinal = 0;
     double desconto = 0;
     bool estaPago;

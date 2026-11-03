@@ -1,3 +1,4 @@
+#include "seletormaquinacartao.h"
 #include "pagamentoaprazo.h"
 #include "vendas.h"
 #include "services/caixa_service.h"
@@ -114,7 +115,7 @@ void pagamentoAPrazo::terminarPagamento()
         return;
     }
 
-    query.prepare("INSERT INTO entradas_vendas (id_venda, total, data_hora, forma_pagamento, valor_recebido, troco, taxa, valor_final, desconto, id_caixa, id_operador_sessao) VALUES (:valor1, :valor2, :valor3, :valor4, :valor5, :valor6, :valor7, :valor8, :valor9, :idcaixa, :idoperadorsessao)");
+    query.prepare("INSERT INTO entradas_vendas (id_venda, total, data_hora, forma_pagamento, valor_recebido, troco, taxa, valor_final, desconto, id_caixa, id_operador_sessao, id_maquina, taxa_maquina) VALUES (:valor1, :valor2, :valor3, :valor4, :valor5, :valor6, :valor7, :valor8, :valor9, :idcaixa, :idoperadorsessao, :idmaquina, :taxamaquina)");
     query.bindValue(":valor1", idVenda);
     query.bindValue(":idcaixa", caixaAberto.id);
     // quem recebeu e o operador logado, e nao o dono do caixa.
@@ -132,7 +133,12 @@ void pagamentoAPrazo::terminarPagamento()
     // precisa converter para notacao usa para inserir no banco de dados
     query.bindValue(":valor5", QString::number(portugues.toFloat(recebido), 'f', 2));
     query.bindValue(":valor6", QString::number(portugues.toFloat(troco), 'f', 2));
-    query.bindValue(":valor7", QString::number(portugues.toFloat(taxa), 'f', 2));
+    // o cliente paga o valor cobrado: a taxa do cartão não é somada, é custo da loja (id_maquina/taxa_maquina)
+    const bool cartao = (forma_pagamento == "Crédito" || forma_pagamento == "Débito");
+    query.bindValue(":valor7", QString::number(0.0, 'f', 2));
+    query.bindValue(":idmaquina", cartao && seletorMaquina->idMaquina() > 0 ? QVariant(seletorMaquina->idMaquina())
+                                                                           : QVariant(QMetaType(QMetaType::LongLong)));
+    query.bindValue(":taxamaquina", cartao ? QVariant(portugues.toDouble(taxa)) : QVariant(QMetaType(QMetaType::Double)));
     query.bindValue(":valor8", QString::number(portugues.toFloat(valor_final), 'f', 2));
     query.bindValue(":valor9", QString::number(portugues.toFloat(desconto), 'f', 2));
     if (query.exec()) {

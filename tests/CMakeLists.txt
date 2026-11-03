@@ -43,6 +43,7 @@ set(TEST_SOURCES
     services/test_nuvem.cpp
     services/test_lanches.cpp
     services/test_saidausoproprio.cpp
+    services/test_maquinacartao.cpp
     services/test_backup.cpp
     services/test_tema.cpp
 )
@@ -70,6 +71,7 @@ add_executable(QEstoqueLojaTests
     services/test_nuvem.h services/test_nuvem.cpp
     services/test_lanches.h services/test_lanches.cpp
     services/test_saidausoproprio.h services/test_saidausoproprio.cpp
+    services/test_maquinacartao.h services/test_maquinacartao.cpp
     services/test_backup.h services/test_backup.cpp
     services/test_tema.h services/test_tema.cpp
 

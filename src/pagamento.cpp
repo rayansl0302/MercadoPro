@@ -1,5 +1,8 @@
 #include "pagamento.h"
 #include "ui_pagamento.h"
+#include "seletormaquinacartao.h"
+#include <QComboBox>
+#include <QHBoxLayout>
 #include <QPainter>
 #include <QPrinter>
 #include <QPrintDialog>
@@ -41,6 +44,28 @@ pagamento::pagamento(QString total, QString cliente, QString data, QWidget *pare
     // validador
     QDoubleValidator *validador = new QDoubleValidator(0.0, 9999.99, 2);
     ui->Ledit_Taxa->setValidator(validador);
+
+    // combo da maquininha na mesma linha da taxa (a linha é posicionada à mão: só é preciso alargá-la)
+    auto *cbMaquina = new QComboBox(this);
+    if (QWidget *linha = ui->label_8->parentWidget()) {
+        if (auto *h = qobject_cast<QHBoxLayout *>(linha->layout())) {
+            h->addWidget(cbMaquina);
+            QRect g = linha->geometry();
+            g.setWidth(qMax(g.width(), 440));
+            linha->setGeometry(g);
+        }
+    }
+    ui->label_8->setText(QStringLiteral("Taxa da máquina (%):"));
+    ui->label_8->setToolTip(QStringLiteral("Custo da loja: não é somada ao valor, o cliente paga o preço da gôndola."));
+    seletorMaquina = new SeletorMaquinaCartao(cbMaquina, nullptr, this);
+    ui->Ledit_Taxa->setReadOnly(seletorMaquina->temMaquinas());
+    connect(seletorMaquina, &SeletorMaquinaCartao::escolhaMudou, this, [this]() {
+        const int forma = ui->CBox_FormaPagamento->currentIndex();
+        if (forma == 2)
+            mostrarTaxaMaquina("Crédito", configDTO.taxaCreditoFinanceiro);
+        else if (forma == 3)
+            mostrarTaxaMaquina("Débito", configDTO.taxaDebitoFinanceiro);
+    });
     ui->Ledit_Recebido->setValidator(validador);
     ui->Ledit_Desconto->setValidator(validador);
     QIntValidator *validadorInt = new QIntValidator();
@@ -74,8 +99,7 @@ void pagamento::on_CBox_FormaPagamento_activated(int index)
     // mostrar ou esconder campos relacionados ao troco
     // a depender da forma dinheiro ser selecionada
 
-    QString taxaDebito  = QString::number(configDTO.taxaDebitoFinanceiro);
-    QString taxaCredito = QString::number(configDTO.taxaCreditoFinanceiro);
+    seletorMaquina->mostrar(index == 2 || index == 3);
 
     switch (index) {
     case 0:
@@ -107,8 +131,8 @@ void pagamento::on_CBox_FormaPagamento_activated(int index)
         ui->Ledit_Recebido->setText(totalGlobal);
         ui->Lbl_Troco->setText("0");
         ui->Ledit_Desconto->setText("0");
-        ui->Ledit_Taxa->setText(taxaCredito);
-        ui->Lbl_TotalTaxa->setText(portugues.toString(obterValorFinal(taxaCredito, "0"), 'f', 2));
+        mostrarTaxaMaquina("Crédito", configDTO.taxaCreditoFinanceiro);
+        ui->Lbl_TotalTaxa->setText(portugues.toString(obterValorFinal("0", "0"), 'f', 2));
         break;
     case 3:
         // debito
@@ -123,8 +147,8 @@ void pagamento::on_CBox_FormaPagamento_activated(int index)
         ui->Ledit_Recebido->setText(totalGlobal);
         ui->Lbl_Troco->setText("0");
         ui->Ledit_Desconto->setText("0");
-        ui->Ledit_Taxa->setText(taxaDebito);
-        ui->Lbl_TotalTaxa->setText(portugues.toString(obterValorFinal(taxaDebito, "0"), 'f', 2));
+        mostrarTaxaMaquina("Débito", configDTO.taxaDebitoFinanceiro);
+        ui->Lbl_TotalTaxa->setText(portugues.toString(obterValorFinal("0", "0"), 'f', 2));
         break;
     default:
         ui->Lbl_Troco->hide();
@@ -150,9 +174,16 @@ void pagamento::on_Ledit_Taxa_textChanged(const QString &arg1)
     descontoTaxa();
 }
 
-float pagamento::obterValorFinal(QString taxa, QString desconto){
-    float valorFinal = (portugues.toFloat(totalGlobal) - portugues.toFloat(desconto)) * (1 + portugues.toFloat(taxa)/100);
-    return valorFinal;
+// A taxa do cartão NÃO entra no valor: o cliente paga o preço de gôndola (total - desconto).
+// O parâmetro fica só por compatibilidade; a taxa é gravada como custo da loja.
+float pagamento::obterValorFinal(QString /*taxa*/, QString desconto){
+    return portugues.toFloat(totalGlobal) - portugues.toFloat(desconto);
+}
+
+void pagamento::mostrarTaxaMaquina(const QString &forma, double taxaPadrao)
+{
+    seletorMaquina->mostrar(true);
+    ui->Ledit_Taxa->setText(portugues.toString(seletorMaquina->taxaDaForma(forma, taxaPadrao), 'f', 2));
 }
 
 void pagamento::on_Ledit_Desconto_textChanged(const QString &arg1)
