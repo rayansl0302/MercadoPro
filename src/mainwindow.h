@@ -102,6 +102,8 @@ private slots:
     void setLocalProd();
 
     void verProd();
+    void saidaUsoProprio();
+    void historicoSaidasUsoProprio();
 
 
     void on_actionDocumenta_o_triggered();
@@ -170,6 +172,7 @@ private:
     QAction* actionMenuPrintNomePreco1;
     QAction* actionMenuPrintNomePreco3;
     QAction* actionVerProduto;
+    QAction* actionSaidaUsoProprio;
     Produto_Service *produtoService;
     Config_service *confServ = new Config_service(this);
     ConfigDTO configDTO;
@@ -189,7 +192,7 @@ private:
     void setarIconesJanela();
     //QModelIndex selected_index;
 
-    const int ultimaVersaoSchema = 25;
+    const int ultimaVersaoSchema = 26;
 
     // operador comum só entra em histórico, cadastro de operadores, configurações e
     // relatórios gerenciais depois de informar o PIN do gerente

@@ -2,6 +2,8 @@
 #include "alterarproduto.h"
 #include <QBoxLayout>
 #include <QCheckBox>
+#include <QPushButton>
+#include "saidausopropriodialog.h"
 #include "ui_alterarproduto.h"
 #include "mainwindow.h"
 #include "QSqlQuery"
@@ -25,7 +27,18 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     chUsoLoja = new QCheckBox(QStringLiteral("Produto de uso da loja (limpeza, sacolas...)"), ui->groupBox->parentWidget());
     chUsoLoja->setToolTip(QStringLiteral("Marcado: o painel online não soma o produto no valor do estoque; ele aparece numa seção separada."));
     chUsoLoja->setGeometry(chSemEstoque->x(), chSemEstoque->geometry().bottom() + 6, chSemEstoque->width(), 24);
-    ui->tabWidget->setMinimumHeight(chUsoLoja->geometry().bottom() + ui->tabWidget->tabBar()->height() + 24);
+    // dar saída de estoque para uso próprio (consumo, limpeza, quebra...) sem sair do cadastro
+    btnSaidaUsoProprio = new QPushButton(QStringLiteral("Saída para uso próprio..."), ui->groupBox->parentWidget());
+    btnSaidaUsoProprio->setToolTip(QStringLiteral("Tira uma quantidade do estoque para uso da loja e registra o motivo."));
+    btnSaidaUsoProprio->setGeometry(chUsoLoja->x(), chUsoLoja->geometry().bottom() + 10, 200, 32);
+    connect(btnSaidaUsoProprio, &QPushButton::clicked, this, [this]() {
+        SaidaUsoProprioDialog dlg(idAlt.toLongLong(), this);
+        if (dlg.exec() == QDialog::Accepted && dlg.registrou()) {
+            emit produtoAlterado();
+            accept();
+        }
+    });
+    ui->tabWidget->setMinimumHeight(btnSaidaUsoProprio->geometry().bottom() + ui->tabWidget->tabBar()->height() + 24);
     util->setParent(this);
     db = QSqlDatabase::database();
 

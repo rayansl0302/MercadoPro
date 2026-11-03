@@ -86,6 +86,7 @@
 #include <QPixmap>
 #include <QCloseEvent>
 #include "services/sessao_service.h"
+#include "saidausopropriodialog.h"
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QDebug>
@@ -157,6 +158,9 @@ MainWindow::MainWindow(QWidget *parent)
     actionMenuAlterarProd = new QAction(this);
     actionMenuDeletarProd = new QAction(this);
     actionSetLocalProd = new QAction(this);
+    actionSaidaUsoProprio = new QAction(this);
+    actionSaidaUsoProprio->setText("Saída para uso próprio...");
+    connect(actionSaidaUsoProprio, &QAction::triggered, this, &MainWindow::saidaUsoProprio);
     actionVerProduto = new QAction(this);
     actionSetLocalProd->setText("Adicionar Local Produto");
     actionVerProduto->setText("Ver Produto");
@@ -592,6 +596,7 @@ void MainWindow::montarMenuInicial()
     m->adicionarBotao("package-plus", "Cadastrar produto", "Adicionar um novo produto", [this]() { ui->Btn_AddProd->click(); });
     m->adicionarBotao("users", "Clientes", "Cadastro de clientes", [this]() { ui->Btn_Clientes->click(); });
     m->adicionarBotao("truck", "Compras", "Entrada de mercadorias", [this]() { ui->Btn_Entradas->click(); });
+    m->adicionarBotao("clipboard-list", "Saídas de uso próprio", "Consumo, limpeza e quebras tiradas do estoque", [this]() { historicoSaidasUsoProprio(); });
 
     m->adicionarGrupo("Caixa");
     m->adicionarBotao("wallet", "Abrir caixa", "Abrir o seu caixa", [this]() { abrirCaixaClicked(); });
@@ -1380,6 +1385,7 @@ void MainWindow::on_Tview_Produtos_customContextMenuRequested(const QPoint &pos)
     menu.addAction(actionMenuDeletarProd);
     menu.addAction(actionSetLocalProd);
     menu.addAction(actionVerProduto);
+    menu.addAction(actionSaidaUsoProprio);
     imprimirMenu->setIcon(iconImpressora);
     imprimirMenu->addAction(actionMenuPrintBarCode1);
     imprimirMenu->addAction(actionMenuPrintBarCode3);
@@ -1485,6 +1491,21 @@ QString MainWindow::getIdProdSelected(){
         QString id = ui->Tview_Produtos->model()->data(idIndex).toString();
         return id;
     }
+}
+
+void MainWindow::saidaUsoProprio()
+{
+    if (!ui->Tview_Produtos->currentIndex().isValid())
+        return;
+    SaidaUsoProprioDialog dlg(getIdProdSelected().toLongLong(), this);
+    if (dlg.exec() == QDialog::Accepted && dlg.registrou())
+        atualizarTableview();
+}
+
+void MainWindow::historicoSaidasUsoProprio()
+{
+    HistoricoSaidasDialog dlg(this);
+    dlg.exec();
 }
 
 void MainWindow::verProd(){

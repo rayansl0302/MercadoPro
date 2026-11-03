@@ -2195,6 +2195,51 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 25:
+        {
+            // versao 26: saída de estoque para uso próprio (consumo, limpeza, quebra...), com histórico.
+            // Custo e preço ficam gravados como estavam na hora da saída.
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 26", dbSchemaVersion};
+            }
+            const QString pk26 = DatabaseConnection_service::isPostgres() ? "SERIAL PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT";
+            const QStringList comandos26 = {
+                "CREATE TABLE IF NOT EXISTS saidas_uso_proprio ("
+                "  id " + pk26 + ","
+                "  id_produto INTEGER NOT NULL,"
+                "  descricao_produto TEXT NOT NULL,"
+                "  quantidade DOUBLE PRECISION NOT NULL,"
+                "  motivo TEXT NOT NULL,"
+                "  observacao TEXT,"
+                "  custo_unitario DECIMAL(10,2) NOT NULL DEFAULT 0,"
+                "  preco_venda DECIMAL(10,2) NOT NULL DEFAULT 0,"
+                "  id_operador_sessao INTEGER,"
+                "  nome_operador TEXT,"
+                "  data_hora TEXT NOT NULL)",
+                "CREATE INDEX IF NOT EXISTS idx_saidas_uso_proprio_data ON saidas_uso_proprio(data_hora)"
+            };
+            for (const QString &sql : comandos26) {
+                QSqlQuery query(db);
+                if (!query.exec(sql)) {
+                    qDebug() << "Erro migracao 26:" << query.lastError().text() << "SQL:" << sql;
+                    db.rollback();
+                    return {false, SchemaErro::ErroMigracao, "Erro na migracao 26 (saida para uso proprio)", dbSchemaVersion};
+                }
+            }
+            if (!setSchemaVersion(26)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 26", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 26", dbSchemaVersion};
+            }
+            dbSchemaVersion = 26;
+            qDebug() << "Migracao para versao 26 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;

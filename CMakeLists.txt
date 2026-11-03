@@ -146,6 +146,8 @@ set(QESTOQUE_SOURCES
     src/repository/sessao_repository.cpp
     src/repository/empresa_repository.cpp
     src/repository/contasreceber_repository.cpp
+    src/repository/saidausoproprio_repository.cpp
+    src/services/saidausoproprio_service.cpp
     src/repository/relatorios_repository.cpp
     src/repository/contaspagar_repository.cpp
 
@@ -351,6 +353,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/repository/sessao_repository.h src/repository/sessao_repository.cpp
         src/repository/empresa_repository.h src/repository/empresa_repository.cpp
         src/repository/contasreceber_repository.h src/repository/contasreceber_repository.cpp
+        src/repository/saidausoproprio_repository.h src/repository/saidausoproprio_repository.cpp
+        src/services/saidausoproprio_service.h src/services/saidausoproprio_service.cpp
+        src/dto/SaidaUsoProprio_dto.h
         src/repository/contaspagar_repository.h src/repository/contaspagar_repository.cpp
         src/services/operador_service.h src/services/operador_service.cpp
         src/services/sessao_service.h src/services/sessao_service.cpp
@@ -379,6 +384,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/menuinicial.h src/menuinicial.cpp
         src/empresadialog.h src/empresadialog.cpp
         src/produtoemvendasdialog.h src/produtoemvendasdialog.cpp
+        src/saidausopropriodialog.h src/saidausopropriodialog.cpp
         src/contareceberdialogs.h src/contareceberdialogs.cpp
         src/extratoclientedialog.h src/extratoclientedialog.cpp
         src/contasreceberjanela.h src/contasreceberjanela.cpp

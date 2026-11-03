@@ -436,6 +436,21 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
        ORDER BY p.descricao LIMIT 200`,
       [L, config.lancheMin, config.lancheMax],
     );
+    // saídas de estoque para uso próprio (consumo, limpeza, quebra...) nos últimos 30 dias, a custo do momento da saída
+    const usoProprioMotivos = await pool.query(
+      `SELECT motivo, count(*)::int AS saidas, coalesce(sum(quantidade * coalesce(custo_unitario, 0)), 0) AS custo
+       FROM espelho.saidas_uso_proprio
+       WHERE loja_id = $1 AND painel.ts_seguro(data_hora)::date > ($2::date - 30)
+       GROUP BY motivo ORDER BY custo DESC, motivo`,
+      [L, dia],
+    );
+    const usoProprioItens = await pool.query(
+      `SELECT id, data_hora, descricao_produto, quantidade, motivo, observacao, nome_operador, quantidade * coalesce(custo_unitario, 0) AS custo
+       FROM espelho.saidas_uso_proprio
+       WHERE loja_id = $1 AND painel.ts_seguro(data_hora)::date > ($2::date - 30)
+       ORDER BY painel.ts_seguro(data_hora) DESC, id DESC LIMIT 100`,
+      [L, dia],
+    );
     const qtdLanches = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND painel.eh_lanche(codigo_barras, $2, $3)', [L, config.lancheMin, config.lancheMax]);
     const valores = await pool.query(
       `SELECT coalesce(sum(quantidade * preco) FILTER (WHERE quantidade > 0), 0) AS a_preco_de_venda,
@@ -453,6 +468,12 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       usoLoja: {
         produtos: usoLoja.rowCount,
         itens: usoLoja.rows.map((x) => ({ id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco), custo: x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor) })),
+      },
+      usoProprio: {
+        saidas30Dias: usoProprioMotivos.rows.reduce((s, x) => s + x.saidas, 0),
+        custo30Dias: dinheiro(usoProprioMotivos.rows.reduce((s, x) => s + Number(x.custo), 0)),
+        porMotivo: usoProprioMotivos.rows.map((x) => ({ motivo: x.motivo, saidas: x.saidas, custo: dinheiro(x.custo) })),
+        itens: usoProprioItens.rows.map((x) => ({ id: x.id, dataHora: x.data_hora, descricao: x.descricao_produto, quantidade: inteiro(x.quantidade), motivo: x.motivo, observacao: x.observacao, operador: x.nome_operador, custo: dinheiro(x.custo) })),
       },
       semControle: {
         produtos: semControle.rowCount,

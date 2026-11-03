@@ -50,6 +50,7 @@ protected:
     Ui::AlterarProduto *ui;
     class QCheckBox *chSemEstoque = nullptr;
     class QCheckBox *chUsoLoja = nullptr;
+    class QPushButton *btnSaidaUsoProprio = nullptr;
 
 private:
     QSet<QString> generatedNumbers;

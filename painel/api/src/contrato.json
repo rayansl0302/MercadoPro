@@ -132,6 +132,15 @@
         {"n": "id_operador_sessao", "t": "int"}, {"n": "criado_em", "t": "ts"}
       ]
     },
+    "saidas_uso_proprio": {
+      "pk": ["id"],
+      "colunas": [
+        {"n": "id", "t": "int"}, {"n": "id_produto", "t": "int"}, {"n": "descricao_produto", "t": "text"},
+        {"n": "quantidade", "t": "real"}, {"n": "motivo", "t": "text"}, {"n": "observacao", "t": "text"},
+        {"n": "custo_unitario", "t": "dec"}, {"n": "preco_venda", "t": "dec"}, {"n": "id_operador_sessao", "t": "int"},
+        {"n": "nome_operador", "t": "text"}, {"n": "data_hora", "t": "ts"}
+      ]
+    },
     "notas_fiscais": {
       "pk": ["id"],
       "colunas": [

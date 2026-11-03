@@ -444,3 +444,38 @@ describe('produto marcado "uso da loja"', () => {
     expect((await obter(cookie, '/api/painel/produtos?id=72')).produto.usoLoja).toBe(false);
   });
 });
+
+describe('saídas de estoque para uso próprio', () => {
+  it('somam o custo do momento da saída, por motivo, só dos últimos 30 dias, e não mexem nos números de estoque', async () => {
+    await carregarDados();
+    const L = loja.id;
+    const { cookie } = await sessao();
+    const antes = await obter(cookie, '/api/painel/estoque?limite=100000');
+    const h = await hojeLoja();
+    const hoje = new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate())).toISOString().slice(0, 10);
+    await pool.query(
+      `INSERT INTO espelho.saidas_uso_proprio (loja_id, id, id_produto, descricao_produto, quantidade, motivo, observacao, custo_unitario, preco_venda, nome_operador, data_hora) VALUES
+         ($1, 1, 1, 'CAFE', '2', 'Consumo próprio', 'equipe', '6.00', '9.00', 'Maria', $2),
+         ($1, 2, 1, 'CAFE', '1', 'Consumo próprio', null, '6.00', '9.00', 'Maria', $2),
+         ($1, 3, 2, 'DETERGENTE', '4', 'Limpeza / uso na loja', null, '2.50', '4.00', 'Nalva', $2),
+         ($1, 4, 2, 'DETERGENTE', '10', 'Doação', null, '2.50', '4.00', 'Nalva', $3)`,
+      [L, `${hoje} 08:00:00`, `${dia(hoje, -45)} 08:00:00`]);
+
+    const e = await obter(cookie, '/api/painel/estoque?limite=100000');
+    expect(e.usoProprio.saidas30Dias).toBe(3);                       // a doação de 45 dias atrás fica de fora
+    expect(e.usoProprio.custo30Dias).toBe(18 + 10);                  // 3 x 6,00 + 4 x 2,50
+    expect(e.usoProprio.porMotivo).toEqual([
+      { motivo: 'Consumo próprio', saidas: 2, custo: 18 },
+      { motivo: 'Limpeza / uso na loja', saidas: 1, custo: 10 },
+    ]);
+    expect(e.usoProprio.itens).toHaveLength(3);
+    expect(e.usoProprio.itens[0]).toMatchObject({ descricao: expect.any(String), operador: expect.any(String) });
+    expect(e.resumo).toEqual(antes.resumo);                          // a saída já baixou o estoque na loja: o painel não desconta de novo
+  });
+
+  it('sem nenhuma saída, a seção vem vazia', async () => {
+    await carregarDados();
+    const e = await obter((await sessao()).cookie, '/api/painel/estoque?limite=100000');
+    expect(e.usoProprio).toMatchObject({ saidas30Dias: 0, porMotivo: [], itens: [] });
+  });
+});

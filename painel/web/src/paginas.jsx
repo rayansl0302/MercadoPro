@@ -392,6 +392,20 @@ export function Estoque() {
               ]} />
             </Secao>
           )}
+          {d.usoProprio.saidas30Dias > 0 && (
+            <Secao titulo="Saídas para uso próprio · últimos 30 dias">
+              <p className="mb-3 text-sm text-slate-600">{d.usoProprio.saidas30Dias} saída(s) tiradas do estoque para a loja · custo <b>{moeda(d.usoProprio.custo30Dias)}</b></p>
+              <Tabela linhas={d.usoProprio.porMotivo} colunas={[
+                { titulo: 'Motivo', render: (l) => l.motivo }, { titulo: 'Saídas', direita: true, render: (l) => l.saidas }, dinheiroCol('Custo', (l) => l.custo),
+              ]} />
+              <div className="mt-4" />
+              <Tabela linhas={d.usoProprio.itens} colunas={[
+                { titulo: 'Data', render: (l) => dataBr(String(l.dataHora).slice(0, 10)) }, { titulo: 'Produto', render: (l) => l.descricao },
+                { titulo: 'Qtd', direita: true, render: (l) => l.quantidade }, { titulo: 'Motivo', render: (l) => l.motivo },
+                { titulo: 'Operador', render: (l) => l.operador ?? '—' }, dinheiroCol('Custo', (l) => l.custo),
+              ]} />
+            </Secao>
+          )}
           {d.semControle.produtos > 0 && (
             <Secao titulo="Sem controle de estoque (ovos, itens a granel...) · últimos 30 dias">
               <p className="mb-3 text-sm text-slate-600">Produtos marcados na loja como "não controlar o estoque": não entram nos números de estoque acima.</p>
