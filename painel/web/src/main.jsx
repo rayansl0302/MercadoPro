@@ -5,11 +5,15 @@ import { api, horaBr } from './api.js';
 import { Agrupada, Caixas, ContasPagar, Devedores, Estoque, Fiscal, Fluxo, Operadores, Pedidos, Seguranca, Sincronizacao, VisaoGeral, Vendas } from './paginas.jsx';
 import { useDados } from './ui.jsx';
 import { CampoSenha, TrocarSenha, Usuarios } from './conta.jsx';
+import { Balanca } from './balanca.jsx';
 
 const MENU = [
   ['geral', 'Início'], ['vendas', 'Vendas'], ['pagar', 'Contas a pagar'], ['receber', 'A receber'],
-  ['estoque', 'Estoque'], ['fiscal', 'Fiscal e segurança'], ['loja', 'Loja e pedidos'],
+  ['estoque', 'Estoque'], ['balanca', 'Balança (etiquetas)'], ['fiscal', 'Fiscal e segurança'], ['loja', 'Loja e pedidos'],
 ];
+
+// rotas por caminho: só /balanca tem endereço próprio (para abrir direto no computador da balança)
+const paginaDoCaminho = () => (window.location.pathname.replace(/[/]+$/, '') === '/balanca' ? 'balanca' : 'geral');
 
 function Login({ onEntrou }) {
   const guardado = (() => { try { return localStorage.getItem('mp_email') ?? ''; } catch { return ''; } })();
@@ -68,7 +72,7 @@ function StatusLoja() {
 function App() {
   const [usuario, setUsuario] = useState(undefined);
   const [formas, setFormas] = useState([]);
-  const [pagina, setPagina] = useState('geral');
+  const [pagina, setPagina] = useState(paginaDoCaminho);
   const [empresa, setEmpresa] = useState('');
   const [aviso, setAviso] = useState('');
   const [aberto, setAberto] = useState(false);
@@ -79,6 +83,7 @@ function App() {
     api.get('/api/painel/eu').then((d) => { setUsuario(d.usuario); setFormas(d.formasPagamento); }).catch(() => setUsuario(null));
   }, []);
   useEffect(carregarEu, [carregarEu]);
+  useEffect(() => { const volta = () => setPagina(paginaDoCaminho()); window.addEventListener('popstate', volta); return () => window.removeEventListener('popstate', volta); }, []);
   useEffect(() => { if (usuario) api.get('/api/painel/empresas').then((d) => setEmpresas(d.empresas)).catch(() => {}); }, [usuario]);
   useEffect(() => { if (aviso) { const t = setTimeout(() => setAviso(''), 6000); return () => clearTimeout(t); } return undefined; }, [aviso]);
 
@@ -89,13 +94,18 @@ function App() {
   const podeAgir = ['gerente', 'admin'].includes(usuario.perfil);
   const menu = usuario.perfil === 'admin' ? [...MENU, ['usuarios', 'Usuários']] : MENU;
   const emp = empresa ? Number(empresa) : undefined;
-  const ir = (p) => { setPagina(p); setAberto(false); };
+  const ir = (p) => {
+    setPagina(p); setAberto(false);
+    const caminho = p === 'balanca' ? '/balanca' : '/';
+    if (window.location.pathname !== caminho) window.history.pushState(null, '', caminho);
+  };
   const telas = {
     geral: <VisaoGeral empresa={emp} ir={ir} />,
     vendas: <Agrupada abas={[['v', 'Vendas', <Vendas empresa={emp} />], ['o', 'Operadores', <Operadores empresa={emp} />], ['c', 'Caixas (abertura e fechamento)', <Caixas />]]} />,
     pagar: <ContasPagar empresa={emp} empresas={empresas} formas={formas} podeAgir={podeAgir} avisar={setAviso} />,
     receber: <Devedores empresa={emp} />,
     estoque: <Estoque />,
+    balanca: <Balanca />,
     fiscal: <Agrupada abas={[['f', 'Notas fiscais', <Fiscal />], ['s', 'Segurança', <Seguranca />]]} />,
     usuarios: <Usuarios eu={usuario} avisar={setAviso} />,
     loja: <Agrupada abas={[['p', 'Pedidos enviados', <Pedidos podeAgir={podeAgir} />], ['s', 'Sincronização', <Sincronizacao />]]} />,

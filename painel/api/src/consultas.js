@@ -215,6 +215,21 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     };
   });
 
+  // produto para a etiqueta de balança (/balanca): busca exata pelo código de barras cadastrado
+  app.get('/api/painel/balanca/produto', async (req) => {
+    await comLoja(req);
+    const q = z.object({ codigo: z.string().trim().min(1).max(50) }).parse(req.query ?? {});
+    const r = await pool.query(
+      `SELECT id, descricao, codigo_barras, un_comercial, preco FROM espelho.produtos
+       WHERE loja_id = $1 AND codigo_barras = $2 ORDER BY id LIMIT 2`,
+      [req.loja.id, q.codigo],
+    );
+    if (!r.rowCount) throw new ErroHttp(404, 'Produto não encontrado com esse código.');
+    if (r.rowCount > 1) throw new ErroHttp(409, 'Há mais de um produto com esse código de barras: corrija o cadastro na loja.');
+    const x = r.rows[0];
+    return { produto: { id: Number(x.id), descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, precoKg: dinheiro(x.preco) } };
+  });
+
   // ------------------------------------------------------------------ operadores
   app.get('/api/painel/operadores', async (req) => {
     await comLoja(req);

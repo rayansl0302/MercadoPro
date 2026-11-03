@@ -493,3 +493,26 @@ describe('venda no cartão com maquininha', () => {
     expect(semMaquina.venda).toMatchObject({ maquina: null, taxa_maquina: null, custo_taxa: null });
   });
 });
+
+describe('produto para a etiqueta de balança', () => {
+  it('acha pelo código de barras exato e devolve id, nome, unidade e preço por kg', async () => {
+    await carregarDados();
+    const L = loja.id;
+    await pool.query(
+      `INSERT INTO espelho.produtos (loja_id, id, descricao, quantidade, preco, codigo_barras, un_comercial) VALUES
+         ($1, 80, 'QUEIJO MUSSARELA', '10', '39.90', '4521', 'KG'),
+         ($1, 81, 'DUPLICADO A', '1', '5.00', '9999', 'UN'),
+         ($1, 82, 'DUPLICADO B', '1', '6.00', '9999', 'UN')`, [L]);
+    const { cookie } = await sessao();
+    const ok = await obter(cookie, '/api/painel/balanca/produto?codigo=4521');
+    expect(ok.produto).toEqual({ id: 80, descricao: 'QUEIJO MUSSARELA', codigoBarras: '4521', unidade: 'KG', precoKg: 39.9 });
+    expect((await app.inject({ method: 'GET', url: '/api/painel/balanca/produto?codigo=000', headers: { cookie } })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'GET', url: '/api/painel/balanca/produto?codigo=9999', headers: { cookie } })).statusCode).toBe(409);
+    expect((await app.inject({ method: 'GET', url: '/api/painel/balanca/produto', headers: { cookie } })).statusCode).toBe(422);
+  });
+
+  it('exige login', async () => {
+    const r = await app.inject({ method: 'GET', url: '/api/painel/balanca/produto?codigo=1' });
+    expect(r.statusCode).toBe(401);
+  });
+});
