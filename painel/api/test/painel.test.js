@@ -283,6 +283,21 @@ describe('consultas do painel', () => {
     expect(abertas.porCategoria[0]).toMatchObject({ categoria: 'Aluguel', total: 2800 });
   });
 
+  it('contas a pagar: período, tipo e pesquisa', async () => {
+    await carregarDados();
+    const { cookie } = await sessao();
+    const base = '/api/painel/contas-pagar?status=TODAS&empresa=1';
+    const { hoje } = await obter(cookie, base);
+    const periodo = await obter(cookie, `${base}&de=${dia(hoje, 0)}&ate=${dia(hoje, 3)}`);
+    expect(periodo.contas.map((c) => c.descricao)).toEqual(['Aluguel', 'Energia']);
+    expect(periodo.totalFiltrado).toBe(3230.9);
+    expect((await obter(cookie, `${base}&categoria=Fornecedor`)).contas.map((c) => c.descricao).sort()).toEqual(['Mercadoria', 'Parcela']);
+    expect((await obter(cookie, `${base}&categoria=__sem__`)).contas.map((c) => c.descricao)).toEqual(['Internet']);
+    expect((await obter(cookie, `${base}&busca=ALUG`)).contas.map((c) => c.descricao)).toEqual(['Aluguel']);
+    const todas = await obter(cookie, base);
+    expect(todas.categorias).toEqual(expect.arrayContaining(['Aluguel', 'Fornecedor', '__sem__']));
+  });
+
   it('fluxo, estoque, fiscal, segurança, empresas e sincronização', async () => {
     const { hoje } = await carregarDados();
     const { cookie } = await sessao();

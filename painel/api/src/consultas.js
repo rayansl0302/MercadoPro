@@ -329,8 +329,12 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       empresa: z.coerce.number().int().positive().optional(),
       de: dataIso.optional(),
       ate: dataIso.optional(),
+      categoria: z.string().trim().max(80).optional(),   // '__sem__' = sem categoria
+      busca: z.string().trim().max(80).optional(),       // descrição, fornecedor ou documento
     }).parse(req.query ?? {});
     const dia = await hoje(pool, req.loja.fuso);
+    const categoria = q.categoria || null;
+    const busca = q.busca ? q.busca.toLowerCase() : null;
     const r = await pool.query(
       `SELECT id, id_empresa, descricao, fornecedor, categoria, documento, valor, vencimento, status, valor_pago,
               forma_pagamento, pago_em, parcela, total_parcelas, observacao, motivo_cancelamento
@@ -338,18 +342,29 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
        WHERE loja_id = $1 AND ($2::int IS NULL OR id_empresa = $2)
          AND ($3 = 'TODAS' OR ($3 = 'VENCIDA' AND status = 'ABERTA' AND painel.data_segura(vencimento) < $6::date) OR ($3 <> 'VENCIDA' AND status = $3))
          AND ($4::date IS NULL OR painel.data_segura(vencimento) >= $4::date) AND ($5::date IS NULL OR painel.data_segura(vencimento) <= $5::date)
+         AND ($7::text IS NULL OR ($7 = '__sem__' AND coalesce(categoria, '') = '') OR categoria = $7)
+         AND ($8::text IS NULL OR position($8 in lower(coalesce(descricao, '') || ' ' || coalesce(fornecedor, '') || ' ' || coalesce(documento, ''))) > 0)
        ORDER BY painel.data_segura(vencimento), id LIMIT 500`,
-      [req.loja.id, q.empresa ?? null, q.status, q.de ?? null, q.ate ?? null, dia],
+      [req.loja.id, q.empresa ?? null, q.status, q.de ?? null, q.ate ?? null, dia, categoria, busca],
+    );
+    const totalFiltrado = r.rows.reduce((s, x) => s + Number(x.valor), 0);
+    const categorias = await pool.query(
+      `SELECT DISTINCT coalesce(nullif(categoria, ''), '__sem__') AS categoria FROM espelho.contas_pagar
+       WHERE loja_id = $1 AND ($2::int IS NULL OR id_empresa = $2) ORDER BY 1`,
+      [req.loja.id, q.empresa ?? null],
     );
     const porCategoria = await pool.query(
       `SELECT coalesce(nullif(categoria, ''), 'Sem categoria') AS categoria, count(*)::int AS qtd, coalesce(sum(valor), 0) AS total
        FROM espelho.contas_pagar WHERE loja_id = $1 AND status = 'ABERTA' AND ($2::int IS NULL OR id_empresa = $2)
          AND ($3::date IS NULL OR painel.data_segura(vencimento) >= $3::date) AND ($4::date IS NULL OR painel.data_segura(vencimento) <= $4::date)
+         AND ($5::text IS NULL OR position($5 in lower(coalesce(descricao, '') || ' ' || coalesce(fornecedor, '') || ' ' || coalesce(documento, ''))) > 0)
        GROUP BY 1 ORDER BY 3 DESC`,
-      [req.loja.id, q.empresa ?? null, q.de ?? null, q.ate ?? null],
+      [req.loja.id, q.empresa ?? null, q.de ?? null, q.ate ?? null, busca],
     );
     return {
       hoje: dia,
+      totalFiltrado: dinheiro(totalFiltrado),
+      categorias: categorias.rows.map((x) => x.categoria),
       contas: r.rows.map((x) => ({ ...x, valor: dinheiro(x.valor), valor_pago: x.valor_pago === null ? null : dinheiro(x.valor_pago) })),
       porCategoria: porCategoria.rows.map((x) => ({ categoria: x.categoria, qtd: x.qtd, total: dinheiro(x.total) })),
     };

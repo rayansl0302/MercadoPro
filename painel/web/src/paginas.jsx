@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, dataBr, dataHoraLoja, horaBr, moeda } from './api.js';
 import { Barras, Cartao, Estado, Periodo, periodoInicial, Secao, Selo, Tabela, useDados } from './ui.jsx';
 
@@ -216,20 +216,25 @@ export function ContasPagar(props) {
 
 function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
   const [status, setStatus] = useState('ABERTA');
-  const [mes, setMes] = useState(() => new Date().toLocaleDateString('sv-SE').slice(0, 7));   // YYYY-MM; '' = todos os meses
-  const periodo = mes ? { de: `${mes}-01`, ate: `${mes}-${String(new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate()).padStart(2, '0')}` } : {};
-  const r = useDados('/api/painel/contas-pagar', { status, empresa, ...periodo });
+  const hojeIso = new Date().toLocaleDateString('sv-SE');
+  const limitesDoMes = (iso) => {
+    const [ano, mm] = iso.split('-').map(Number);
+    const p = String(mm).padStart(2, '0');
+    return { de: `${ano}-${p}-01`, ate: `${ano}-${p}-${String(new Date(ano, mm, 0).getDate()).padStart(2, '0')}` };
+  };
+  const mesAtual = limitesDoMes(hojeIso);
+  const [de, setDe] = useState(mesAtual.de);        // abre sempre no mês corrente
+  const [ate, setAte] = useState(mesAtual.ate);
+  const [categoria, setCategoria] = useState('');
+  const [busca, setBusca] = useState('');
+  const [buscaAplicada, setBuscaAplicada] = useState('');
+  useEffect(() => { const t = setTimeout(() => setBuscaAplicada(busca), 350); return () => clearTimeout(t); }, [busca]);
+  const r = useDados('/api/painel/contas-pagar', { status, empresa, de: de || undefined, ate: ate || undefined, categoria: categoria || undefined, busca: buscaAplicada || undefined });
   const [baixando, setBaixando] = useState(null);
   const [lancando, setLancando] = useState(false);
-  const mudarMes = (delta) => {
-    const [a, m] = mes.split('-').map(Number);
-    const d = new Date(a, m - 1 + delta, 1);
-    setMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  };
-  const mesAtual = new Date().toLocaleDateString('sv-SE').slice(0, 7);
-  const somaMes = (base, delta) => { const [a, m] = base.split('-').map(Number); const d = new Date(a, m - 1 + delta, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
-  const nomeMes = (m) => new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  const opcoesMes = [...new Set([...Array.from({ length: 30 }, (_, i) => somaMes(mesAtual, i - 6)), ...(mes ? [mes] : [])])].sort();   // 6 meses atrás até 23 à frente
+  const noMesAtual = de === mesAtual.de && ate === mesAtual.ate;
+  const filtrando = !noMesAtual || categoria || busca;
+  const limpar = () => { setDe(mesAtual.de); setAte(mesAtual.ate); setCategoria(''); setBusca(''); };
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -246,16 +251,22 @@ function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
             {status === 'ABERTA' && d.porCategoria.length > 0 && (
               <Secao titulo="Em aberto por categoria"><Barras itens={d.porCategoria.map((c) => ({ rotulo: `${c.categoria} (${c.qtd})`, valor: c.total }))} formato={moeda} /></Secao>
             )}
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-slate-600">Mês:</span>
-              <button aria-label="Mês anterior" disabled={!mes} onClick={() => mudarMes(-1)} className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200 disabled:opacity-40">‹</button>
-              <select value={mes} onChange={(e) => setMes(e.target.value)} className="rounded-full border-0 bg-marca px-3 py-1 font-medium capitalize text-white ring-1 ring-marca">
-                <option value="">Todos os meses</option>
-                {opcoesMes.map((m) => <option key={m} value={m}>{nomeMes(m)}{m === mesAtual ? ' (atual)' : ''}</option>)}
-              </select>
-              <button aria-label="Próximo mês" disabled={!mes} onClick={() => mudarMes(1)} className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200 disabled:opacity-40">›</button>
-              {mes !== mesAtual && <button onClick={() => setMes(mesAtual)} className="rounded-full px-3 py-1 text-marca hover:bg-marca-claro">Voltar ao mês atual</button>}
+            <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 text-sm ring-1 ring-slate-200">
+              <label className="block"><span className="mb-1 block text-xs text-slate-500">Vencimento de</span><input type="date" value={de} max={ate || undefined} onChange={(e) => setDe(e.target.value)} className="rounded border border-slate-300 px-2 py-1.5" /></label>
+              <label className="block"><span className="mb-1 block text-xs text-slate-500">até</span><input type="date" value={ate} min={de || undefined} onChange={(e) => setAte(e.target.value)} className="rounded border border-slate-300 px-2 py-1.5" /></label>
+              <label className="block"><span className="mb-1 block text-xs text-slate-500">Tipo</span>
+                <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="rounded border border-slate-300 px-2 py-1.5">
+                  <option value="">Todos</option>
+                  {d.categorias.map((c) => <option key={c} value={c}>{c === '__sem__' ? 'Sem categoria' : c}</option>)}
+                </select></label>
+              <label className="block min-w-[12rem] flex-1"><span className="mb-1 block text-xs text-slate-500">Pesquisar</span><input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Descrição, fornecedor ou nº do documento" className="w-full rounded border border-slate-300 px-2 py-1.5" /></label>
+              <div className="flex gap-1">
+                <button onClick={() => { setDe(mesAtual.de); setAte(mesAtual.ate); }} className={`rounded-full px-3 py-1.5 ring-1 ${noMesAtual ? 'bg-marca text-white ring-marca' : 'bg-white ring-slate-200'}`}>Mês atual</button>
+                <button onClick={() => { setDe(''); setAte(''); }} className={`rounded-full px-3 py-1.5 ring-1 ${!de && !ate ? 'bg-marca text-white ring-marca' : 'bg-white ring-slate-200'}`}>Todo o período</button>
+                {filtrando && <button onClick={limpar} className="rounded-full px-3 py-1.5 text-marca hover:bg-marca-claro">Limpar filtros</button>}
+              </div>
             </div>
+            <p className="text-sm text-slate-600">{d.contas.length} conta(s) · total <b>{moeda(d.totalFiltrado)}</b></p>
             <Secao titulo="Contas">
               <Tabela linhas={d.contas} vazio="Nenhuma conta nesse filtro." colunas={[
                 { titulo: 'Vencimento', render: (l) => dataBr(l.vencimento) },
