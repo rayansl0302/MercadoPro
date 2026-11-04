@@ -203,7 +203,14 @@ export function criarApp({ pool, config }) {
     if (!r.rowCount) throw new ErroHttp(404, 'Produto não encontrado com esse código.');
     if (r.rowCount > 1) throw new ErroHttp(409, 'Há mais de um produto com esse código de barras: corrija o cadastro na loja.');
     const x = r.rows[0];
-    return { produto: { id: Number(x.id), descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, precoKg: Math.round(Number(x.preco ?? 0) * 100) / 100 } };
+    // preço com a taxa da maquininha mais cara (ativa): o mesmo valor que o PDV cobra e a etiqueta A4 imprime
+    const mq = await pool.query(
+      `SELECT coalesce(max(greatest(coalesce(taxa_debito, 0), coalesce(taxa_credito, 0))), 0) AS taxa
+       FROM espelho.maquinas_cartao WHERE loja_id = $1 AND ativa`, [l.rows[0].id]);
+    const taxa = Number(mq.rows[0].taxa ?? 0);
+    const base = Number(x.preco ?? 0);
+    const comTaxa = base > 0 && taxa > 0 && taxa < 100 ? base / (1 - taxa / 100) : base;
+    return { produto: { id: Number(x.id), descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, precoKg: Math.round(comTaxa * 100) / 100, taxaMaquina: taxa } };
   });
 
   app.get('/saude', async () => ({ ok: true }));

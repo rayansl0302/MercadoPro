@@ -1,4 +1,5 @@
 #include "maquinacartao_service.h"
+#include "precotaxa_service.h"
 
 QList<MaquinaCartaoDTO> MaquinaCartao_service::listar(bool incluirInativas)
 {
@@ -12,6 +13,7 @@ MaquinaCartaoDTO MaquinaCartao_service::get(qlonglong id)
 
 MaquinaCartao_service::Resultado MaquinaCartao_service::salvar(const MaquinaCartaoDTO &m)
 {
+    PrecoTaxa::invalidar();   // a taxa mais alta pode mudar: o preço de venda recalcula na hora
     MaquinaCartaoDTO maquina = m;
     maquina.nome = maquina.nome.trimmed();
     if (maquina.nome.isEmpty())
@@ -37,6 +39,7 @@ MaquinaCartao_service::Resultado MaquinaCartao_service::salvar(const MaquinaCart
 
 MaquinaCartao_service::Resultado MaquinaCartao_service::definirAtiva(qlonglong id, bool ativa)
 {
+    PrecoTaxa::invalidar();
     MaquinaCartaoDTO m = repo.get(id);
     if (!m.valida())
         return {false, "Maquininha não encontrada."};

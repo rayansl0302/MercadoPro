@@ -23,6 +23,7 @@
 #include "services/test_lanches.h"
 #include "services/test_saidausoproprio.h"
 #include "services/test_maquinacartao.h"
+#include "services/test_precotaxa.h"
 #include "services/test_backup.h"
 #include "services/test_tema.h"
 #include <QSqlDatabase>
@@ -35,6 +36,12 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     int status = 0;
+    // QE_SO_TESTE=PrecoTaxa roda só as classes de teste cujo nome contém o texto (rodada rápida durante o desenvolvimento)
+    const QString filtro = qEnvironmentVariable("QE_SO_TESTE");
+    auto rodar = [&](QObject *teste) {
+        if (filtro.isEmpty() || QString::fromLatin1(teste->metaObject()->className()).contains(filtro, Qt::CaseInsensitive))
+            status |= QTest::qExec(teste, argc, argv);
+    };
 #ifdef TEST_ENV
 #ifdef TEST_POSTGRES
     // Se a varivel de compilação "TEST_WITH_POSTGRES=ON" estiver sendo usada, criará um banco de dados postgre usando as
@@ -45,26 +52,27 @@ int main(int argc, char *argv[])
 #endif
 #endif//TEST_ENV
 
-    status |= QTest::qExec(new TestChaveAcessoUtil, argc, argv);
-    status |= QTest::qExec(new TestProdutoService, argc, argv);
-    status |= QTest::qExec(new test_barcode_service, argc, argv);
-    status |= QTest::qExec(new test_manifestadordfe, argc, argv);
-    status |= QTest::qExec(new test_cliente_service, argc, argv);
-    status |= QTest::qExec(new TestVendasService, argc, argv);
-    status |= QTest::qExec(new TestProdutoVendaService, argc, argv);
-    status |= QTest::qExec(new TestFiscalEmitterService, argc, argv);
-    status |= QTest::qExec(new test_eventofiscal_service, argc, argv);
-    status |= QTest::qExec(new TestEntradaNfeService, argc, argv);
-    status |= QTest::qExec(new TestCaixaService, argc, argv);
-    status |= QTest::qExec(new TestEmpresaContas, argc, argv);
-    status |= QTest::qExec(new TestContasReceber, argc, argv);
-    status |= QTest::qExec(new TestNumeracaoNF, argc, argv);
-    status |= QTest::qExec(new TestNuvem, argc, argv);
-    status |= QTest::qExec(new TestLanches, argc, argv);
-    status |= QTest::qExec(new TestSaidaUsoProprio, argc, argv);
-    status |= QTest::qExec(new TestMaquinaCartao, argc, argv);
-    status |= QTest::qExec(new TestBackup, argc, argv);
-    status |= QTest::qExec(new TestTema, argc, argv);
+    rodar(new TestChaveAcessoUtil);
+    rodar(new TestProdutoService);
+    rodar(new test_barcode_service);
+    rodar(new test_manifestadordfe);
+    rodar(new test_cliente_service);
+    rodar(new TestVendasService);
+    rodar(new TestProdutoVendaService);
+    rodar(new TestFiscalEmitterService);
+    rodar(new test_eventofiscal_service);
+    rodar(new TestEntradaNfeService);
+    rodar(new TestCaixaService);
+    rodar(new TestEmpresaContas);
+    rodar(new TestContasReceber);
+    rodar(new TestNumeracaoNF);
+    rodar(new TestNuvem);
+    rodar(new TestLanches);
+    rodar(new TestSaidaUsoProprio);
+    rodar(new TestMaquinaCartao);
+    rodar(new TestPrecoTaxa);
+    rodar(new TestBackup);
+    rodar(new TestTema);
 
 #ifdef TEST_POSTGRES
     TestDbFactory::removerBDAtual();

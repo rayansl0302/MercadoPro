@@ -2,6 +2,8 @@
 #include "alterarproduto.h"
 #include <QBoxLayout>
 #include <QCheckBox>
+#include <QLabel>
+#include "services/precotaxa_service.h"
 #include <QPushButton>
 #include "saidausopropriodialog.h"
 #include "ui_alterarproduto.h"
@@ -22,7 +24,12 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     // a aba "Principal" é posicionada manualmente (sem layout): a caixa fica logo abaixo do grupo "Preços"
     chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque (ovos, a granel)"), ui->groupBox->parentWidget());
     chSemEstoque->setToolTip(QStringLiteral("Marcado: vender ou devolver não altera a quantidade, e o painel online não soma o produto no estoque."));
-    chSemEstoque->setGeometry(ui->groupBox->x(), ui->groupBox->geometry().bottom() + 12, ui->groupBox->width(), 24);
+    // preço de venda com a taxa da maquininha mais cara (o cadastro guarda o preço base): logo abaixo do grupo Preços
+    lblPrecoComTaxa = new QLabel(ui->groupBox->parentWidget());
+    lblPrecoComTaxa->setWordWrap(true);
+    lblPrecoComTaxa->setStyleSheet("color: #107A2E; font-weight: bold;");
+    lblPrecoComTaxa->setGeometry(ui->groupBox->x(), ui->groupBox->geometry().bottom() + 6, ui->groupBox->width(), 40);
+    chSemEstoque->setGeometry(ui->groupBox->x(), lblPrecoComTaxa->geometry().bottom() + 6, ui->groupBox->width(), 24);
     // produto de uso da loja (limpeza, sacolas...): o painel online não soma no estoque
     chUsoLoja = new QCheckBox(QStringLiteral("Produto de uso da loja (limpeza, sacolas...)"), ui->groupBox->parentWidget());
     chUsoLoja->setToolTip(QStringLiteral("Marcado: o painel online não soma o produto no valor do estoque; ele aparece numa seção separada."));
@@ -55,6 +62,7 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     QIntValidator *intValidador = new QIntValidator(1,999);
 
     ui->Ledit_AltPreco->setValidator(DoubleValidador);
+    connect(ui->Ledit_AltPreco, &QLineEdit::textChanged, this, [this]() { atualizarPrecoComTaxa(); });
     ui->Ledit_AltQuant->setValidator(DoubleValidador);
     ui->Ledit_AltPrecoFornecedor->setValidator(DoubleValidador);
     ui->Ledit_AltPercentualLucro->setValidator(DoubleValidador);
@@ -78,6 +86,12 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     produtoService = new Produto_Service();
 
 
+}
+
+void AlterarProduto::atualizarPrecoComTaxa()
+{
+    const QString texto = PrecoTaxa::textoPrecoDeVenda(portugues.toDouble(ui->Ledit_AltPreco->text()));
+    lblPrecoComTaxa->setText(texto);
 }
 
 AlterarProduto::~AlterarProduto()

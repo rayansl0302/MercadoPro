@@ -146,6 +146,7 @@ private slots:
     void backupClicked();
     void exportarProdutosCodigoInterno();
     void exportarProdutosBalanca();
+    void exportarEtiquetasPreco();
     void exportarCatalogoPdf(const QList<ProdutoDTO> &lista, const QString &titulo, const QString &arquivoBase,
                              const QString &textoFinal);
     void atualizarIndicadorNuvem();

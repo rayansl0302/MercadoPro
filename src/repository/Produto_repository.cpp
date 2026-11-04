@@ -586,3 +586,31 @@ QVariantMap Produto_Repository::getProdutoPorCodBarrasMap(const QString &codigo)
     QVector<QVariantMap> registros = DBUtil::extrairResultados(query);
     return registros.isEmpty() ? QVariantMap{} : registros.first();
 }
+
+QList<ProdutoDTO> Produto_Repository::listarParaEtiquetas(bool soBalanca){
+    QList<ProdutoDTO> lista;
+    if(!DatabaseConnection_service::open()){
+        qDebug() << "db nao aberto ao listarParaEtiquetas";
+        return lista;
+    }
+    QSqlQuery query(db);
+    query.prepare(QStringLiteral("SELECT id, descricao, preco, codigo_barras, un_comercial FROM produtos "
+                                 "WHERE preco > 0 %1 ORDER BY descricao")
+                      .arg(soBalanca ? QStringLiteral("AND balanca = :balanca") : QString()));
+    if(soBalanca)
+        query.bindValue(":balanca", true);
+    if(!query.exec()){
+        qDebug() << "Query listarParaEtiquetas falhou";
+        return lista;
+    }
+    while(query.next()){
+        ProdutoDTO p;
+        p.id = query.value("id").toLongLong();
+        p.descricao = query.value("descricao").toString();
+        p.preco = query.value("preco").toDouble();
+        p.codigoBarras = query.value("codigo_barras").toString().trimmed();
+        p.uCom = query.value("un_comercial").toString();
+        lista.append(p);
+    }
+    return lista;
+}

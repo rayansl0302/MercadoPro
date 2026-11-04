@@ -51,6 +51,8 @@ protected:
     class QCheckBox *chSemEstoque = nullptr;
     class QCheckBox *chUsoLoja = nullptr;
     class QCheckBox *chBalanca = nullptr;
+    class QLabel *lblPrecoComTaxa = nullptr;   // "preço de venda com a taxa da maquininha"
+    void atualizarPrecoComTaxa();
     class QPushButton *btnSaidaUsoProprio = nullptr;
 
 private:

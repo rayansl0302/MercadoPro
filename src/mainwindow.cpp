@@ -74,6 +74,8 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include "util/catalogobarras.h"
+#include "util/etiquetaspreco.h"
+#include "services/precotaxa_service.h"
 #include "util/tema.h"
 #include "services/backup_service.h"
 #include <QProgressDialog>
@@ -455,7 +457,7 @@ void MainWindow::imprimirEtiqueta1(){
 
 
     EscPosPrinter_service printer;
-    auto r1 = printer.imprimirEtiquetas(configDTO.impressoraNomeDispositivo, 1, barcode, descVariant.toString(),precoVariant.toDouble());
+    auto r1 = printer.imprimirEtiquetas(configDTO.impressoraNomeDispositivo, 1, barcode, descVariant.toString(), PrecoTaxa::comTaxa(precoVariant.toDouble()));
     if(!r1.ok){
         QMessageBox::warning(this, "Erro", r1.msg);
         return;
@@ -479,7 +481,7 @@ void MainWindow::imprimirEtiqueta3(){
 
 
     EscPosPrinter_service printer;
-    auto r1 = printer.imprimirEtiquetas(configDTO.impressoraNomeDispositivo, 3, barcode, descVariant.toString(),precoVariant.toDouble());
+    auto r1 = printer.imprimirEtiquetas(configDTO.impressoraNomeDispositivo, 3, barcode, descVariant.toString(), PrecoTaxa::comTaxa(precoVariant.toDouble()));
     if(!r1.ok){
         QMessageBox::warning(this, "Erro", r1.msg);
         return;
@@ -502,7 +504,7 @@ void MainWindow::imprimirNomePreco(int quantidade){
 
     EscPosPrinter_service printer;
     auto r1 = printer.imprimirNomePreco(configDTO.impressoraNomeDispositivo, quantidade,
-                                        descVariant.toString(), precoVariant.toDouble());
+                                        descVariant.toString(), PrecoTaxa::comTaxa(precoVariant.toDouble()));
     if(!r1.ok){
         QMessageBox::warning(this, "Erro", r1.msg);
         return;
@@ -740,6 +742,54 @@ void MainWindow::exportarProdutosBalanca()
                         "Imprima e deixe no balcão para achar o código sem procurar no sistema.");
 }
 
+// Folha A4 de etiquetas de preço para recortar e colar na gôndola. O preço impresso já leva a taxa da maquininha
+// mais cara (o mesmo valor que a venda cobra), então a gôndola e o caixa sempre batem.
+void MainWindow::exportarEtiquetasPreco()
+{
+    const double taxa = PrecoTaxa::maiorTaxa();
+    QMessageBox escolha(QMessageBox::Question, QStringLiteral("Etiquetas de preço (A4)"),
+                        QStringLiteral("Gerar a folha de etiquetas de preço para recortar e colar na gôndola.\n\n%1\n\nQuais produtos?")
+                            .arg(taxa > 0 ? QStringLiteral("Os preços saem já com a taxa da maquininha mais cara (%1%), o mesmo valor cobrado na venda.")
+                                                .arg(QLocale(QLocale::Portuguese, QLocale::Brazil).toString(taxa, 'f', 2))
+                                          : QStringLiteral("Nenhuma maquininha ativa cadastrada: os preços saem como estão no cadastro.")),
+                        QMessageBox::NoButton, this);
+    auto *botaoTodos = escolha.addButton("Todos os produtos", QMessageBox::AcceptRole);
+    auto *botaoBalanca = escolha.addButton("Só os de balança", QMessageBox::AcceptRole);
+    escolha.addButton("Cancelar", QMessageBox::RejectRole);
+    escolha.exec();
+    if (escolha.clickedButton() != botaoTodos && escolha.clickedButton() != botaoBalanca)
+        return;
+
+    Produto_Service produtos;
+    const QList<ProdutoDTO> lista = produtos.listarParaEtiquetas(escolha.clickedButton() == botaoBalanca);
+    if (lista.isEmpty()) {
+        QMessageBox::information(this, QStringLiteral("Etiquetas de preço (A4)"), QStringLiteral("Nenhum produto com preço para imprimir."));
+        return;
+    }
+    const QString padrao = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/etiquetas-de-preco.pdf";
+    QString caminho = QFileDialog::getSaveFileName(this, "Salvar o PDF: etiquetas de preço", padrao, "PDF (*.pdf)");
+    if (caminho.isEmpty())
+        return;
+    if (!caminho.endsWith(".pdf", Qt::CaseInsensitive))
+        caminho += ".pdf";
+
+    QList<EtiquetasPreco::Item> itens;
+    for (const ProdutoDTO &p : lista)
+        itens.append({p.descricao, p.uCom, PrecoTaxa::comTaxa(p.preco)});
+    const QString observacao = taxa > 0
+        ? QStringLiteral("Preços com a taxa da maquininha (%1%) já incluída.").arg(QLocale(QLocale::Portuguese, QLocale::Brazil).toString(taxa, 'f', 2))
+        : QString();
+    QString erro;
+    if (!EtiquetasPreco::gerarPdf(caminho, Config_service().carregarTudo().nomeEmpresa, observacao, itens, &erro)) {
+        QMessageBox::warning(this, QStringLiteral("Etiquetas de preço (A4)"), erro);
+        return;
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(caminho));
+    QMessageBox::information(this, QStringLiteral("Etiquetas de preço (A4)"),
+                             QStringLiteral("PDF gerado com %1 etiqueta(s) em %2 folha(s) (%3 por folha).\nImprima em A4 e recorte nas linhas tracejadas.")
+                                 .arg(lista.size()).arg(EtiquetasPreco::paginas(lista.size())).arg(EtiquetasPreco::kPorPagina));
+}
+
 void MainWindow::exportarCatalogoPdf(const QList<ProdutoDTO> &lista, const QString &titulo, const QString &arquivoBase,
                                      const QString &textoFinal)
 {
@@ -764,7 +814,7 @@ void MainWindow::exportarCatalogoPdf(const QList<ProdutoDTO> &lista, const QStri
 
     QList<CatalogoBarras::Item> itens;
     for (const ProdutoDTO &p : lista)
-        itens.append({p.descricao, p.uCom, p.preco, p.codigoBarras});
+        itens.append({p.descricao, p.uCom, PrecoTaxa::comTaxa(p.preco), p.codigoBarras});
     const QString empresa = Config_service().carregarTudo().nomeEmpresa;
 
     QString erro;
@@ -863,6 +913,8 @@ void MainWindow::montarMenuCaixa()
                                 [this]() { exportarProdutosCodigoInterno(); });
     ui->menuExportar->addAction(QStringLiteral("Produtos de balança (PDF para o balcão)..."), this,
                                 [this]() { exportarProdutosBalanca(); });
+    ui->menuExportar->addAction(QStringLiteral("Etiquetas de preço para a gôndola (A4, recortar)..."), this,
+                                [this]() { exportarEtiquetasPreco(); });
 
     // Ajuda > Verificar atualizações (mostra a versão instalada)
     ui->menuAjuda->addSeparator();

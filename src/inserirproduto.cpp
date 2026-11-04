@@ -1,6 +1,9 @@
 #include "inserirproduto.h"
 #include <QBoxLayout>
 #include <QCheckBox>
+#include <QGridLayout>
+#include <QLabel>
+#include "services/precotaxa_service.h"
 #include "ui_inserirproduto.h"
 #include <QMessageBox>
 #include <QRandomGenerator>
@@ -38,6 +41,14 @@ InserirProduto::InserirProduto(QWidget *parent)
         chUsoLoja->hide();
         chBalanca->hide();
     }
+    // preço de venda com a taxa da maquininha mais cara (o cadastro guarda o preço base)
+    lblPrecoComTaxa = new QLabel(this);
+    lblPrecoComTaxa->setWordWrap(true);
+    lblPrecoComTaxa->setStyleSheet("color: #107A2E; font-weight: bold;");
+    if (auto *grade = qobject_cast<QGridLayout *>(ui->Lbl_DicaPreco->parentWidget()->layout()))
+        grade->addWidget(lblPrecoComTaxa, grade->rowCount(), 0, 1, 3);
+    connect(ui->Ledit_PrecoFinal, &QLineEdit::textChanged, this, [this]() { atualizarPrecoComTaxa(); });
+    atualizarPrecoComTaxa();
     ui->tabWidget->setCurrentIndex(0);
     connect(ui->Btn_Cancelar, &QPushButton::clicked, this, &QWidget::close);
 
@@ -206,6 +217,13 @@ void InserirProduto::on_Btn_Enviar_clicked()
 
     emit produtoInserido();
     this->close();
+}
+
+void InserirProduto::atualizarPrecoComTaxa()
+{
+    const QString texto = PrecoTaxa::textoPrecoDeVenda(portugues.toDouble(ui->Ledit_PrecoFinal->text()));
+    lblPrecoComTaxa->setText(texto);
+    lblPrecoComTaxa->setVisible(!texto.isEmpty());
 }
 
 void InserirProduto::on_Ledit_PrecoFornecedor_textChanged(const QString &arg1)

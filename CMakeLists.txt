@@ -149,6 +149,7 @@ set(QESTOQUE_SOURCES
     src/repository/saidausoproprio_repository.cpp
     src/repository/maquinacartao_repository.cpp
     src/services/maquinacartao_service.cpp
+    src/services/precotaxa_service.cpp
     src/services/saidausoproprio_service.cpp
     src/repository/relatorios_repository.cpp
     src/repository/contaspagar_repository.cpp
@@ -186,6 +187,7 @@ set(QESTOQUE_SOURCES
     src/util/comandalanche.cpp
     src/util/cardapiolanches.cpp
     src/util/catalogobarras.cpp
+    src/util/etiquetaspreco.cpp
     src/util/cardapio.qrc
 
 
@@ -331,6 +333,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/util/comandalanche.h src/util/comandalanche.cpp
         src/util/cardapiolanches.h src/util/cardapiolanches.cpp
         src/util/catalogobarras.h src/util/catalogobarras.cpp
+        src/util/etiquetaspreco.h src/util/etiquetaspreco.cpp
         src/util/cardapio.qrc
         src/infra/databaseconnection_service.h src/infra/databaseconnection_service.cpp
         src/services/schemamigration_service.cpp src/services/schemamigration_service.h
@@ -361,6 +364,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/dto/MaquinaCartao_dto.h
         src/repository/maquinacartao_repository.h src/repository/maquinacartao_repository.cpp
         src/services/maquinacartao_service.h src/services/maquinacartao_service.cpp
+        src/services/precotaxa_service.h src/services/precotaxa_service.cpp
         src/seletormaquinacartao.h src/seletormaquinacartao.cpp
         src/maquinascartaodialog.h src/maquinascartaodialog.cpp
         src/repository/contaspagar_repository.h src/repository/contaspagar_repository.cpp

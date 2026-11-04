@@ -67,6 +67,7 @@ public:
   bool semControleDeEstoque(qlonglong idprod);
   QList<ProdutoDTO> listarComCodigoInterno();
   QList<ProdutoDTO> listarDeBalanca();
+  QList<ProdutoDTO> listarParaEtiquetas(bool soBalanca);
   ProdutoDTO getProduto(qlonglong id);
   ProdutoDTO getProdutoPeloCodBarras(const QString &codigo);
   ProdutoDTO getProdutoPelaDescricao(const QString &descricao);

@@ -322,3 +322,7 @@ Produto_Service::Resultado Produto_Service::updateDiminuirQuantidadeProduto(qlon
     }
 }
 
+
+QList<ProdutoDTO> Produto_Service::listarParaEtiquetas(bool soBalanca){
+    return repo.listarParaEtiquetas(soBalanca);
+}

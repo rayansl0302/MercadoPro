@@ -31,6 +31,7 @@ public:
     // produtos sem código de embalagem (GTIN/EAN válido): código gerado, curto ou manual; por descrição
     QList<ProdutoDTO> listarComCodigoInterno();
     QList<ProdutoDTO> listarDeBalanca();   // produtos marcados "de balança", por ordem de nome
+    QList<ProdutoDTO> listarParaEtiquetas(bool soBalanca);   // produtos com preço, por ordem de nome (etiquetas de gôndola)
     ProdutoDTO getProdutoPelaDescricao(const QString &descricao);
     bool updateDiminuirQuantidadeProduto(qlonglong idprod, double quantia);
     QVariantMap getProdutoPorCodBarrasMap(const QString &codigo);

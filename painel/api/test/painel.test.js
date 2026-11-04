@@ -519,7 +519,11 @@ describe('produto para a etiqueta de balança', () => {
          ($1, 81, 'DUPLICADO A', '1', '5.00', '9999', 'UN'),
          ($1, 82, 'DUPLICADO B', '1', '6.00', '9999', 'UN')`, [L]);
     const ok = (await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=4521' })).json();
-    expect(ok.produto).toEqual({ id: 80, descricao: 'QUEIJO MUSSARELA', codigoBarras: '4521', unidade: 'KG', precoKg: 39.9 });
+    expect(ok.produto).toEqual({ id: 80, descricao: 'QUEIJO MUSSARELA', codigoBarras: '4521', unidade: 'KG', precoKg: 39.9, taxaMaquina: 0 });
+    // com maquininha cadastrada, o preço por kg já leva a maior taxa (3%): 39,90 ÷ 0,97
+    await pool.query("INSERT INTO espelho.maquinas_cartao (loja_id, id, nome, taxa_debito, taxa_credito, ativa) VALUES ($1, 1, 'Stone', '1.50', '3.00', true), ($1, 2, 'Velha', '9.00', '9.00', false)", [L]);
+    const comTaxa = (await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=4521' })).json();
+    expect(comTaxa.produto).toMatchObject({ precoKg: 41.13, taxaMaquina: 3 });
     expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=000' })).statusCode).toBe(404);
     expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=9999' })).statusCode).toBe(409);
     expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto' })).statusCode).toBe(422);

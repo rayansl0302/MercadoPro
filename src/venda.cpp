@@ -43,6 +43,7 @@
 #include "../services/Produto_service.h"
 #include "services/config_service.h"
 #include "services/sessao_service.h"
+#include "services/precotaxa_service.h"
 
 namespace {
 // Coluna extra "Ações" em cima do QSqlQueryModel do catálogo, sem alterar o SELECT.
@@ -84,6 +85,11 @@ public:
     {
         if (!sourceModel() || index.column() >= sourceModel()->columnCount())
             return {};
+        // coluna "Preço": o catálogo do PDV mostra (e vende) o preço com a taxa da maquininha mais cara
+        if (index.column() == 3 && (role == Qt::DisplayRole || role == Qt::EditRole)) {
+            const QVariant base = QIdentityProxyModel::data(index, role);
+            return base.isValid() ? QVariant(PrecoTaxa::comTaxa(base.toDouble())) : base;
+        }
         return QIdentityProxyModel::data(index, role);
     }
 
@@ -1578,7 +1584,7 @@ void venda::on_Ledit_Pesquisa_returnPressed()
 
     if (prodServ.codigoBarrasExiste(barras)) {
         ProdutoDTO prod = prodServ.getProdutoPeloCodBarras(barras);
-        adicionarAoCarrinho(prod.id, prod.descricao, prod.preco, quantidade);
+        adicionarAoCarrinho(prod.id, prod.descricao, PrecoTaxa::comTaxa(prod.preco), quantidade);
         return;
     }
 
@@ -1596,7 +1602,7 @@ void venda::on_Ledit_Pesquisa_returnPressed()
     if (modeloProdutos->rowCount() == 1 && !modeloProdutos->canFetchMore()) {
         adicionarAoCarrinho(modeloProdutos->data(modeloProdutos->index(0, 0)).toLongLong(),
                             modeloProdutos->data(modeloProdutos->index(0, 2)).toString(),
-                            modeloProdutos->data(modeloProdutos->index(0, 3)).toDouble(), quantidade);
+                            PrecoTaxa::comTaxa(modeloProdutos->data(modeloProdutos->index(0, 3)).toDouble()), quantidade);
     } else if (modeloProdutos->rowCount() > 0) {
         focarCatalogo();
     } else {
