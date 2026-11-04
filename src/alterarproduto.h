@@ -53,6 +53,8 @@ protected:
     class QCheckBox *chBalanca = nullptr;
     class QLabel *lblPrecoComTaxa = nullptr;   // "preço de venda com a taxa da maquininha"
     void atualizarPrecoComTaxa();
+    void reorganizarAbaPrincipal();   // empilha aviso de taxa, caixas e botão abaixo do grupo Preços, sem sobrepor
+    void showEvent(QShowEvent *e) override;
     class QPushButton *btnSaidaUsoProprio = nullptr;
 
 private:

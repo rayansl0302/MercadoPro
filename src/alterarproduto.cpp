@@ -1,4 +1,5 @@
 #include <QTabBar>
+#include <QShowEvent>
 #include "alterarproduto.h"
 #include <QBoxLayout>
 #include <QCheckBox>
@@ -28,20 +29,15 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
     lblPrecoComTaxa = new QLabel(ui->groupBox->parentWidget());
     lblPrecoComTaxa->setWordWrap(true);
     lblPrecoComTaxa->setStyleSheet("color: #107A2E; font-weight: bold;");
-    lblPrecoComTaxa->setGeometry(ui->groupBox->x(), ui->groupBox->geometry().bottom() + 6, ui->groupBox->width(), 40);
-    chSemEstoque->setGeometry(ui->groupBox->x(), lblPrecoComTaxa->geometry().bottom() + 6, ui->groupBox->width(), 24);
     // produto de uso da loja (limpeza, sacolas...): o painel online não soma no estoque
     chUsoLoja = new QCheckBox(QStringLiteral("Produto de uso da loja (limpeza, sacolas...)"), ui->groupBox->parentWidget());
     chUsoLoja->setToolTip(QStringLiteral("Marcado: o painel online não soma o produto no valor do estoque; ele aparece numa seção separada."));
-    chUsoLoja->setGeometry(chSemEstoque->x(), chSemEstoque->geometry().bottom() + 6, chSemEstoque->width(), 24);
     // produto de balança (vendido por peso): entra no PDF para o balcão
     chBalanca = new QCheckBox(QStringLiteral("Produto de balança (vendido por peso)"), ui->groupBox->parentWidget());
     chBalanca->setToolTip(QStringLiteral("Marcado: o produto sai na lista impressa para o balcão (menu Exportar > Produtos de balança)."));
-    chBalanca->setGeometry(chUsoLoja->x(), chUsoLoja->geometry().bottom() + 6, chUsoLoja->width(), 24);
     // dar saída de estoque para uso próprio (consumo, limpeza, quebra...) sem sair do cadastro
     btnSaidaUsoProprio = new QPushButton(QStringLiteral("Saída para uso próprio..."), ui->groupBox->parentWidget());
     btnSaidaUsoProprio->setToolTip(QStringLiteral("Tira uma quantidade do estoque para uso da loja e registra o motivo."));
-    btnSaidaUsoProprio->setGeometry(chBalanca->x(), chBalanca->geometry().bottom() + 10, 200, 32);
     connect(btnSaidaUsoProprio, &QPushButton::clicked, this, [this]() {
         SaidaUsoProprioDialog dlg(idAlt.toLongLong(), this);
         if (dlg.exec() == QDialog::Accepted && dlg.registrou()) {
@@ -49,7 +45,7 @@ AlterarProduto::AlterarProduto(QWidget *parent) :
             accept();
         }
     });
-    ui->tabWidget->setMinimumHeight(btnSaidaUsoProprio->geometry().bottom() + ui->tabWidget->tabBar()->height() + 24);
+    reorganizarAbaPrincipal();
     util->setParent(this);
     db = QSqlDatabase::database();
 
@@ -92,6 +88,36 @@ void AlterarProduto::atualizarPrecoComTaxa()
 {
     const QString texto = PrecoTaxa::textoPrecoDeVenda(portugues.toDouble(ui->Ledit_AltPreco->text()));
     lblPrecoComTaxa->setText(texto);
+    reorganizarAbaPrincipal();
+}
+
+void AlterarProduto::showEvent(QShowEvent *e)
+{
+    QDialog::showEvent(e);
+    reorganizarAbaPrincipal();
+}
+
+void AlterarProduto::reorganizarAbaPrincipal()
+{
+    QWidget *aba = ui->groupBox->parentWidget();
+    const int x = ui->groupBox->x();
+    const int w = ui->groupBox->width();
+    // o conteúdo do grupo pode passar da borda (fonte maior no Windows): parte do ponto mais baixo
+    int base = ui->groupBox->geometry().bottom();
+    for (QWidget *filho : ui->groupBox->findChildren<QWidget *>())
+        base = qMax(base, ui->groupBox->geometry().top() + filho->mapTo(ui->groupBox, QPoint(0, filho->height())).y());
+    int y = base + 12;
+    lblPrecoComTaxa->setVisible(!lblPrecoComTaxa->text().isEmpty());
+    if (lblPrecoComTaxa->isVisibleTo(aba)) {
+        const int h = qMax(20, lblPrecoComTaxa->heightForWidth(w));
+        lblPrecoComTaxa->setGeometry(x, y, w, h);
+        y += h + 10;
+    }
+    chSemEstoque->setGeometry(x, y, w, 24);
+    chUsoLoja->setGeometry(x, y + 30, w, 24);
+    chBalanca->setGeometry(x, y + 60, w, 24);
+    btnSaidaUsoProprio->setGeometry(x, y + 94, 200, 32);
+    ui->tabWidget->setMinimumHeight(y + 94 + 32 + ui->tabWidget->tabBar()->height() + 24);
 }
 
 AlterarProduto::~AlterarProduto()
