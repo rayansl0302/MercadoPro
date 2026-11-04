@@ -86,11 +86,20 @@ bool gerarPdf(const QString &caminho, const QString &empresa, const QString &obs
             // nome: até 2 linhas, cortado se for maior
             const QRect areaNome(miolo.left(), miolo.top(), miolo.width(), 118);
             p.setPen(QColor("#142D45"));
-            p.setFont(fonteNome);
-            p.save();
-            p.setClipRect(areaNome);
+            // reduz a letra até o nome inteiro caber na área (nunca corta)
+            QFont fonteDoNome = fonteNome;
+            double pontosNome = fonteNome.pointSizeF();
+            while (pontosNome > 6.0) {
+                p.setFont(fonteDoNome);
+                const QRect usado = p.boundingRect(QRect(0, 0, areaNome.width(), 10000),
+                                                   Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap, item.descricao);
+                if (usado.height() <= areaNome.height())
+                    break;
+                pontosNome -= 0.5;
+                fonteDoNome.setPointSizeF(pontosNome);
+            }
+            p.setFont(fonteDoNome);
             p.drawText(areaNome, Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap, item.descricao);
-            p.restore();
 
             // preço grande, reduzido se não couber na largura da etiqueta
             const QString preco = QStringLiteral("R$ ") + ptBR.toString(item.preco, 'f', 2);
