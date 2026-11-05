@@ -118,7 +118,10 @@ QString formatarQuantidade(const QLocale &base, double q)
     QLocale l = base;
     l.setNumberOptions(l.numberOptions() | QLocale::OmitGroupSeparator);
     const bool inteira = std::fabs(q - std::round(q)) < 1e-9;
-    return l.toString(q, 'f', inteira ? 0 : 2);
+    QString txt = l.toString(q, 'f', inteira ? 0 : 3);   // até 3 casas: 125 g = 0,125 kg
+    if (!inteira && txt.endsWith('0'))
+        txt.chop(1);                                       // 1,500 -> 1,50
+    return txt;
 }
 }
 
@@ -1177,7 +1180,7 @@ void venda::verificarRascunho()
 
         modeloSelecionados->appendRow({
             new QStandardItem(QString::number(p.idProduto)),
-            new QStandardItem(portugues.toString(p.quantidade, 'f', 2)),
+            new QStandardItem(formatarQuantidade(portugues, p.quantidade)),
             new QStandardItem(p.descricao),
             itemPreco,
             itemTotal
@@ -1566,12 +1569,12 @@ void venda::on_Ledit_Pesquisa_returnPressed()
 
     // multiplicador: "3*7891234567890" adiciona 3 unidades
     double quantidade = 1;
-    static const QRegularExpression multiplicador(QStringLiteral("^(\\d+(?:[.,]\\d+)?)\\s*\\*\\s*(.+)$"));
+    // também aceita peso: "350g*codigo" ou "0,35kg*codigo"
+    static const QRegularExpression multiplicador(QStringLiteral("^(\\d+(?:[.,]\\d+)?\\s*(?:g|gr|kg)?)\\s*\\*\\s*(.+)$"),
+                                                  QRegularExpression::CaseInsensitiveOption);
     const QRegularExpressionMatch m = multiplicador.match(barras);
     if (m.hasMatch()) {
-        QString qtdTexto = m.captured(1);
-        qtdTexto.replace(',', '.');
-        quantidade = qtdTexto.toDouble();
+        quantidade = DelegateQuant::lerQuantidade(m.captured(1));
         barras = m.captured(2).trimmed();
         if (quantidade <= 0) {
             QMessageBox::warning(this, "Erro", "A quantidade deve ser maior que zero.");
