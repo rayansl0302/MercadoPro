@@ -228,6 +228,8 @@ FiscalEmitter_service::Resultado FiscalEmitter_service::enviarNfcePadrao(VendasD
     nfce->setProdutosVendidosNew(listaProds, emitirTodos);
     nfce->setPagamentoValores(venda.formaPagamento,venda.desconto,venda.valorRecebido,
                               venda.troco, venda.taxa);
+    if (venda.misto())
+        nfce->setPagamentosMistos(venda.pagamentos);
 
     NFRetornoDTO notaRet = nfce->gerarEnviarRetorno();
     qDebug() << "CSTAT: NFCE: " << notaRet.cstat;
@@ -392,6 +394,8 @@ FiscalEmitter_service::Resultado FiscalEmitter_service::enviarNFePadrao(VendasDT
     nfe->setProdutosVendidosNew(listaProds, emitirTodos);
     nfe->setPagamentoValores(venda.formaPagamento,venda.desconto,venda.valorRecebido,
                               venda.troco, venda.taxa);
+    if (venda.misto())
+        nfe->setPagamentosMistos(venda.pagamentos);
 
     NFRetornoDTO notaRet = nfe->gerarEnviarRetorno();
     qDebug() << "CSTAT: NFE: " << notaRet.cstat;

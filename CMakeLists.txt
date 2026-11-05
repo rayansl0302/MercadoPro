@@ -98,6 +98,7 @@ set(QESTOQUE_SOURCES
 
     src/services/Produto_service.cpp
     src/services/barcode_service.cpp
+    src/services/pagamentodividido_service.h src/services/pagamentodividido_service.cpp
     src/services/config_service.cpp
     src/services/cliente_service.cpp
     src/services/dfe_service.cpp
@@ -405,6 +406,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/fechamentocaixa.h src/fechamentocaixa.cpp src/fechamentocaixa.ui
         src/historicocaixas.h src/historicocaixas.cpp src/historicocaixas.ui
         src/sangriasdialog.h src/sangriasdialog.cpp
+        src/dividirpagamentodialog.h src/dividirpagamentodialog.cpp
+        src/services/pagamentodividido_service.h src/services/pagamentodividido_service.cpp
+        src/nota/pagamentomisto.h
         src/relatoriocaixajanela.h src/relatoriocaixajanela.cpp src/relatoriocaixajanela.ui
         src/dto/Cliente_dto.h
         src/repository/cliente_repository.h src/repository/cliente_repository.cpp

@@ -266,6 +266,11 @@ void NfceACBR::setPagamentoValores(QString formaPag, double desconto,double rece
 
 }
 
+void NfceACBR::setPagamentosMistos(const QList<PagamentoVendaDTO> &pagamentos)
+{
+    pagMistos = PagamentoMistoNf::partes(pagamentos);
+}
+
 void NfceACBR::aplicarAcrescimoProporcional(float taxaPercentual)
 {
     double totalOriginal = getSomaValorTotalProdutos();
@@ -580,6 +585,11 @@ void NfceACBR::pag()
     if (emitirApenasNf) {
         vPagNf = vNf;
         trocoNf = 0.0;
+    }
+
+    if (!pagMistos.isEmpty()) {
+        PagamentoMistoNf::escrever(ini, pagMistos, trocoNf, emitirApenasNf, vNf);
+        return;
     }
 
     std::string indice = "001";

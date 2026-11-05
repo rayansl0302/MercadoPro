@@ -1,4 +1,5 @@
 #include "relatoriocaixa_service.h"
+#include "../dto/Vendas_dto.h"
 #include "escposprinter_service.h"
 #include "../util/escposcomandos.h"
 #include <QDateTime>
@@ -121,7 +122,9 @@ QString RelatorioCaixa_service::gerarHtml(const ResumoCaixaDTO &r, const QString
     h += "<h2>Vendas por forma de pagamento</h2><table><tr><th>Forma</th><th class='n'>Qtd</th><th class='n'>Total</th></tr>";
     for (const VendasFormaDTO &v : r.vendasPorForma)
         h += "<tr><td>" + v.formaPagamento.toHtmlEscaped() + (v.formaPagamento == "Prazo"
-                                                                   ? " <span class='muted'>(não entra no caixa)</span>" : "") +
+                                                                   ? " <span class='muted'>(não entra no caixa)</span>"
+                                                                   : v.formaPagamento == VendasDTO::FormaMista
+                                                                         ? " <span class='muted'>(pago em mais de uma forma; o valor já está nas formas acima)</span>" : "") +
              "</td><td class='n'>" + QString::number(v.quantidade) + "</td><td class='n'>" + dinheiro(v.total) + "</td></tr>";
     if (r.vendasPorForma.isEmpty())
         h += "<tr><td colspan='3' class='muted'>Nenhuma venda neste turno.</td></tr>";
@@ -253,7 +256,8 @@ bool RelatorioCaixa_service::imprimirTermica(const ResumoCaixaDTO &r, QString *e
     d += linha("VENDAS POR FORMA");
     d += EscPosComandos::bold(false);
     for (const VendasFormaDTO &v : r.vendasPorForma)
-        d += linha(esquerdaDireita(QString("%1 (%2)").arg(v.formaPagamento).arg(v.quantidade), dinheiro(v.total)));
+        d += linha(esquerdaDireita(v.quantidade > 0 ? QString("%1 (%2)").arg(v.formaPagamento).arg(v.quantidade)
+                                                    : v.formaPagamento, dinheiro(v.total)));
     d += linha(esquerdaDireita("Total em vendas:", dinheiro(r.totalVendas)));
     d += linha(separador());
 

@@ -135,7 +135,12 @@ QList<CustoMaquinaDTO> MaquinaCartao_repository::custoPorMaquina(const QDate &de
         "  WHERE forma_pagamento IN ('Crédito', 'Débito') AND taxa_maquina IS NOT NULL "
         "  UNION ALL "
         "  SELECT id_maquina, taxa_maquina, valor_final, data_hora FROM entradas_vendas "
-        "  WHERE forma_pagamento IN ('Crédito', 'Débito') AND taxa_maquina IS NOT NULL"
+        "  WHERE forma_pagamento IN ('Crédito', 'Débito') AND taxa_maquina IS NOT NULL "
+        "  UNION ALL "
+        // parte no cartão de vendas pagas em mais de uma forma
+        "  SELECT p.id_maquina, p.taxa_maquina, p.valor AS valor_final, v.data_hora "
+        "  FROM venda_pagamentos p JOIN vendas2 v ON v.id = p.id_venda "
+        "  WHERE p.forma_pagamento IN ('Crédito', 'Débito') AND p.taxa_maquina IS NOT NULL"
         ") x LEFT JOIN maquinas_cartao m ON m.id = x.id_maquina "
         "WHERE x.data_hora >= :de AND x.data_hora < :ate "
         "GROUP BY x.id_maquina, m.nome ORDER BY 5 DESC");

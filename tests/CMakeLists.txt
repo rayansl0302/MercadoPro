@@ -45,6 +45,7 @@ set(TEST_SOURCES
     services/test_saidausoproprio.cpp
     services/test_maquinacartao.cpp
     services/test_precotaxa.cpp
+    services/test_pagamentodividido.cpp
     services/test_backup.cpp
     services/test_tema.cpp
 )
@@ -74,6 +75,7 @@ add_executable(QEstoqueLojaTests
     services/test_saidausoproprio.h services/test_saidausoproprio.cpp
     services/test_maquinacartao.h services/test_maquinacartao.cpp
     services/test_precotaxa.h services/test_precotaxa.cpp
+    services/test_pagamentodividido.h services/test_pagamentodividido.cpp
     services/test_backup.h services/test_backup.cpp
     services/test_tema.h services/test_tema.cpp
 

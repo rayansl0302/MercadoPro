@@ -15,6 +15,7 @@
 #include "../services/Produto_service.h"
 #include "../dto/ProdutoParaNFe_dto.h"
 #include "../services/notafiscal_service.h"
+#include "pagamentomisto.h"
 
 class NfceACBR : public QObject
 {
@@ -27,6 +28,8 @@ public:
     void setCliente(QString cpf, bool ehPf);
     void setPagamentoValores(QString formaPag, double desconto, double recebido, double troco,
                              double taxa);
+    // venda paga em mais de uma forma: chamar depois de setPagamentoValores
+    void setPagamentosMistos(const QList<PagamentoVendaDTO> &pagamentos);
     qlonglong getNNF();
     int getSerie();
     QString gerarEnviar();
@@ -60,6 +63,7 @@ private:
     QList<ProdutoParaNFeDTO> listaProdutosNFCe;
     double descontoNf,trocoNf,vPagNf, vNf;
     QString indPagNf,tPagNf;
+    QList<PagamentoMistoNf::Parte> pagMistos;
     float taxaPercentual;
     double totalGeral;
     bool usarIBS;

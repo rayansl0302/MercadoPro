@@ -27,6 +27,9 @@ public:
     void listarVendasDeAteFormaPagamento(QSqlQueryModel *model, const QString &de, const QString &ate, VendasUtil::VendasFormaPagamento formaPag, qlonglong idCliente);
     qlonglong inserir(VendasDTO venda);
     bool atualizarEstaPago(qlonglong idVenda, int estaPago);
+    // venda dividida em mais de uma forma de pagamento
+    bool inserirPagamentos(qlonglong idVenda, const QList<PagamentoVendaDTO> &pagamentos);
+    QList<PagamentoVendaDTO> listarPagamentos(qlonglong idVenda);
 private:
     QSqlDatabase db;
 

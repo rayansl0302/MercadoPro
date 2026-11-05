@@ -525,7 +525,7 @@ QMap<QString, double> Relatorios_repository::buscarLucroPeriodo(
                        ss.lucro_total
                        - COALESCE(v.desconto, 0)
                        - CASE
-                             WHEN v.forma_pagamento IN ('Crédito', 'Débito')
+                             WHEN v.forma_pagamento IN ('Crédito', 'Débito', 'Misto')
                              THEN (v.total - COALESCE(v.desconto, 0)) * (COALESCE(v.taxa, 0) + COALESCE(v.taxa_maquina, 0)) / 100.0
                              ELSE 0
                          END
@@ -611,7 +611,7 @@ double Relatorios_repository::buscarLucroVenda(qlonglong idVenda)
                 ss.lucro_total
                 - COALESCE(v.desconto, 0)
                 - CASE
-                      WHEN v.forma_pagamento IN ('Crédito', 'Débito')
+                      WHEN v.forma_pagamento IN ('Crédito', 'Débito', 'Misto')
                       THEN (v.total - COALESCE(v.desconto, 0)) * (COALESCE(v.taxa, 0) + COALESCE(v.taxa_maquina, 0)) / 100.0
                       ELSE 0
                   END AS lucro_caixa

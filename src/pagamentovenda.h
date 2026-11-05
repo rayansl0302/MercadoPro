@@ -26,6 +26,12 @@ private slots:
     void on_CBox_ModeloEmit_currentIndexChanged(int index) override;
 private:
     void terminarPagamento() override;
+    // pagamento em mais de uma forma (Dinheiro + Pix...): vazio = pagamento normal, de uma forma só
+    QList<PagamentoVendaDTO> divididos;
+    double valorDividido = 0;
+    class QPushButton *btnDividir = nullptr;
+    void dividirPagamento();
+    void mostrarDivisao();
     int idCliente;
     WaitDialog* waitDialog = nullptr;
     QString erroNf;

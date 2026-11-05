@@ -244,6 +244,13 @@ bool Recibo_service::imprimirCupomPadrao(qlonglong idvenda, QString *erro)
         if (venda.taxa > 0)   // vendas antigas, em que a taxa era somada ao valor
             dados += linha(esquerdaDireita("Taxa (%)", dinheiro(portugues, venda.taxa)));
         dados += linha(esquerdaDireita("Valor final (R$)", dinheiro(portugues, venda.valorFinal)));
+    } else if (venda.misto()) {
+        dados += linha(esquerdaDireita("Valor final (R$)", dinheiro(portugues, venda.valorFinal)));
+        for (const PagamentoVendaDTO &p : venda.pagamentos)
+            dados += linha(esquerdaDireita("  " + p.forma + " (R$)",
+                                           dinheiro(portugues, p.forma == "Dinheiro" && p.valorRecebido > 0 ? p.valorRecebido : p.valor)));
+        if (venda.troco > 0)
+            dados += linha(esquerdaDireita("Troco (R$)", dinheiro(portugues, venda.troco)));
     } else if (venda.formaPagamento == "Prazo") {
         dados += linha(esquerdaDireita("Valor final (R$)", dinheiro(portugues, venda.valorFinal)));
         const QList<EntradaVendaDTO> entradas = entradaServ.getEntradasFromVenda(idvenda);

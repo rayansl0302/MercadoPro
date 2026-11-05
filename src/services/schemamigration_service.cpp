@@ -2309,6 +2309,48 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 28:
+        {
+            // versao 29: pagamento dividido em mais de uma forma (ex.: Dinheiro + Pix). A venda fica com
+            // forma_pagamento = 'Misto' e as partes entram em venda_pagamentos.
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 29", dbSchemaVersion};
+            }
+            const QString pk29 = DatabaseConnection_service::isPostgres() ? "SERIAL PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT";
+            const QStringList comandos29 = {
+                "CREATE TABLE IF NOT EXISTS venda_pagamentos ("
+                "  id " + pk29 + ","
+                "  id_venda INTEGER NOT NULL,"
+                "  forma_pagamento TEXT NOT NULL,"
+                "  valor DECIMAL(10,2) NOT NULL,"
+                "  valor_recebido DECIMAL(10,2),"
+                "  troco DECIMAL(10,2),"
+                "  id_maquina INTEGER,"
+                "  taxa_maquina DECIMAL(5,2))",
+                "CREATE INDEX IF NOT EXISTS idx_venda_pagamentos_venda ON venda_pagamentos (id_venda)"
+            };
+            for (const QString &sql : comandos29) {
+                QSqlQuery query(db);
+                if (!query.exec(sql)) {
+                    qDebug() << "Erro migracao 29:" << query.lastError().text() << "SQL:" << sql;
+                    db.rollback();
+                    return {false, SchemaErro::ErroMigracao, "Erro na migracao 29 (pagamento dividido)", dbSchemaVersion};
+                }
+            }
+            if (!setSchemaVersion(29)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 29", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 29", dbSchemaVersion};
+            }
+            dbSchemaVersion = 29;
+            qDebug() << "Migracao para versao 29 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;

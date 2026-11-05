@@ -3,6 +3,8 @@
 #include "subclass/waitdialog.h"
 #include <QTimer>
 #include "configuracao.h"
+#include "dividirpagamentodialog.h"
+#include <QPushButton>
 #include <QSqlError>
 
 
@@ -43,6 +45,42 @@ pagamentoVenda::pagamentoVenda(QList<ProdutoVendidoDTO> listaProdutos, QString t
     CLIENTE = cliServ.getClienteByID(idCliente);
     ui->Ledit_CpfCnpjCliente->setText(CLIENTE.cpf);
 
+    // pagamento dividido em mais de uma forma: botão ao lado da escolha da forma
+    btnDividir = new QPushButton(QStringLiteral("Dividir em 2 formas..."), this);
+    btnDividir->setToolTip(QStringLiteral("Pagar uma parte em uma forma e o resto em outra (ex.: dinheiro e Pix)."));
+    btnDividir->setGeometry(325, 210, 205, 28);
+    connect(btnDividir, &QPushButton::clicked, this, &pagamentoVenda::dividirPagamento);
+}
+
+void pagamentoVenda::dividirPagamento()
+{
+    const double valorFinal = portugues.toDouble(ui->Lbl_TotalTaxa->text());
+    if (valorFinal <= 0) {
+        QMessageBox::information(this, "Dividir pagamento", "A venda não tem valor a pagar.");
+        return;
+    }
+    DividirPagamentoDialog dlg(valorFinal, configDTO.taxaCreditoFinanceiro, configDTO.taxaDebitoFinanceiro, this);
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+    divididos = dlg.pagamentos();
+    valorDividido = valorFinal;
+    mostrarDivisao();
+}
+
+void pagamentoVenda::mostrarDivisao()
+{
+    if (divididos.isEmpty()) {
+        btnDividir->setText(QStringLiteral("Dividir em 2 formas..."));
+        btnDividir->setToolTip(QString());
+        ui->CBox_FormaPagamento->setEnabled(true);
+        return;
+    }
+    QStringList partes;
+    for (const PagamentoVendaDTO &p : divididos)
+        partes << QStringLiteral("%1 %2").arg(p.forma, portugues.toString(p.valor, 'f', 2));
+    btnDividir->setText(QStringLiteral("Dividido ✓ (alterar)"));
+    btnDividir->setToolTip(QStringLiteral("Pago em: ") + partes.join(QStringLiteral(" + ")));
+    ui->CBox_FormaPagamento->setEnabled(false);
 }
 
 void pagamentoVenda::on_CBox_ModeloEmit_currentIndexChanged(int index)
@@ -117,6 +155,23 @@ void pagamentoVenda::terminarPagamento(){
     newVenda.troco = portugues.toDouble(troco);
     newVenda.valorFinal = portugues.toDouble(valor_final);
     newVenda.valorRecebido = portugues.toDouble(recebido);
+
+    if (!divididos.isEmpty()) {
+        // o valor mudou depois da divisão (ex.: desconto): pede para dividir de novo
+        if (qAbs(newVenda.valorFinal - valorDividido) > 0.009) {
+            QMessageBox::warning(this, "Pagamento dividido",
+                                 "O valor da venda mudou depois de dividir o pagamento. Divida de novo.");
+            divididos.clear();
+            mostrarDivisao();
+            return;
+        }
+        newVenda.pagamentos = divididos;
+        const QString erroMisto = Vendas_service::prepararPagamentoMisto(newVenda);
+        if (!erroMisto.isEmpty()) {
+            QMessageBox::warning(this, "Pagamento dividido", erroMisto);
+            return;
+        }
+    }
 
     ClienteDTO cli = CLIENTE;
     cli.cpf = ui->Ledit_CpfCnpjCliente->text().trimmed();

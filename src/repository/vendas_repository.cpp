@@ -147,8 +147,60 @@ VendasDTO Vendas_repository::getVenda(qlonglong id){
     }else{
         qDebug() << "erro query venda2 imprimir";
     }
+    if (result.misto())
+        result.pagamentos = listarPagamentos(id);
     return result;
 
+}
+
+bool Vendas_repository::inserirPagamentos(qlonglong idVenda, const QList<PagamentoVendaDTO> &pagamentos)
+{
+    if (!DatabaseConnection_service::open())
+        return false;
+    for (const PagamentoVendaDTO &p : pagamentos) {
+        QSqlQuery query(db);
+        query.prepare("INSERT INTO venda_pagamentos (id_venda, forma_pagamento, valor, valor_recebido, troco, "
+                      "id_maquina, taxa_maquina) VALUES (:venda, :forma, :valor, :recebido, :troco, :maquina, :taxa)");
+        query.bindValue(":venda", idVenda);
+        query.bindValue(":forma", p.forma);
+        query.bindValue(":valor", p.valor);
+        query.bindValue(":recebido", p.valorRecebido);
+        query.bindValue(":troco", p.troco);
+        query.bindValue(":maquina", p.idMaquina > 0 ? QVariant(p.idMaquina) : QVariant(QMetaType(QMetaType::LongLong)));
+        query.bindValue(":taxa", p.idMaquina > 0 || p.taxaMaquina > 0 ? QVariant(p.taxaMaquina)
+                                                                      : QVariant(QMetaType(QMetaType::Double)));
+        if (!query.exec()) {
+            qDebug() << "inserirPagamentos falhou:" << query.lastError().text();
+            return false;
+        }
+    }
+    return true;
+}
+
+QList<PagamentoVendaDTO> Vendas_repository::listarPagamentos(qlonglong idVenda)
+{
+    QList<PagamentoVendaDTO> lista;
+    if (!DatabaseConnection_service::open())
+        return lista;
+    QSqlQuery query(db);
+    query.prepare("SELECT forma_pagamento, valor, valor_recebido, troco, id_maquina, taxa_maquina "
+                  "FROM venda_pagamentos WHERE id_venda = :id ORDER BY id");
+    query.bindValue(":id", idVenda);
+    if (!query.exec()) {
+        qDebug() << "listarPagamentos falhou:" << query.lastError().text();
+        return lista;
+    }
+    while (query.next()) {
+        PagamentoVendaDTO p;
+        p.forma = query.value(0).toString();
+        p.valor = query.value(1).toDouble();
+        p.valorRecebido = query.value(2).toDouble();
+        p.troco = query.value(3).toDouble();
+        p.idMaquina = query.value(4).toLongLong();
+        p.taxaMaquina = query.value(5).toDouble();
+        lista << p;
+    }
+    return lista;
 }
 
 void Vendas_repository::listarVendasDeAteFormaPagamento(
@@ -279,6 +331,11 @@ bool Vendas_repository::deletarVenda(qlonglong id){
         return false;
     }
 
+    QSqlQuery partes(db);
+    partes.prepare("DELETE FROM venda_pagamentos WHERE id_venda = :id");
+    partes.bindValue(":id", id);
+    partes.exec();   // vendas de uma forma só não têm linhas aqui
+
     QSqlQuery query(db);
 
     query.prepare("DELETE FROM vendas2 WHERE id = :id");
@@ -357,7 +414,8 @@ qlonglong Vendas_repository::inserir(VendasDTO venda){
     const bool cartao = venda.formaPagamento == QStringLiteral("Crédito") || venda.formaPagamento == QStringLiteral("Débito");
     query.bindValue(":idmaquina", cartao && venda.idMaquina > 0 ? QVariant(venda.idMaquina)
                                                                : QVariant(QMetaType(QMetaType::LongLong)));
-    query.bindValue(":taxamaquina", cartao ? QVariant(venda.taxaMaquina) : QVariant(QMetaType(QMetaType::Double)));
+    // venda mista: taxa_maquina guarda a taxa média ponderada das partes no cartão (a conta do lucro usa esse valor)
+    query.bindValue(":taxamaquina", cartao || venda.misto() ? QVariant(venda.taxaMaquina) : QVariant(QMetaType(QMetaType::Double)));
     query.bindValue(":idempresa", venda.idEmpresa > 0 ? venda.idEmpresa : EmpresaAtiva::id());
 
     query.bindValue(":cliente", venda.clienteNome);

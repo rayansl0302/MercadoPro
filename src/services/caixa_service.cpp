@@ -342,7 +342,7 @@ ResumoCaixaDTO Caixa_service::resumo(qlonglong idCaixa)
 
     // formas que não entram na conferência (ex.: "Não Sei"): ficam avisadas no fechamento e no relatório
     for (const VendasFormaDTO &v : r.vendasPorForma)
-        if (v.formaPagamento != "Prazo" && !FormasCaixa.contains(v.formaPagamento))
+        if (v.formaPagamento != "Prazo" && v.formaPagamento != VendasDTO::FormaMista && !FormasCaixa.contains(v.formaPagamento))
             r.outrasFormas[v.formaPagamento] += v.total;
     for (auto it = r.recebimentosPorForma.constBegin(); it != r.recebimentosPorForma.constEnd(); ++it)
         if (!FormasCaixa.contains(it.key()))

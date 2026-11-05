@@ -388,21 +388,35 @@ QList<VendasFormaDTO> Caixa_repository::vendasPorForma(qlonglong idCaixa)
     QList<VendasFormaDTO> lista;
     if (!DatabaseConnection_service::open())
         return lista;
+    // vendas de uma forma só entram pela forma; vendas "Misto" entram pelas partes (venda_pagamentos),
+    // contadas à parte na linha "Misto" (total 0: o valor já está nas formas)
     QSqlQuery query(db);
     query.prepare("SELECT forma_pagamento, COUNT(*) AS qtd, COALESCE(SUM(valor_final), 0) AS total "
-                  "FROM vendas2 WHERE id_caixa = :id GROUP BY forma_pagamento ORDER BY forma_pagamento");
+                  "FROM vendas2 WHERE id_caixa = :id AND forma_pagamento <> 'Misto' GROUP BY forma_pagamento "
+                  "UNION ALL "
+                  "SELECT p.forma_pagamento, 0 AS qtd, COALESCE(SUM(p.valor), 0) AS total "
+                  "FROM venda_pagamentos p JOIN vendas2 v ON v.id = p.id_venda "
+                  "WHERE v.id_caixa = :id2 AND v.forma_pagamento = 'Misto' GROUP BY p.forma_pagamento "
+                  "UNION ALL "
+                  "SELECT 'Misto' AS forma_pagamento, COUNT(*) AS qtd, 0 AS total "
+                  "FROM vendas2 WHERE id_caixa = :id3 AND forma_pagamento = 'Misto' HAVING COUNT(*) > 0");
     query.bindValue(":id", idCaixa);
+    query.bindValue(":id2", idCaixa);
+    query.bindValue(":id3", idCaixa);
     if (!query.exec()) {
         qDebug() << "vendasPorForma falhou:" << query.lastError().text();
         return lista;
     }
+    QMap<QString, VendasFormaDTO> porForma;   // junta a mesma forma vinda de vendas simples e de partes
     while (query.next()) {
-        VendasFormaDTO v;
-        v.formaPagamento = query.value("forma_pagamento").toString();
-        v.quantidade = query.value("qtd").toInt();
-        v.total = query.value("total").toDouble();
-        lista << v;
+        const QString forma = query.value("forma_pagamento").toString();
+        VendasFormaDTO &v = porForma[forma];
+        v.formaPagamento = forma;
+        v.quantidade += query.value("qtd").toInt();
+        v.total += query.value("total").toDouble();
     }
+    for (const VendasFormaDTO &v : porForma)
+        lista << v;
     return lista;
 }
 

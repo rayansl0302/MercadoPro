@@ -17,6 +17,7 @@
 #include "../dto/ProdutoParaNFe_dto.h"
 #include "../dto/NFRetorno_dto.h"
 #include "../dto/Cliente_dto.h"
+#include "pagamentomisto.h"
 
 class NfeACBR : public QObject
 {
@@ -29,6 +30,8 @@ public:
     void setProdutosVendidos(QList<QList<QVariant> > produtosVendidos, bool emitirTodos);
     void setPagamentoValores(QString formaPag, float desconto, float recebido, float troco,
                              float taxa);
+    // venda paga em mais de uma forma: chamar depois de setPagamentoValores
+    void setPagamentosMistos(const QList<PagamentoVendaDTO> &pagamentos);
     qlonglong getNNF();
     int getSerie();
     QString gerarEnviar();
@@ -71,6 +74,7 @@ private:
     // QVector<float> descontoProd;
     double descontoNf,trocoNf,vPagNf, vNf = 0;
     QString indPagNf,tPagNf;
+    QList<PagamentoMistoNf::Parte> pagMistos;
     float taxaPercentual;
     double totalGeral;
     QString nomeCli, cpfCli, emailCli, lgrCli, nroCli, bairroCli,

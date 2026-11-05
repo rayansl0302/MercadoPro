@@ -54,6 +54,8 @@ public:
     void listarVendas(QSqlQueryModel *model);
     QPair<QDate, QDate> getMinMaxData();
     VendasDTO getVenda(qlonglong id);
+    // pagamento dividido: valida as partes e deixa a venda como "Misto" (texto vazio = ok; no-op sem partes)
+    static QString prepararPagamentoMisto(VendasDTO &venda);
     ResumoVendasDTO calcularResumo(const QString &dataDe, const QString &dataAte, bool somentePrazo, qlonglong idCliente);
     Vendas_service::Resultado deletarVenda(qlonglong id);
     // motivoCancelamento é obrigatório quando a venda pertence a um caixa aberto

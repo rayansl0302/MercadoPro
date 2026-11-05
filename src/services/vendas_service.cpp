@@ -25,6 +25,38 @@ QPair<QDate, QDate> Vendas_service::getMinMaxData(){
     return vendasRepo.getMinMaxData();
 }
 
+QString Vendas_service::prepararPagamentoMisto(VendasDTO &venda)
+{
+    if (venda.pagamentos.isEmpty())
+        return QString();
+    if (venda.pagamentos.size() < 2)
+        return "O pagamento dividido precisa de pelo menos duas formas.";
+    double soma = 0, cartao = 0, recebido = 0, troco = 0;
+    for (const PagamentoVendaDTO &p : venda.pagamentos) {
+        if (p.forma != "Dinheiro" && p.forma != "Pix" && p.forma != "Crédito" && p.forma != "Débito")
+            return "No pagamento dividido só cabem Dinheiro, Pix, Crédito e Débito.";
+        if (p.valor <= 0)
+            return "Cada forma do pagamento dividido precisa de um valor maior que zero.";
+        soma += p.valor;
+        recebido += p.forma == "Dinheiro" ? p.valorRecebido : p.valor;
+        troco += p.troco;
+        if (p.forma == "Crédito" || p.forma == "Débito")
+            cartao += p.valor * p.taxaMaquina;
+    }
+    if (qAbs(soma - venda.valorFinal) > 0.009)
+        return QString("A soma das formas (%1) é diferente do valor da venda (%2).")
+            .arg(QString::number(soma, 'f', 2), QString::number(venda.valorFinal, 'f', 2));
+    venda.formaPagamento = VendasDTO::FormaMista;
+    venda.estaPago = true;
+    venda.idMaquina = 0;
+    venda.taxa = 0;
+    // taxa média das partes no cartão, sobre o valor da venda (a conta de lucro usa esse número)
+    venda.taxaMaquina = venda.valorFinal > 0 ? qRound64(cartao / venda.valorFinal * 100.0) / 100.0 : 0;
+    venda.valorRecebido = recebido;
+    venda.troco = troco;
+    return QString();
+}
+
 VendasDTO Vendas_service::getVenda(qlonglong id){
     return vendasRepo.getVenda(id);
 }
@@ -186,6 +218,11 @@ Vendas_service::ResultadoInsercaoRN Vendas_service::inserirVendaRegraDeNegocio(V
                                                                      QList<ProdutoVendidoDTO> listaProds){
     constexpr double LIMITE_DECIMAL_10_2 = 99999999.99;
 
+    // pagamento dividido: confere as partes e resume a venda como "Misto"
+    const QString erroMisto = prepararPagamentoMisto(venda);
+    if (!erroMisto.isEmpty())
+        return {false, VendasErro::QuebraDeRegra, erroMisto, -1};
+
     //  ser menor ou igual ao valor final
     bool menorQueTotal = venda.desconto <= venda.total;
 
@@ -222,6 +259,11 @@ Vendas_service::ResultadoInsercaoRN Vendas_service::inserirVendaRegraDeNegocio(V
     qlonglong idVenda = vendasRepo.inserir(venda);
     if(idVenda <= 0){
         return{false, VendasErro::InsercaoInvalida, "Erro ao inserir venda no banco de dados.", -1};
+    }
+
+    if (venda.misto() && !vendasRepo.inserirPagamentos(idVenda, venda.pagamentos)) {
+        vendasRepo.deletarVenda(idVenda);
+        return {false, VendasErro::InsercaoInvalida, "Erro ao gravar as formas de pagamento da venda.", -1};
     }
 
     for(int i = 0; i < listaProds.size(); i++){
