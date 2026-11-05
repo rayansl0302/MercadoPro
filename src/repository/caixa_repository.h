@@ -34,6 +34,8 @@ public:
     // recebimentos desta venda lançados em caixas que não estão mais abertos
     int contarRecebimentosEmCaixaFechado(qlonglong idVenda);
     QList<MovimentacaoCaixaDTO> listarMovimentacoes(qlonglong idCaixa);
+    // sangrias (não estornadas) feitas entre as datas (inclusive), de todos os caixas
+    QList<MovimentacaoCaixaDTO> listarSangrias(const QDate &de, const QDate &ate);
 
     // totais
     QList<VendasFormaDTO> vendasPorForma(qlonglong idCaixa);

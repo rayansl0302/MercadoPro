@@ -404,6 +404,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/movimentacaocaixa.h src/movimentacaocaixa.cpp src/movimentacaocaixa.ui
         src/fechamentocaixa.h src/fechamentocaixa.cpp src/fechamentocaixa.ui
         src/historicocaixas.h src/historicocaixas.cpp src/historicocaixas.ui
+        src/sangriasdialog.h src/sangriasdialog.cpp
         src/relatoriocaixajanela.h src/relatoriocaixajanela.cpp src/relatoriocaixajanela.ui
         src/dto/Cliente_dto.h
         src/repository/cliente_repository.h src/repository/cliente_repository.cpp

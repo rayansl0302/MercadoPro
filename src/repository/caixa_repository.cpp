@@ -361,6 +361,28 @@ QList<MovimentacaoCaixaDTO> Caixa_repository::listarMovimentacoes(qlonglong idCa
     return lista;
 }
 
+QList<MovimentacaoCaixaDTO> Caixa_repository::listarSangrias(const QDate &de, const QDate &ate)
+{
+    QList<MovimentacaoCaixaDTO> lista;
+    if (!DatabaseConnection_service::open())
+        return lista;
+    QSqlQuery query(db);
+    query.prepare("SELECT m.*, o.nome AS nome_operador FROM movimentacoes_caixa m "
+                  "LEFT JOIN operadores o ON o.id = m.id_operador "
+                  "WHERE m.tipo = 'SANGRIA' AND m.estornado = :est "
+                  "AND m.data_hora >= :de AND m.data_hora < :ate ORDER BY m.data_hora, m.id");
+    query.bindValue(":est", false);
+    query.bindValue(":de", QDateTime(de, QTime(0, 0)));
+    query.bindValue(":ate", QDateTime(ate.addDays(1), QTime(0, 0)));
+    if (!query.exec()) {
+        qDebug() << "listarSangrias falhou:" << query.lastError().text();
+        return lista;
+    }
+    while (query.next())
+        lista << lerMovimentacao(query);
+    return lista;
+}
+
 QList<VendasFormaDTO> Caixa_repository::vendasPorForma(qlonglong idCaixa)
 {
     QList<VendasFormaDTO> lista;

@@ -57,6 +57,7 @@
 #include "fechamentocaixa.h"
 #include "movimentacaocaixa.h"
 #include "historicocaixas.h"
+#include "sangriasdialog.h"
 #include "operadores.h"
 #include "loginoperador.h"
 #include "logacessodialog.h"
@@ -903,6 +904,12 @@ void MainWindow::montarMenuCaixa()
     menuCaixa->addSeparator();
     menuCaixa->addAction("Sangria...", this, &MainWindow::sangriaClicked);
     menuCaixa->addAction("Suprimento...", this, &MainWindow::suprimentoClicked);
+    menuCaixa->addAction("Sangrias do dia (relatório)...", this, [this]() {
+        if (!exigirGerente(QStringLiteral("O relatório de sangrias")))
+            return;
+        SangriasDialog dlg(this);
+        dlg.exec();
+    });
     menuCaixa->addSeparator();
     menuCaixa->addAction("Histórico...", this, &MainWindow::historicoCaixaClicked);
     menuCaixa->addAction("Operadores...", this, &MainWindow::operadoresClicked);

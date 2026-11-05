@@ -59,6 +59,7 @@ public:
     Resultado fecharCaixa(qlonglong idCaixa, const QString &pin, const QMap<QString, double> &informados,
                           const QString &observacao);
 
+    QList<MovimentacaoCaixaDTO> sangrias(const QDate &de, const QDate &ate) { return repo.listarSangrias(de, ate); }
     void listarHistorico(QSqlQueryModel *model, const QString &de = QString(), const QString &ate = QString());
 
 private:
