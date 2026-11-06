@@ -73,3 +73,36 @@ export function desenharEtiqueta(dados, alturaPx = 240, canvas = document.create
   ctx.drawImage(barras, Math.round((LARGURA_PX - bw) / 2), yBarras, bw, bh);
   return canvas;
 }
+
+// Etiqueta com o QR de acesso rápido à tela da balança (o funcionário aponta a câmera e abre a tela certa).
+// QR à esquerda, em módulos inteiros (nítido na térmica), e a instrução à direita.
+export function desenharEtiquetaQr(modulos, tamanhoModulos, alturaPx = 240, canvas = document.createElement('canvas')) {
+  canvas.width = LARGURA_PX;
+  canvas.height = alturaPx;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, LARGURA_PX, alturaPx);
+  ctx.fillStyle = '#000';
+  const zonaQuieta = 4; // módulos de margem branca em volta do QR
+  const total = tamanhoModulos + 2 * zonaQuieta;
+  const lado = alturaPx - 16;
+  const px = Math.max(1, Math.floor(lado / total)); // pixels por módulo, inteiro
+  const ladoQr = px * total;
+  const x0 = 8;
+  const y0 = Math.round((alturaPx - ladoQr) / 2);
+  for (let l = 0; l < tamanhoModulos; l++) {
+    for (let c = 0; c < tamanhoModulos; c++) {
+      if (modulos[l * tamanhoModulos + c]) ctx.fillRect(x0 + (c + zonaQuieta) * px, y0 + (l + zonaQuieta) * px, px, px);
+    }
+  }
+  const xTexto = x0 + ladoQr + 6;
+  const largura = LARGURA_PX - xTexto - 8;
+  ctx.textBaseline = 'top';
+  ctx.font = `bold 30px ${FONTE}`;
+  let y = Math.max(10, Math.round(alturaPx / 2) - 70);
+  for (const linha of quebrarTexto(ctx, 'ETIQUETA DE BALANÇA', largura, 3)) { ctx.fillText(linha, xTexto, y); y += 34; }
+  ctx.font = `20px ${FONTE}`;
+  y += 6;
+  for (const linha of quebrarTexto(ctx, 'Aponte a câmera do celular', largura, 3)) { ctx.fillText(linha, xTexto, y); y += 24; }
+  return canvas;
+}

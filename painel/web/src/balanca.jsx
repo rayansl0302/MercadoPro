@@ -4,7 +4,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api.js';
 import { eanDeBalanca, lerPesoEmGramas, moedaDeCentavos, paraCentavos, pesoDeGramas, totalEmCentavos, unidadeEhQuilo } from './balanca.js';
-import { ALTURAS, desenharEtiqueta } from './etiqueta.js';
+import QRCode from 'qrcode';
+import { ALTURAS, desenharEtiqueta, desenharEtiquetaQr } from './etiqueta.js';
 import { Secao } from './ui.jsx';
 
 const lerAltura = () => { try { return Number(localStorage.getItem('mp_etiqueta_altura')) || 240; } catch { return 240; } };
@@ -91,6 +92,72 @@ function Passos({ passo }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+// Acesso rápido: QR com o endereço desta tela, para imprimir (papel ou etiqueta) e colar ao lado da balança
+function QrAcesso({ imp, altura, botao, botaoClaro }) {
+  const [aberto, setAberto] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [imprimindo, setImprimindo] = useState(false);
+  const previa = useRef(null);
+  const endereco = `${window.location.origin}/balanca`;
+  const qr = useRef(null);
+  if (!qr.current) {
+    const q = QRCode.create(endereco, { errorCorrectionLevel: 'M' });
+    qr.current = { tamanho: q.modules.size, dados: Array.from(q.modules.data) };
+  }
+  useEffect(() => {
+    if (aberto && previa.current) desenharEtiquetaQr(qr.current.dados, qr.current.tamanho, altura, previa.current);
+  }, [aberto, altura]);
+
+  const imprimirPapel = async () => {
+    setMsg('');
+    const url = await QRCode.toDataURL(endereco, { errorCorrectionLevel: 'M', margin: 2, width: 700 });
+    const w = window.open('', '_blank');
+    if (!w) { setMsg('O navegador bloqueou a janela de impressão. Libere pop-ups para esta página.'); return; }
+    const pagina = w.document;
+    pagina.title = 'QR da balança';
+    pagina.body.style.cssText = 'font-family:Arial,sans-serif;text-align:center;margin:40px';
+    const titulo = pagina.createElement('h1');
+    titulo.textContent = 'Etiqueta de balança';
+    const instrucao = pagina.createElement('p');
+    instrucao.textContent = 'Aponte a câmera do celular para abrir a tela da balança';
+    instrucao.style.fontSize = '20px';
+    const img = pagina.createElement('img');
+    img.src = url;
+    img.style.cssText = 'width:420px;height:420px';
+    const link = pagina.createElement('p');
+    link.textContent = endereco;
+    link.style.cssText = 'color:#555;word-break:break-all';
+    pagina.body.append(titulo, instrucao, img, link);
+    img.onload = () => setTimeout(() => w.print(), 200);
+  };
+
+  const imprimirEtiqueta = async () => {
+    setMsg(''); setImprimindo(true);
+    try { await imp.imprimir(previa.current); setMsg('QR enviado para a impressora.'); }
+    catch (x) { if (!x?.jaTratado) setMsg(`Não foi possível imprimir: ${x?.message ?? x}`); }
+    finally { setImprimindo(false); }
+  };
+
+  return (
+    <Secao titulo="QR de acesso rápido">
+      {!aberto ? (
+        <button className={botaoClaro} onClick={() => setAberto(true)}>Mostrar QR desta tela</button>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">Quem ler este QR com a câmera abre direto a tela da balança: <span className="break-all font-medium">{endereco}</span></p>
+          <canvas ref={previa} className="w-full rounded border border-slate-300 bg-white" style={{ imageRendering: 'pixelated' }} />
+          <div className="flex flex-wrap gap-2">
+            <button className={botao} onClick={imprimirPapel}>Imprimir em papel</button>
+            <button className={botaoClaro} disabled={imprimindo} onClick={imprimirEtiqueta}>{imprimindo ? 'Imprimindo…' : 'Imprimir na etiqueta'}</button>
+            <button className={botaoClaro} onClick={() => setAberto(false)}>Fechar</button>
+          </div>
+          {msg && <p className="rounded bg-slate-50 p-2 text-sm">{msg}</p>}
+        </div>
+      )}
+    </Secao>
   );
 }
 
@@ -243,6 +310,8 @@ export function Balanca() {
 
         {mensagemErro && <p className="mt-3 rounded bg-red-50 p-2 text-sm text-red-800">{mensagemErro}</p>}
       </Secao>
+
+      <QrAcesso imp={imp} altura={altura} botao={botao} botaoClaro={botaoClaro} />
     </div>
   );
 }
