@@ -3,7 +3,7 @@
 // A impressora fala com o navegador por Bluetooth (Web Bluetooth) ou USB (Web Serial), só em Chrome/Edge.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api.js';
-import { eanDeBalanca, lerPesoEmGramas, moedaDeCentavos, paraCentavos, pesoDeGramas, totalEmCentavos, unidadeEhQuilo } from './balanca.js';
+import { codigoDaEtiqueta, lerPesoEmGramas, moedaDeCentavos, paraCentavos, pesoDeGramas, totalEmCentavos, unidadeEhQuilo } from './balanca.js';
 import QRCode from 'qrcode';
 import { ALTURAS, desenharEtiqueta, desenharEtiquetaQr } from './etiqueta.js';
 import { Secao } from './ui.jsx';
@@ -182,14 +182,16 @@ export function Balanca() {
 
   // etiqueta do passo 3 (a mesma imagem que vai para a impressora)
   let ean = '';
+  let formato = 'EAN13';
   let erroEtiqueta = '';
   if (passo >= 3 && gramas && produto) {
-    try { ean = eanDeBalanca(produto.id, total); } catch (x) { erroEtiqueta = x.message; }
+    // o código impresso é o do cadastro do produto (o caixa lê e identifica o produto)
+    try { ({ codigo: ean, formato } = codigoDaEtiqueta(produto.codigoBarras)); } catch (x) { erroEtiqueta = x.message; }
   }
   useEffect(() => {
     if (passo < 3 || !ean || !previa.current) return;
-    desenharEtiqueta({ nome: produto.descricao, gramas, precoKgCentavos, totalCentavos: total, ean }, altura, previa.current);
-  }, [passo, ean, altura, produto, gramas, precoKgCentavos, total]);
+    desenharEtiqueta({ nome: produto.descricao, gramas, precoKgCentavos, totalCentavos: total, ean, formato }, altura, previa.current);
+  }, [passo, ean, formato, altura, produto, gramas, precoKgCentavos, total]);
 
   const buscarProduto = async (e) => {
     e.preventDefault();

@@ -49,7 +49,16 @@ export function eanDeBalanca(idProduto, totalCentavos) {
   return base + digitoEan13(base);
 }
 
-export const moedaDeCentavos = (c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+// Código que vai impresso na etiqueta: o MESMO código de barras cadastrado no produto, para o caixa ler e
+// identificar o produto. EAN-13 válido sai como EAN-13; qualquer outro código (interno, EAN-8, curto) sai em CODE128.
+export function codigoDaEtiqueta(codigoBarras) {
+  const codigo = String(codigoBarras ?? '').trim();
+  if (!codigo) throw new Error('Este produto está sem código de barras no cadastro.');
+  if (!/^[\x20-\x7e]+$/.test(codigo)) throw new Error('O código de barras do produto tem caracteres que a etiqueta não imprime.');
+  return { codigo, formato: eanValido(codigo) ? 'EAN13' : 'CODE128' };
+}
+
+export const moedaDeCentavos =(c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 export const pesoDeGramas = (g) => `${(g / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg`;
 
 // o produto é vendido por peso? (cadastro com unidade KG)

@@ -40,8 +40,9 @@ export function desenharEtiqueta(dados, alturaPx = 240, canvas = document.create
 
   // código de barras EAN-13 (desenhado antes só para medir o espaço que ele ocupa embaixo)
   const barras = document.createElement('canvas');
+  const formato = dados.formato ?? 'EAN13';
   JsBarcode(barras, dados.ean, {
-    format: 'EAN13', width: 3, height: 54, displayValue: true, fontSize: 20, textMargin: 2, margin: 0,
+    format: formato, width: formato === 'EAN13' ? 3 : 2, height: 54, displayValue: true, fontSize: 20, textMargin: 2, margin: 0,
     background: '#ffffff', lineColor: '#000000', font: 'Arial',
   });
   const escala = Math.min(1, util / barras.width);

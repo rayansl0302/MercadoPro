@@ -1,7 +1,7 @@
 // Regras da etiqueta de balança (painel/web/src/balanca.js): funções puras, sem banco.
 import { describe, expect, it } from 'vitest';
 import {
-  digitoEan13, eanDeBalanca, eanValido, lerPesoEmGramas, paraCentavos, totalEmCentavos, unidadeEhQuilo,
+  codigoDaEtiqueta, digitoEan13, eanDeBalanca, eanValido, lerPesoEmGramas, paraCentavos, totalEmCentavos, unidadeEhQuilo,
 } from '../../web/src/balanca.js';
 
 describe('EAN-13', () => {
@@ -58,5 +58,18 @@ describe('unidade', () => {
   it('reconhece quilo', () => {
     for (const ok of ['KG', 'kg', ' Kg ', 'KGS', 'quilo']) expect(unidadeEhQuilo(ok)).toBe(true);
     for (const nao of ['UN', 'CX', 'G', '', null]) expect(unidadeEhQuilo(nao)).toBe(false);
+  });
+});
+
+describe('código impresso na etiqueta', () => {
+  it('usa o código de barras cadastrado no produto, sem montar outro', () => {
+    expect(codigoDaEtiqueta('4006381333931')).toEqual({ codigo: '4006381333931', formato: 'EAN13' });   // EAN-13 válido
+    expect(codigoDaEtiqueta(' 356227099 ')).toEqual({ codigo: '356227099', formato: 'CODE128' });        // código interno curto
+    expect(codigoDaEtiqueta('4006381333932').formato).toBe('CODE128');                                    // 13 dígitos com dígito errado: não finge ser EAN
+  });
+  it('recusa produto sem código ou com caractere que não imprime', () => {
+    expect(() => codigoDaEtiqueta('')).toThrow(/sem código/);
+    expect(() => codigoDaEtiqueta(null)).toThrow(/sem código/);
+    expect(() => codigoDaEtiqueta('12ç4')).toThrow(/caracteres/);
   });
 });
