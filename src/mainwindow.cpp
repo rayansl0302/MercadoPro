@@ -399,6 +399,12 @@ void MainWindow::on_Btn_Alterar_clicked()
     produto.aliquotaIcms = cell(11).toDouble();
     produto.csosn        = cell(12).toString();
     produto.pis          = cell(13).toString();
+    // as marcas (sem controle de estoque, uso da loja, balança) não estão na tabela da tela: vêm do banco.
+    // Sem isso a janela abria tudo desmarcado e salvar apagava as marcas do produto.
+    const ProdutoDTO doBanco = produtoService->getProduto(produto.id);
+    produto.semControleEstoque = doBanco.semControleEstoque;
+    produto.usoLoja = doBanco.usoLoja;
+    produto.balanca = doBanco.balanca;
 
     // criar janela
     AlterarProduto *alterar = new AlterarProduto;
