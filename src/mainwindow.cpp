@@ -76,6 +76,13 @@
 #include <QDesktopServices>
 #include "util/catalogobarras.h"
 #include "util/etiquetaspreco.h"
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListWidget>
+#include <QPushButton>
+#include <QVBoxLayout>
 #include "services/precotaxa_service.h"
 #include "util/tema.h"
 #include "services/backup_service.h"
@@ -762,13 +769,74 @@ void MainWindow::exportarEtiquetasPreco()
                         QMessageBox::NoButton, this);
     auto *botaoTodos = escolha.addButton("Todos os produtos", QMessageBox::AcceptRole);
     auto *botaoBalanca = escolha.addButton("Só os de balança", QMessageBox::AcceptRole);
+    auto *botaoEscolher = escolha.addButton("Escolher produtos...", QMessageBox::AcceptRole);
     escolha.addButton("Cancelar", QMessageBox::RejectRole);
     escolha.exec();
-    if (escolha.clickedButton() != botaoTodos && escolha.clickedButton() != botaoBalanca)
+    if (escolha.clickedButton() != botaoTodos && escolha.clickedButton() != botaoBalanca
+        && escolha.clickedButton() != botaoEscolher)
         return;
 
     Produto_Service produtos;
-    const QList<ProdutoDTO> lista = produtos.listarParaEtiquetas(escolha.clickedButton() == botaoBalanca);
+    QList<ProdutoDTO> lista = produtos.listarParaEtiquetas(escolha.clickedButton() == botaoBalanca);
+    if (escolha.clickedButton() == botaoEscolher && !lista.isEmpty()) {
+        // seleção manual: busca por nome/código, marca só o que precisa imprimir
+        QDialog dlg(this);
+        dlg.setWindowTitle(QStringLiteral("Escolher produtos para as etiquetas"));
+        dlg.resize(560, 560);
+        auto *lay = new QVBoxLayout(&dlg);
+        auto *busca = new QLineEdit(&dlg);
+        busca->setPlaceholderText(QStringLiteral("Buscar por nome ou código de barras..."));
+        busca->setClearButtonEnabled(true);
+        lay->addWidget(busca);
+        auto *lw = new QListWidget(&dlg);
+        for (int i = 0; i < lista.size(); ++i) {
+            auto *it = new QListWidgetItem(
+                QStringLiteral("%1   —   R$ %2").arg(lista.at(i).descricao,
+                    QLocale(QLocale::Portuguese, QLocale::Brazil).toString(PrecoTaxa::comTaxa(lista.at(i).preco), 'f', 2)), lw);
+            it->setFlags(it->flags() | Qt::ItemIsUserCheckable);
+            it->setCheckState(Qt::Unchecked);
+            it->setData(Qt::UserRole, i);
+            it->setData(Qt::UserRole + 1, (lista.at(i).descricao + ' ' + lista.at(i).codigoBarras).toLower());
+        }
+        lay->addWidget(lw, 1);
+        auto *contagem = new QLabel(&dlg);
+        lay->addWidget(contagem);
+        auto atualizar = [lw, contagem]() {
+            int n = 0;
+            for (int i = 0; i < lw->count(); ++i)
+                n += lw->item(i)->checkState() == Qt::Checked ? 1 : 0;
+            contagem->setText(QStringLiteral("%1 produto(s) marcado(s)").arg(n));
+        };
+        QObject::connect(lw, &QListWidget::itemChanged, &dlg, atualizar);
+        QObject::connect(busca, &QLineEdit::textChanged, &dlg, [lw](const QString &t) {
+            const QString termo = t.trimmed().toLower();
+            for (int i = 0; i < lw->count(); ++i)
+                lw->item(i)->setHidden(!termo.isEmpty() && !lw->item(i)->data(Qt::UserRole + 1).toString().contains(termo));
+        });
+        auto *botoes = new QDialogButtonBox(&dlg);
+        auto *limpar = botoes->addButton(QStringLiteral("Desmarcar tudo"), QDialogButtonBox::ActionRole);
+        botoes->addButton(QStringLiteral("Gerar PDF"), QDialogButtonBox::AcceptRole);
+        botoes->addButton(QStringLiteral("Cancelar"), QDialogButtonBox::RejectRole);
+        QObject::connect(limpar, &QPushButton::clicked, &dlg, [lw]() {
+            for (int i = 0; i < lw->count(); ++i)
+                lw->item(i)->setCheckState(Qt::Unchecked);
+        });
+        QObject::connect(botoes, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+        QObject::connect(botoes, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+        lay->addWidget(botoes);
+        atualizar();
+        if (dlg.exec() != QDialog::Accepted)
+            return;
+        QList<ProdutoDTO> escolhidos;
+        for (int i = 0; i < lw->count(); ++i)
+            if (lw->item(i)->checkState() == Qt::Checked)
+                escolhidos.append(lista.at(lw->item(i)->data(Qt::UserRole).toInt()));
+        lista = escolhidos;
+        if (lista.isEmpty()) {
+            QMessageBox::information(this, QStringLiteral("Etiquetas de preço (A4)"), QStringLiteral("Nenhum produto foi marcado."));
+            return;
+        }
+    }
     if (lista.isEmpty()) {
         QMessageBox::information(this, QStringLiteral("Etiquetas de preço (A4)"), QStringLiteral("Nenhum produto com preço para imprimir."));
         return;
