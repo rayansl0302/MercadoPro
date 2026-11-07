@@ -8,7 +8,7 @@ import { CampoSenha, TrocarSenha, Usuarios } from './conta.jsx';
 import { Balanca } from './balanca.jsx';
 
 const MENU = [
-  ['geral', 'Início'], ['vendas', 'Vendas'], ['pagar', 'Contas a pagar'], ['receber', 'A receber'],
+  ['geral', 'Início'], ['vendas', 'Vendas'], ['caixas', 'Caixas'], ['pagar', 'Contas a pagar'], ['receber', 'A receber'],
   ['estoque', 'Estoque'], ['fiscal', 'Fiscal e segurança'], ['loja', 'Loja e pedidos'],
 ];
 
@@ -96,7 +96,8 @@ function App() {
   };
   const telas = {
     geral: <VisaoGeral empresa={emp} ir={ir} />,
-    vendas: <Agrupada abas={[['v', 'Vendas', <Vendas empresa={emp} />], ['o', 'Operadores', <Operadores empresa={emp} />], ['c', 'Caixas (abertura e fechamento)', <Caixas />]]} />,
+    vendas: <Agrupada abas={[['v', 'Vendas', <Vendas empresa={emp} />], ['o', 'Operadores', <Operadores empresa={emp} />]]} />,
+    caixas: <Caixas />,
     pagar: <ContasPagar empresa={emp} empresas={empresas} formas={formas} podeAgir={podeAgir} avisar={setAviso} />,
     receber: <Devedores empresa={emp} />,
     estoque: <Estoque />,

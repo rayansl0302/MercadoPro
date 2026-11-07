@@ -27,8 +27,26 @@ export function Secao({ titulo, acao, children }) {
 
 export function Tabela({ colunas, linhas, vazio = 'Nada para mostrar.' }) {
   if (!linhas.length) return <p className="py-6 text-center text-sm text-slate-500">{vazio}</p>;
+  const [titulo, ...resto] = colunas;
   return (
-    <div className="overflow-x-auto">
+    <>
+    {/* celular: um cartão por linha (a primeira coluna vira o título) */}
+    <ul className="space-y-2 md:hidden">
+      {linhas.map((l, i) => (
+        <li key={l.id ?? i} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="mb-2 text-sm font-semibold text-slate-900">{titulo.render(l)}</div>
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+            {resto.map((c) => (
+              <div key={c.titulo} className={c.titulo === 'Justificativa' ? 'col-span-2' : ''}>
+                <dt className="text-[11px] uppercase text-slate-500">{c.titulo}</dt>
+                <dd className="tabular-nums text-slate-800">{c.render(l)}</dd>
+              </div>
+            ))}
+          </dl>
+        </li>
+      ))}
+    </ul>
+    <div className="hidden overflow-x-auto md:block">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-500">
@@ -44,6 +62,7 @@ export function Tabela({ colunas, linhas, vazio = 'Nada para mostrar.' }) {
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 
