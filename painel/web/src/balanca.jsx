@@ -3,7 +3,7 @@
 // A impressora fala com o navegador por Bluetooth (Web Bluetooth) ou USB (Web Serial), só em Chrome/Edge.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api.js';
-import { codigoDaEtiqueta, lerPesoEmGramas, moedaDeCentavos, paraCentavos, pesoDeGramas, totalEmCentavos, unidadeEhQuilo } from './balanca.js';
+import { codigoComPeso, lerPesoEmGramas, moedaDeCentavos, paraCentavos, pesoDeGramas, totalEmCentavos, unidadeEhQuilo } from './balanca.js';
 import QRCode from 'qrcode';
 import { ALTURAS, desenharEtiqueta, desenharEtiquetaQr } from './etiqueta.js';
 import { Secao } from './ui.jsx';
@@ -186,7 +186,7 @@ export function Balanca() {
   let erroEtiqueta = '';
   if (passo >= 3 && gramas && produto) {
     // o código impresso é o do cadastro do produto (o caixa lê e identifica o produto)
-    try { ({ codigo: ean, formato } = codigoDaEtiqueta(produto.codigoBarras)); } catch (x) { erroEtiqueta = x.message; }
+    try { ({ codigo: ean, formato } = codigoComPeso(produto.codigoBarras, gramas)); } catch (x) { erroEtiqueta = x.message; }
   }
   useEffect(() => {
     if (passo < 3 || !ean || !previa.current) return;

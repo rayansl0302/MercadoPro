@@ -1,7 +1,7 @@
 // Regras da etiqueta de balança (painel/web/src/balanca.js): funções puras, sem banco.
 import { describe, expect, it } from 'vitest';
 import {
-  codigoDaEtiqueta, digitoEan13, eanDeBalanca, eanValido, lerPesoEmGramas, paraCentavos, totalEmCentavos, unidadeEhQuilo,
+  codigoComPeso, codigoDaEtiqueta, digitoEan13, eanDeBalanca, eanValido, lerPesoEmGramas, paraCentavos, totalEmCentavos, unidadeEhQuilo,
 } from '../../web/src/balanca.js';
 
 describe('EAN-13', () => {
@@ -66,6 +66,12 @@ describe('código impresso na etiqueta', () => {
     expect(codigoDaEtiqueta('4006381333931')).toEqual({ codigo: '4006381333931', formato: 'EAN13' });   // EAN-13 válido
     expect(codigoDaEtiqueta(' 356227099 ')).toEqual({ codigo: '356227099', formato: 'CODE128' });        // código interno curto
     expect(codigoDaEtiqueta('4006381333932').formato).toBe('CODE128');                                    // 13 dígitos com dígito errado: não finge ser EAN
+  });
+  it('etiqueta de balança: peso*código em CODE128, no formato que o PDV já lê', () => {
+    expect(codigoComPeso('356293694', 296)).toEqual({ codigo: '296g*356293694', formato: 'CODE128' });
+    expect(codigoComPeso('4006381333931', 1500).codigo).toBe('1500g*4006381333931');
+    expect(() => codigoComPeso('356293694', 0)).toThrow(/peso/);
+    expect(() => codigoComPeso('', 300)).toThrow(/sem código/);
   });
   it('recusa produto sem código ou com caractere que não imprime', () => {
     expect(() => codigoDaEtiqueta('')).toThrow(/sem código/);

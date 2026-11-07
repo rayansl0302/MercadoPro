@@ -58,6 +58,14 @@ export function codigoDaEtiqueta(codigoBarras) {
   return { codigo, formato: eanValido(codigo) ? 'EAN13' : 'CODE128' };
 }
 
+// Código da etiqueta de balança: "296g*<código do produto>". O PDV já entende esse formato (peso*código), então ao
+// ler a etiqueta ele acha o produto pelo cadastro e lança o peso certo, sem digitar nada. Sempre CODE128 (EAN-13 não leva "*").
+export function codigoComPeso(codigoBarras, gramas) {
+  const { codigo } = codigoDaEtiqueta(codigoBarras);
+  if (!Number.isInteger(gramas) || gramas < 1) throw new Error('O peso precisa ser maior que zero.');
+  return { codigo: `${gramas}g*${codigo}`, formato: 'CODE128' };
+}
+
 export const moedaDeCentavos =(c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 export const pesoDeGramas = (g) => `${(g / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg`;
 
