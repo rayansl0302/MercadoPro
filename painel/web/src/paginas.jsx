@@ -169,6 +169,7 @@ export function Caixas() {
               dinheiroCol('Esperado', (l) => l.esperado),
               dinheiroCol('Contado', (l) => l.contado),
               { titulo: 'Diferença', direita: true, render: (l) => (l.status === 'ABERTO' ? '—' : <span className={Math.abs(l.diferenca) > 0.004 ? 'font-medium text-amber-700' : ''}>{moeda(l.diferenca)}</span>) },
+              { titulo: 'Justificativa', render: (l) => (l.justificativa?.trim() ? <span className="block max-w-xs whitespace-normal text-xs text-slate-700">{l.justificativa}</span> : '—') },
             ]} />
           )}
         </Estado>
@@ -407,7 +408,12 @@ export function Fluxo({ empresa }) {
 
 // ------------------------------------------------------------------ estoque
 export function Estoque() {
-  const r = useDados('/api/painel/estoque', {});
+  const [limite, setLimite] = useState(5);
+  const r = useDados('/api/painel/estoque', { limite });
+  const aplicar = (txt) => {
+    const n = Number(String(txt).replace(',', '.'));
+    if (Number.isFinite(n) && n >= 0 && n <= 100000) setLimite(n);
+  };
   return (
     <Estado r={r}>
       {(d) => (
@@ -419,8 +425,22 @@ export function Estoque() {
             <Cartao titulo="Estoque a preço de venda" valor={moeda(d.resumo.valorAPrecoDeVenda)} />
             <Cartao titulo="Estoque a custo" valor={moeda(d.resumo.valorACusto)} />
           </div>
-          <Secao titulo={`Estoque baixo (até ${d.limite} un.)`}>
-            <Tabela linhas={d.baixoEstoque} vazio="Nenhum produto com estoque baixo." colunas={[
+          <Secao titulo={d.limite === 0 ? 'Produtos em falta (estoque zerado)' : `Estoque baixo (até ${d.limite} un.)`}>
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-slate-600">Mostrar com quantidade até:</span>
+              {[0, 2, 5, 10, 20, 50].map((n) => (
+                <button key={n} type="button" onClick={() => setLimite(n)}
+                  className={`rounded-full border px-3 py-1 ${d.limite === n ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-300 bg-white text-slate-700'}`}>
+                  {n === 0 ? 'Acabou' : n}
+                </button>
+              ))}
+              <input type="number" min="0" inputMode="decimal" placeholder="outro" defaultValue=""
+                className="w-20 rounded-lg border border-slate-300 px-2 py-1"
+                onKeyDown={(e) => { if (e.key === 'Enter') aplicar(e.currentTarget.value); }}
+                onBlur={(e) => { if (e.currentTarget.value !== '') aplicar(e.currentTarget.value); }} />
+            </div>
+            <p className="mb-2 text-xs text-slate-500">{d.baixoEstoque.length} produto(s){d.baixoEstoque.length >= 500 ? ' (mostrando os 500 primeiros)' : ''}, do menor estoque para o maior.</p>
+            <Tabela linhas={d.baixoEstoque} vazio="Nenhum produto nessa faixa de estoque." colunas={[
               { titulo: 'Produto', render: (l) => l.descricao },
               { titulo: 'Qtd', direita: true, render: (l) => <span className={l.quantidade <= 0 ? 'font-medium text-red-700' : ''}>{l.quantidade}</span> },
               dinheiroCol('Preço', (l) => l.preco),

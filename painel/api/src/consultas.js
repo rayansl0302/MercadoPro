@@ -266,7 +266,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     await comLoja(req);
     const per = await periodo(pool, req, 14);
     const r = await pool.query(
-      `SELECT c.id, c.terminal, c.status, c.aberto_em, c.fechado_em, c.troco_inicial, o.nome AS operador,
+      `SELECT c.id, c.terminal, c.status, c.aberto_em, c.fechado_em, c.troco_inicial, c.observacao_fechamento AS justificativa, o.nome AS operador,
               (SELECT coalesce(sum(v.valor_final), 0) FROM espelho.vendas2 v WHERE v.loja_id = c.loja_id AND v.id_caixa = c.id AND v.forma_pagamento <> 'Prazo') AS vendas,
               (SELECT count(*)::int FROM espelho.vendas2 v WHERE v.loja_id = c.loja_id AND v.id_caixa = c.id) AS qtd_vendas,
               (SELECT coalesce(sum(m.valor), 0) FROM espelho.movimentacoes_caixa m WHERE m.loja_id = c.loja_id AND m.id_caixa = c.id AND m.tipo = 'SANGRIA') AS sangrias,
@@ -409,7 +409,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     const baixo = await pool.query(
       `SELECT id, descricao, quantidade, un_comercial, preco, preco_fornecedor FROM espelho.produtos
        WHERE loja_id = $1 AND coalesce(quantidade, 0) <= $2 AND NOT painel.sem_estoque(codigo_barras, (coalesce(sem_controle_estoque, false) OR coalesce(uso_loja, false)), $3, $4)
-       ORDER BY quantidade NULLS FIRST, descricao LIMIT 100`,
+       ORDER BY quantidade NULLS FIRST, descricao LIMIT 500`,
       [L, limite, config.lancheMin, config.lancheMax],
     );
     const parados = await pool.query(
