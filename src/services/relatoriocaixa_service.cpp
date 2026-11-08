@@ -146,6 +146,21 @@ QString RelatorioCaixa_service::gerarHtml(const ResumoCaixaDTO &r, const QString
     h += "<h2>Conferência</h2>";
     h += "<div class='muted'>Dinheiro esperado = troco inicial + vendas em dinheiro + recebimentos em dinheiro + "
          "suprimentos − sangrias. Tolerância: " + descricaoTolerancia.toHtmlEscaped() + "</div>";
+    {
+        // a conta do dinheiro esperado, linha a linha, com as sangrias descontadas
+        double vendasDinheiro = 0;
+        for (const VendasFormaDTO &v : r.vendasPorForma)
+            if (v.formaPagamento == "Dinheiro")
+                vendasDinheiro += v.total;
+        const double recDinheiro = r.recebimentosPorForma.value("Dinheiro", 0.0);
+        h += "<table><tr><th colspan='2'>Como chegamos no dinheiro esperado</th></tr>";
+        h += "<tr><td>Troco inicial</td><td class='n'>+ " + dinheiro(c.trocoInicial) + "</td></tr>";
+        h += "<tr><td>Vendas em dinheiro</td><td class='n'>+ " + dinheiro(vendasDinheiro) + "</td></tr>";
+        h += "<tr><td>Recebimentos em dinheiro</td><td class='n'>+ " + dinheiro(recDinheiro) + "</td></tr>";
+        h += "<tr><td>Suprimentos</td><td class='n'>+ " + dinheiro(r.totalSuprimentos) + "</td></tr>";
+        h += "<tr><td><b>Sangrias (dinheiro retirado do caixa)</b></td><td class='n neg'>- " + dinheiro(r.totalSangrias) + "</td></tr>";
+        h += "<tr><th>Dinheiro esperado na gaveta</th><th class='n'>" + dinheiro(r.esperadoPorForma.value("Dinheiro", 0.0)) + "</th></tr></table>";
+    }
     h += "<table><tr><th>Forma</th><th class='n'>Esperado</th><th class='n'>Informado</th><th class='n'>Diferença</th><th>Situação</th></tr>";
     double totalDif = 0;
     if (r.fechamento.isEmpty()) {
@@ -279,6 +294,19 @@ bool RelatorioCaixa_service::imprimirTermica(const ResumoCaixaDTO &r, QString *e
     d += EscPosComandos::bold(true);
     d += linha("CONFERENCIA");
     d += EscPosComandos::bold(false);
+    {
+        double vendasDinheiro = 0;
+        for (const VendasFormaDTO &v : r.vendasPorForma)
+            if (v.formaPagamento == "Dinheiro")
+                vendasDinheiro += v.total;
+        d += linha(esquerdaDireita("Troco inicial:", "+ " + dinheiro(r.caixa.trocoInicial)));
+        d += linha(esquerdaDireita("Vendas dinheiro:", "+ " + dinheiro(vendasDinheiro)));
+        d += linha(esquerdaDireita("Receb. dinheiro:", "+ " + dinheiro(r.recebimentosPorForma.value("Dinheiro", 0.0))));
+        d += linha(esquerdaDireita("Suprimentos:", "+ " + dinheiro(r.totalSuprimentos)));
+        d += linha(esquerdaDireita("Sangrias:", "- " + dinheiro(r.totalSangrias)));
+        d += linha(esquerdaDireita("Dinheiro esperado:", dinheiro(r.esperadoPorForma.value("Dinheiro", 0.0))));
+        d += linha(separador());
+    }
     d += linha(esquerdaDireita("Forma", "Esperado  Informado"));
     double totalDif = 0;
     const QList<FechamentoFormaDTO> &fs = r.fechamento;
