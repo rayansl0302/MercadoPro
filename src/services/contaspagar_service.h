@@ -41,7 +41,9 @@ public:
     Resultado baixar(qlonglong id, double valorPago, const QString &forma, const QDateTime &quando = QDateTime(),
                      const QString &origem = QString());
     Resultado estornarBaixa(qlonglong id);
-    Resultado cancelar(qlonglong id, const QString &motivo);
+    // origem (opcional): pedido vindo do painel (ex.: "Painel: Maria"); nesse caso quem autorizou foi o painel,
+    // então não pede gerente na loja, e o log de acesso registra de onde veio.
+    Resultado cancelar(qlonglong id, const QString &motivo, const QString &origem = QString());
 
     QList<ContaPagarDTO> listar(const FiltroContasPagarDTO &filtro);
     ContaPagarDTO getConta(qlonglong id);

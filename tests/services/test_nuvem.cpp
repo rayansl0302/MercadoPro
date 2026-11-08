@@ -655,3 +655,46 @@ void TestNuvem::impressao_digital_muda_quando_uma_venda_e_cancelada_ou_o_estoque
     QVERIFY(cancelada != comVenda);                               // venda cancelada (apagada) também muda
     QCOMPARE(NuvemExportador::impressaoDigital(), cancelada);
 }
+
+void TestNuvem::pedido_de_editar_e_cancelar_conta_com_motivo()
+{
+    FakeApi api;
+    ContasPagar_service cp;
+    const QString sufixo = QUuid::createUuid().toString(QUuid::Id128).left(6);
+    const qlonglong editavel = novaConta("Editar painel " + sufixo, 100);
+    const qlonglong cancelavel = novaConta("Cancelar painel " + sufixo, 70);
+    const qlonglong paga = novaConta("Paga painel " + sufixo, 40);
+    QVERIFY(cp.baixar(paga, 40, "Pix").ok);
+    const QString venc = QDate::currentDate().addDays(9).toString(Qt::ISODate);
+
+    api.pedidos.append(pedido("ped-editar", "CONTA_PAGAR_EDITAR",
+        {{"contaId", double(editavel)}, {"descricao", "Editada " + sufixo}, {"fornecedor", "Novo fornecedor"},
+         {"valor", 123.45}, {"vencimento", venc}}));
+    api.pedidos.append(pedido("ped-cancelar", "CONTA_PAGAR_CANCELAR",
+        {{"contaId", double(cancelavel)}, {"motivo", "Boleto lançado em duplicidade"}}));
+    api.pedidos.append(pedido("ped-sem-motivo", "CONTA_PAGAR_CANCELAR", {{"contaId", double(editavel)}, {"motivo", "x"}}));
+    api.pedidos.append(pedido("ped-cancelar-paga", "CONTA_PAGAR_CANCELAR", {{"contaId", double(paga)}, {"motivo", "tentativa indevida"}}));
+
+    Nuvem_service servico;
+    servico.definirConfigParaTeste(configPara(api));
+    servico.definirTerminalParaTeste("CAIXA-A");
+    const auto r = servico.executar(false);
+    QVERIFY2(r.ok, qPrintable(r.mensagem));
+    QCOMPARE(r.pedidosAplicados, 2);
+
+    QCOMPARE(api.resultados.value("ped-editar").value("status").toString(), QStringLiteral("APLICADO"));
+    const ContaPagarDTO e = cp.getConta(editavel);
+    QCOMPARE(e.descricao, "Editada " + sufixo);
+    QCOMPARE(e.valor, 123.45);
+    QCOMPARE(e.vencimento, venc);
+    QCOMPARE(e.status, QStringLiteral("ABERTA"));
+
+    QCOMPARE(api.resultados.value("ped-cancelar").value("status").toString(), QStringLiteral("APLICADO"));
+    const ContaPagarDTO c = cp.getConta(cancelavel);
+    QCOMPARE(c.status, QStringLiteral("CANCELADA"));
+    QCOMPARE(c.motivoCancelamento, QStringLiteral("Boleto lançado em duplicidade"));
+
+    QCOMPARE(api.resultados.value("ped-sem-motivo").value("status").toString(), QStringLiteral("RECUSADO"));
+    QCOMPARE(api.resultados.value("ped-cancelar-paga").value("status").toString(), QStringLiteral("CONFLITO"));
+    QCOMPARE(cp.getConta(paga).status, QStringLiteral("PAGA"));
+}

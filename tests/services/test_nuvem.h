@@ -23,6 +23,7 @@ private slots:
     void resultado_que_nao_chegou_e_reenviado_sem_reaplicar();
     void pedido_com_conta_ja_paga_e_conflito_e_pedido_vencido_expira();
     void pedido_de_lancar_conta_parcelada_e_pedido_invalido_e_recusado();
+    void pedido_de_editar_e_cancelar_conta_com_motivo();
     void so_um_computador_sincroniza_e_a_trava_vencida_e_assumida();
     void nuvem_desligada_nao_faz_nada();
     void queda_passageira_so_vira_erro_na_terceira_vez_seguida_e_volta_ao_normal();

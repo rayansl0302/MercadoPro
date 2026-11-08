@@ -18,12 +18,17 @@ struct ResultadoPedido {
 //  CONTA_PAGAR_BAIXAR : payload { contaId, valorPago, forma, data("yyyy-MM-dd") }
 //  CONTA_PAGAR_LANCAR : payload { descricao, fornecedor, categoria, documento, valor, vencimento("yyyy-MM-dd"),
 //                                 parcelas, periodicidade(MENSAL|QUINZENAL|SEMANAL), observacao, idEmpresa }
+//  CONTA_PAGAR_EDITAR : payload { contaId, descricao, fornecedor, categoria, documento, observacao, valor,
+//                                 vencimento("yyyy-MM-dd") }   (conta paga: só os textos mudam)
+//  CONTA_PAGAR_CANCELAR : payload { contaId, motivo }          (só conta em aberto)
 class PedidoAplicador
 {
 public:
     ResultadoPedido aplicar(const QJsonObject &pedido);
 
 private:
+    ResultadoPedido editarConta(const QJsonObject &payload, const QString &origem);
+    ResultadoPedido cancelarConta(const QJsonObject &payload, const QString &origem);
     ResultadoPedido baixarConta(const QJsonObject &payload, const QString &origem);
     ResultadoPedido lancarConta(const QJsonObject &payload, const QString &origem);
 };

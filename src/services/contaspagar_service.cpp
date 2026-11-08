@@ -191,9 +191,9 @@ ContasPagar_service::Resultado ContasPagar_service::estornarBaixa(qlonglong id)
     return {true, "Pagamento estornado: a conta voltou para em aberto.", id, 1};
 }
 
-ContasPagar_service::Resultado ContasPagar_service::cancelar(qlonglong id, const QString &motivo)
+ContasPagar_service::Resultado ContasPagar_service::cancelar(qlonglong id, const QString &motivo, const QString &origem)
 {
-    if (!autorizado())
+    if (origem.isEmpty() && !autorizado())
         return {false, "Cancelar uma conta é restrito a gerentes."};
     if (motivo.trimmed().size() < 3)
         return {false, "Informe o motivo do cancelamento."};
@@ -204,8 +204,10 @@ ContasPagar_service::Resultado ContasPagar_service::cancelar(qlonglong id, const
     if (!repo.cancelar(id, motivo.trimmed(), &erro))
         return {false, erro};
     Sessao_service::instancia()->registrarAcao(
-        QStringLiteral("CONTA_PAGAR_CANCELAMENTO"),
-        QStringLiteral("Conta #%1 (%2, %3) cancelada: %4").arg(id).arg(c.descricao, dinheiro(c.valor), motivo.trimmed()));
+        origem.isEmpty() ? QStringLiteral("CONTA_PAGAR_CANCELAMENTO") : QStringLiteral("CONTA_PAGAR_CANCELAMENTO_PAINEL"),
+        QStringLiteral("%1Conta #%2 (%3, %4) cancelada: %5")
+            .arg(origem.isEmpty() ? QString() : QStringLiteral("[%1] ").arg(origem))
+            .arg(id).arg(c.descricao, dinheiro(c.valor), motivo.trimmed()));
     return {true, "Conta cancelada.", id, 1};
 }
 

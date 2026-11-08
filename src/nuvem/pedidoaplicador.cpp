@@ -1,6 +1,7 @@
 #include "pedidoaplicador.h"
 #include "../services/contaspagar_service.h"
 #include "../services/empresa_service.h"
+#include "../services/sessao_service.h"
 #include <QDate>
 #include <QDateTime>
 #include <QJsonValue>
@@ -42,7 +43,59 @@ ResultadoPedido PedidoAplicador::aplicar(const QJsonObject &pedido)
         return baixarConta(payload, origem);
     if (tipo == QLatin1String("CONTA_PAGAR_LANCAR"))
         return lancarConta(payload, origem);
+    if (tipo == QLatin1String("CONTA_PAGAR_EDITAR"))
+        return editarConta(payload, origem);
+    if (tipo == QLatin1String("CONTA_PAGAR_CANCELAR"))
+        return cancelarConta(payload, origem);
     return resultado("RECUSADO", QStringLiteral("Tipo de pedido desconhecido: %1.").arg(tipo));
+}
+
+ResultadoPedido PedidoAplicador::editarConta(const QJsonObject &p, const QString &origem)
+{
+    ContasPagar_service servico;
+    const qlonglong id = qRound64(p.value("contaId").toDouble(p.value("contaId").toString().toDouble()));
+    const ContaPagarDTO atual = servico.getConta(id);
+    if (id <= 0 || atual.id <= 0)
+        return resultado("RECUSADO", "A conta não existe mais na loja.");
+    if (atual.status == kContaCancelada)
+        return resultado("CONFLITO", "A conta já estava cancelada na loja.", QJsonObject{{"statusNaLoja", atual.status}});
+
+    ContaPagarDTO c = atual;
+    c.descricao = p.value("descricao").toString();
+    c.fornecedor = p.value("fornecedor").toString();
+    c.categoria = p.value("categoria").toString();
+    c.documento = p.value("documento").toString();
+    c.observacao = p.value("observacao").toString();
+    if (atual.aberta()) {
+        bool ok = false;
+        c.valor = numero(p.value("valor"), &ok);
+        if (!ok)
+            return resultado("RECUSADO", "Valor da conta ausente.");
+        c.vencimento = p.value("vencimento").toString();
+    }
+    const auto r = servico.alterar(c);
+    if (!r.ok)
+        return resultado("RECUSADO", r.msg);
+    Sessao_service::instancia()->registrarAcao(
+        QStringLiteral("CONTA_PAGAR_EDITADA_PAINEL"),
+        QStringLiteral("[%1] Conta #%2 (%3) editada").arg(origem).arg(id).arg(c.descricao));
+    return resultado("APLICADO", r.msg, QJsonObject{{"contaId", double(id)}});
+}
+
+ResultadoPedido PedidoAplicador::cancelarConta(const QJsonObject &p, const QString &origem)
+{
+    ContasPagar_service servico;
+    const qlonglong id = qRound64(p.value("contaId").toDouble(p.value("contaId").toString().toDouble()));
+    const ContaPagarDTO conta = servico.getConta(id);
+    if (id <= 0 || conta.id <= 0)
+        return resultado("RECUSADO", "A conta não existe mais na loja.");
+    if (!conta.aberta())
+        return resultado("CONFLITO", QStringLiteral("A conta já estava %1 na loja.").arg(conta.status == kContaPaga ? "paga" : "cancelada"),
+                         QJsonObject{{"statusNaLoja", conta.status}});
+    const auto r = servico.cancelar(id, p.value("motivo").toString(), origem);
+    if (!r.ok)
+        return resultado("RECUSADO", r.msg);
+    return resultado("APLICADO", r.msg, QJsonObject{{"contaId", double(id)}});
 }
 
 ResultadoPedido PedidoAplicador::baixarConta(const QJsonObject &p, const QString &origem)
