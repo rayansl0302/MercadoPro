@@ -534,10 +534,11 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
         const preco = dinheiro(x.preco);
         return {
           id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, quantidade, preco,
-          custo: x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor),
-          valor: Math.round(quantidade * preco * 100) / 100,
-          foraDoEstoque: Boolean(x.sem_controle || x.uso_loja || x.lanche),
-          motivoFora: x.lanche ? 'lanche' : x.sem_controle ? 'sem controle de estoque' : x.uso_loja ? 'uso da loja' : null,
+          custo: x.preco_fornecedor === null ? 0 : dinheiro(x.preco_fornecedor), // 0 = sem custo cadastrado
+          // só quantidade positiva vale dinheiro em estoque (igual ao total da tela)
+          valor: quantidade > 0 ? Math.round(quantidade * preco * 100) / 100 : 0,
+          margemPercentual: x.preco_fornecedor && Number(x.preco_fornecedor) > 0 ? Math.round(((preco - Number(x.preco_fornecedor)) / Number(x.preco_fornecedor)) * 1000) / 10 : null,
+          situacao: x.lanche ? 'Lanche' : x.sem_controle ? 'Sem controle de estoque' : x.uso_loja ? 'Uso da loja' : 'Estoque controlado',
         };
       }),
     };
