@@ -252,6 +252,11 @@ venda::venda(QWidget *parent) :
         ui->Btn_DesfazerRemocao->hide();
     });
     connect(ui->Btn_DesfazerRemocao, &QPushButton::clicked, this, &venda::desfazerRemocao);
+    // F11: alterna entre tela cheia e maximizado
+    QShortcut *atalhoTelaCheia = new QShortcut(QKeySequence(Qt::Key_F11), this);
+    connect(atalhoTelaCheia, &QShortcut::activated, this, [this]() {
+        if (isFullScreen()) showMaximized(); else showFullScreen();
+    });
     QShortcut *atalhoDesfazer = new QShortcut(QKeySequence(Qt::Key_F8), this);
     connect(atalhoDesfazer, &QShortcut::activated, this, &venda::desfazerRemocao);
 

@@ -154,7 +154,7 @@
 
         w.setModoDesenvolvimento(modoDesenvolvimento);
         w.aplicarSessao();
-        w.show();
+        w.showMaximized();
         // sincronização com o painel online (desligada por padrão; só age se configurada neste computador)
         Nuvem_service::instancia()->iniciar();
         // auto-update silencioso: consulta em segundo plano; só instala com o PDV ocioso; offline não faz nada

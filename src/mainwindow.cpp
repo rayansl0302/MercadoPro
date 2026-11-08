@@ -77,6 +77,7 @@
 #include "util/catalogobarras.h"
 #include "util/etiquetaspreco.h"
 #include <QDialog>
+#include <QShortcut>
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QLineEdit>
@@ -108,6 +109,12 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // F11: alterna entre tela cheia e maximizado
+    auto *atalhoTelaCheia = new QShortcut(QKeySequence(Qt::Key_F11), this);
+    connect(atalhoTelaCheia, &QShortcut::activated, this, [this]() {
+        if (isFullScreen()) showMaximized(); else showFullScreen();
+    });
 
     QCoreApplication::setApplicationVersion(VERSAO_QE);
 
