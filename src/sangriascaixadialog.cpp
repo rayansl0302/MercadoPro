@@ -24,8 +24,8 @@ SangriasCaixaDialog::SangriasCaixaDialog(bool iniciarComSuprimento, QWidget *par
     layout->addWidget(resumo);
 
     tabela = new QTableWidget(this);
-    tabela->setColumnCount(5);
-    tabela->setHorizontalHeaderLabels({"Hora", "Tipo", "Valor (R$)", "Motivo", "Operador"});
+    tabela->setColumnCount(6);
+    tabela->setHorizontalHeaderLabels({"Hora", "Tipo", "Forma", "Valor (R$)", "Motivo", "Operador"});
     tabela->setSelectionBehavior(QAbstractItemView::SelectRows);
     tabela->setSelectionMode(QAbstractItemView::SingleSelection);
     tabela->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -70,17 +70,17 @@ void SangriasCaixaDialog::recarregar()
         (m.tipo == "SANGRIA" ? sangrias : suprimentos) += m.valor;
         const QString quem = m.nomeOperadorSessao.isEmpty() ? m.nomeOperador : m.nomeOperadorSessao;
         const QStringList cel{RelatorioCaixa_service::formatarDataHora(m.dataHora),
-                              m.tipo == "SANGRIA" ? "Sangria" : "Suprimento",
+                              m.tipo == "SANGRIA" ? "Sangria" : "Suprimento", m.formaPagamento,
                               portugues.toString(m.valor, 'f', 2), m.motivo, quem};
         for (int c = 0; c < cel.size(); ++c) {
             auto *item = new QTableWidgetItem(cel.at(c));
-            if (c == 2)
+            if (c == 3)
                 item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
             tabela->setItem(i, c, item);
         }
     }
     tabela->resizeColumnsToContents();
-    tabela->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+    tabela->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Stretch);
 
     if (!caixa.aberto()) {
         resumo->setText("Nenhum caixa aberto neste terminal.");
@@ -131,12 +131,17 @@ void SangriasCaixaDialog::editar()
                                                  QLineEdit::Normal, atual.motivo, &ok).trimmed();
     if (!ok)
         return;
+    const QStringList formas{"Dinheiro", "Crédito", "Débito", "Pix"};
+    const QString forma = QInputDialog::getItem(this, "Editar lançamento", "Forma de pagamento:", formas,
+                                                qMax(0, int(formas.indexOf(atual.formaPagamento))), false, &ok);
+    if (!ok)
+        return;
     const QString correcao = QInputDialog::getText(this, "Editar lançamento",
                                                    "Por que está corrigindo? (fica registrado no log)",
                                                    QLineEdit::Normal, QString(), &ok).trimmed();
     if (!ok)
         return;
-    const auto r = caixaServ.editarSangriaSuprimento(id, valor, motivo, correcao);
+    const auto r = caixaServ.editarSangriaSuprimento(id, valor, motivo, correcao, forma);
     if (!r.ok)
         QMessageBox::warning(this, "Caixa", r.msg);
     recarregar();

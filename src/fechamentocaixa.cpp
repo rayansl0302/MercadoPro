@@ -48,9 +48,12 @@ FechamentoCaixa::FechamentoCaixa(QWidget *parent, qlonglong idCaixaAlvo)
         aviso += "\nDinheiro esperado: troco inicial " + r(resumoAtual.caixa.trocoInicial) +
                  " + vendas " + r(vendasDinheiro) +
                  (receb > 0.004 ? " + recebimentos " + r(receb) : QString()) +
-                 (resumoAtual.totalSuprimentos > 0.004 ? " + suprimentos " + r(resumoAtual.totalSuprimentos) : QString()) +
-                 " − sangrias " + r(resumoAtual.totalSangrias) +
+                 (resumoAtual.suprimentosPorForma.value("Dinheiro") > 0.004 ? " + suprimentos " + r(resumoAtual.suprimentosPorForma.value("Dinheiro")) : QString()) +
+                 " − sangrias " + r(resumoAtual.sangriasPorForma.value("Dinheiro")) +
                  " = " + r(resumoAtual.esperadoPorForma.value("Dinheiro", 0.0)) + ".";
+        for (auto it = resumoAtual.sangriasPorForma.constBegin(); it != resumoAtual.sangriasPorForma.constEnd(); ++it)
+            if (it.key() != "Dinheiro" && it.value() > 0.004)
+                aviso += "\nSangria em " + it.key() + ": − " + r(it.value()) + " (já descontada do esperado em " + it.key() + ").";
     }
     ui->Lbl_Tolerancia->setText(aviso);
     ui->Lbl_Tolerancia->setWordWrap(true);

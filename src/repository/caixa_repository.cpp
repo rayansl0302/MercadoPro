@@ -340,16 +340,17 @@ MovimentacaoCaixaDTO Caixa_repository::getMovimentacao(qlonglong id)
     return lerMovimentacao(query);
 }
 
-bool Caixa_repository::atualizarMovimentacao(qlonglong id, double valor, const QString &motivo, QString *erro)
+bool Caixa_repository::atualizarMovimentacao(qlonglong id, double valor, const QString &motivo, const QString &forma, QString *erro)
 {
     if (!DatabaseConnection_service::open()) {
         setErro(erro, "Banco de dados indisponível.");
         return false;
     }
     QSqlQuery query(db);
-    query.prepare("UPDATE movimentacoes_caixa SET valor = :valor, motivo = :motivo WHERE id = :id");
+    query.prepare("UPDATE movimentacoes_caixa SET valor = :valor, motivo = :motivo, forma_pagamento = :forma WHERE id = :id");
     query.bindValue(":valor", valor);
     query.bindValue(":motivo", motivo);
+    query.bindValue(":forma", forma);
     query.bindValue(":id", id);
     if (!query.exec()) {
         setErro(erro, query.lastError().text());

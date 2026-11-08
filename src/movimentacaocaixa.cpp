@@ -2,6 +2,9 @@
 #include "ui_movimentacaocaixa.h"
 #include <QMessageBox>
 #include <QDoubleValidator>
+#include <QComboBox>
+#include <QVBoxLayout>
+#include <QLabel>
 
 MovimentacaoCaixa::MovimentacaoCaixa(Tipo tipo, QWidget *parent)
     : QDialog(parent)
@@ -28,6 +31,16 @@ MovimentacaoCaixa::MovimentacaoCaixa(Tipo tipo, QWidget *parent)
     QDoubleValidator *validador = new QDoubleValidator(0.01, 99999999.99, 2, this);
     validador->setLocale(portugues);
     ui->Ledit_Valor->setValidator(validador);
+
+    // de onde saiu (sangria) ou onde entrou (suprimento): a diferença do caixa vem da forma errada
+    cbForma = new QComboBox(this);
+    for (const QString &f : {QStringLiteral("Dinheiro"), QStringLiteral("Crédito"), QStringLiteral("Débito"), QStringLiteral("Pix")})
+        cbForma->addItem(f);
+    if (auto *lay = qobject_cast<QVBoxLayout *>(layout())) {
+        const int pos = lay->indexOf(ui->Ledit_Valor);
+        lay->insertWidget(pos + 1, new QLabel("Forma (de onde foi retirado / onde entrou):", this));
+        lay->insertWidget(pos + 2, cbForma);
+    }
 }
 
 MovimentacaoCaixa::~MovimentacaoCaixa()
@@ -47,8 +60,8 @@ void MovimentacaoCaixa::on_Btn_Confirmar_clicked()
 
     const QString motivo = ui->PTEdit_Motivo->toPlainText().trimmed();
     const auto r = ui->Rb_Suprimento->isChecked()
-                       ? caixaServ.registrarSuprimento(valor, motivo)
-                       : caixaServ.registrarSangria(valor, motivo);
+                       ? caixaServ.registrarSuprimento(valor, motivo, cbForma->currentText())
+                       : caixaServ.registrarSangria(valor, motivo, cbForma->currentText());
     if (!r.ok) {
         QMessageBox::warning(this, "Caixa", r.msg);
         return;

@@ -103,7 +103,7 @@ Caixa_service::Resultado Caixa_service::exigirCaixaAberto()
 }
 
 Caixa_service::Resultado Caixa_service::registrarMovimentacaoSimples(const QString &tipo, double valor,
-                                                                     const QString &motivo)
+                                                                     const QString &motivo, const QString &forma)
 {
     const CaixaDTO caixa = caixaAtual();
     if (!caixa.aberto())
@@ -112,12 +112,14 @@ Caixa_service::Resultado Caixa_service::registrarMovimentacaoSimples(const QStri
         return {false, "Informe um valor maior que zero."};
     if (motivo.trimmed().isEmpty())
         return {false, "Informe o motivo."};
+    if (!FormasCaixa.contains(forma))
+        return {false, "Escolha de qual forma de pagamento saiu."};
 
     MovimentacaoCaixaDTO mov;
     mov.idCaixa = caixa.id;
     mov.tipo = tipo;
     mov.valor = arredondar2(valor);
-    mov.formaPagamento = "Dinheiro";
+    mov.formaPagamento = forma;
     mov.motivo = motivo.trimmed();
     mov.idOperador = caixa.idOperador;
     mov.idOperadorSessao = Sessao_service::instancia()->idOperador();
@@ -129,14 +131,14 @@ Caixa_service::Resultado Caixa_service::registrarMovimentacaoSimples(const QStri
     return {true, tipo == "SANGRIA" ? "Sangria registrada." : "Suprimento registrado.", id};
 }
 
-Caixa_service::Resultado Caixa_service::registrarSangria(double valor, const QString &motivo)
+Caixa_service::Resultado Caixa_service::registrarSangria(double valor, const QString &motivo, const QString &forma)
 {
-    return registrarMovimentacaoSimples("SANGRIA", valor, motivo);
+    return registrarMovimentacaoSimples("SANGRIA", valor, motivo, forma);
 }
 
-Caixa_service::Resultado Caixa_service::registrarSuprimento(double valor, const QString &motivo)
+Caixa_service::Resultado Caixa_service::registrarSuprimento(double valor, const QString &motivo, const QString &forma)
 {
-    return registrarMovimentacaoSimples("SUPRIMENTO", valor, motivo);
+    return registrarMovimentacaoSimples("SUPRIMENTO", valor, motivo, forma);
 }
 
 QList<MovimentacaoCaixaDTO> Caixa_service::sangriasESuprimentosDoCaixa(qlonglong idCaixa)
@@ -154,7 +156,8 @@ QString dinheiroBr(double v) { return "R$ " + QLocale(QLocale::Portuguese, QLoca
 
 Caixa_service::Resultado Caixa_service::editarSangriaSuprimento(qlonglong idMovimentacao, double novoValor,
                                                                 const QString &novoMotivo,
-                                                                const QString &motivoDaCorrecao)
+                                                                const QString &motivoDaCorrecao,
+                                                                const QString &novaForma)
 {
     const MovimentacaoCaixaDTO mov = repo.getMovimentacao(idMovimentacao);
     if (mov.id <= 0 || (mov.tipo != "SANGRIA" && mov.tipo != "SUPRIMENTO"))
@@ -167,15 +170,18 @@ Caixa_service::Resultado Caixa_service::editarSangriaSuprimento(qlonglong idMovi
         return {false, "Informe o motivo."};
     if (motivoDaCorrecao.trimmed().size() < 3)
         return {false, "Informe por que está corrigindo."};
+    const QString forma = novaForma.isEmpty() ? mov.formaPagamento : novaForma;
+    if (!FormasCaixa.contains(forma))
+        return {false, "Forma de pagamento inválida."};
     QString erro;
-    if (!repo.atualizarMovimentacao(idMovimentacao, arredondar2(novoValor), novoMotivo.trimmed(), &erro))
+    if (!repo.atualizarMovimentacao(idMovimentacao, arredondar2(novoValor), novoMotivo.trimmed(), forma, &erro))
         return {false, "Não foi possível alterar: " + erro};
     Sessao_service::instancia()->registrarAcao(
         mov.tipo == "SANGRIA" ? QStringLiteral("SANGRIA_EDITADA") : QStringLiteral("SUPRIMENTO_EDITADO"),
-        QStringLiteral("Caixa #%1, %2 #%3: de %4 (%5) para %6 (%7). Motivo da correção: %8")
+        QStringLiteral("Caixa #%1, %2 #%3: de %4 em %5 (%6) para %7 em %8 (%9). Motivo da correção: %10")
             .arg(mov.idCaixa).arg(mov.tipo.toLower()).arg(mov.id)
-            .arg(dinheiroBr(mov.valor), mov.motivo, dinheiroBr(arredondar2(novoValor)), novoMotivo.trimmed(),
-                 motivoDaCorrecao.trimmed()));
+            .arg(dinheiroBr(mov.valor), mov.formaPagamento, mov.motivo, dinheiroBr(arredondar2(novoValor)), forma,
+                 novoMotivo.trimmed(), motivoDaCorrecao.trimmed()));
     return {true, "Lançamento alterado.", idMovimentacao};
 }
 
@@ -194,9 +200,9 @@ Caixa_service::Resultado Caixa_service::removerSangriaSuprimento(qlonglong idMov
         return {false, "Não foi possível remover: " + erro};
     Sessao_service::instancia()->registrarAcao(
         mov.tipo == "SANGRIA" ? QStringLiteral("SANGRIA_REMOVIDA") : QStringLiteral("SUPRIMENTO_REMOVIDO"),
-        QStringLiteral("Caixa #%1, %2 #%3 de %4 (%5) removido. Motivo: %6")
+        QStringLiteral("Caixa #%1, %2 #%3 de %4 em %5 (%6) removido. Motivo: %7")
             .arg(mov.idCaixa).arg(mov.tipo.toLower()).arg(mov.id)
-            .arg(dinheiroBr(mov.valor), mov.motivo, motivoDaRemocao.trimmed()));
+            .arg(dinheiroBr(mov.valor), mov.formaPagamento, mov.motivo, motivoDaRemocao.trimmed()));
     return {true, "Lançamento removido.", idMovimentacao};
 }
 
@@ -380,10 +386,14 @@ ResumoCaixaDTO Caixa_service::resumo(qlonglong idCaixa)
             continue;
         }
         r.movimentacoes << m;
-        if (m.tipo == "SANGRIA")
+        const QString formaMov = m.formaPagamento.isEmpty() ? QStringLiteral("Dinheiro") : m.formaPagamento;
+        if (m.tipo == "SANGRIA") {
             r.totalSangrias += m.valor;
-        else if (m.tipo == "SUPRIMENTO")
+            r.sangriasPorForma[formaMov] += m.valor;
+        } else if (m.tipo == "SUPRIMENTO") {
             r.totalSuprimentos += m.valor;
+            r.suprimentosPorForma[formaMov] += m.valor;
+        }
         else if (m.tipo == "RECEBIMENTO") {
             r.totalRecebimentos += m.valor;
             r.recebimentosPorForma[m.formaPagamento] += m.valor;
@@ -396,8 +406,9 @@ ResumoCaixaDTO Caixa_service::resumo(qlonglong idCaixa)
             if (v.formaPagamento == forma)
                 esperado += v.total;
         esperado += r.recebimentosPorForma.value(forma, 0.0);
+        esperado += r.suprimentosPorForma.value(forma, 0.0) - r.sangriasPorForma.value(forma, 0.0);
         if (forma == "Dinheiro")
-            esperado += r.caixa.trocoInicial + r.totalSuprimentos - r.totalSangrias;
+            esperado += r.caixa.trocoInicial;
         r.esperadoPorForma[forma] = arredondar2(esperado);
     }
 

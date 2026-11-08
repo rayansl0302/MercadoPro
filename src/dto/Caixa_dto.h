@@ -71,6 +71,8 @@ struct ResumoCaixaDTO {
     CaixaDTO caixa;
     QList<VendasFormaDTO> vendasPorForma;
     QMap<QString, double> recebimentosPorForma;
+    QMap<QString, double> sangriasPorForma;       // a retirada pode sair de Dinheiro, Crédito, Débito ou Pix
+    QMap<QString, double> suprimentosPorForma;
     double totalSangrias = 0;
     double totalSuprimentos = 0;
     double totalRecebimentos = 0;

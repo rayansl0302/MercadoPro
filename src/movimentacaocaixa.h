@@ -26,6 +26,7 @@ private:
     Ui::MovimentacaoCaixa *ui;
     QLocale portugues;
     Caixa_service caixaServ;
+    class QComboBox *cbForma = nullptr;
 };
 
 #endif // MOVIMENTACAOCAIXA_H

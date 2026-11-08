@@ -157,8 +157,8 @@ QString RelatorioCaixa_service::gerarHtml(const ResumoCaixaDTO &r, const QString
         h += "<tr><td>Troco inicial</td><td class='n'>+ " + dinheiro(c.trocoInicial) + "</td></tr>";
         h += "<tr><td>Vendas em dinheiro</td><td class='n'>+ " + dinheiro(vendasDinheiro) + "</td></tr>";
         h += "<tr><td>Recebimentos em dinheiro</td><td class='n'>+ " + dinheiro(recDinheiro) + "</td></tr>";
-        h += "<tr><td>Suprimentos</td><td class='n'>+ " + dinheiro(r.totalSuprimentos) + "</td></tr>";
-        h += "<tr><td><b>Sangrias (dinheiro retirado do caixa)</b></td><td class='n neg'>- " + dinheiro(r.totalSangrias) + "</td></tr>";
+        h += "<tr><td>Suprimentos em dinheiro</td><td class='n'>+ " + dinheiro(r.suprimentosPorForma.value("Dinheiro")) + "</td></tr>";
+        h += "<tr><td><b>Sangrias (dinheiro retirado do caixa)</b></td><td class='n neg'>- " + dinheiro(r.sangriasPorForma.value("Dinheiro")) + "</td></tr>";
         h += "<tr><th>Dinheiro esperado na gaveta</th><th class='n'>" + dinheiro(r.esperadoPorForma.value("Dinheiro", 0.0)) + "</th></tr></table>";
     }
     h += "<table><tr><th>Forma</th><th class='n'>Esperado</th><th class='n'>Informado</th><th class='n'>Diferença</th><th>Situação</th></tr>";
@@ -302,8 +302,8 @@ bool RelatorioCaixa_service::imprimirTermica(const ResumoCaixaDTO &r, QString *e
         d += linha(esquerdaDireita("Troco inicial:", "+ " + dinheiro(r.caixa.trocoInicial)));
         d += linha(esquerdaDireita("Vendas dinheiro:", "+ " + dinheiro(vendasDinheiro)));
         d += linha(esquerdaDireita("Receb. dinheiro:", "+ " + dinheiro(r.recebimentosPorForma.value("Dinheiro", 0.0))));
-        d += linha(esquerdaDireita("Suprimentos:", "+ " + dinheiro(r.totalSuprimentos)));
-        d += linha(esquerdaDireita("Sangrias:", "- " + dinheiro(r.totalSangrias)));
+        d += linha(esquerdaDireita("Suprimentos:", "+ " + dinheiro(r.suprimentosPorForma.value("Dinheiro"))));
+        d += linha(esquerdaDireita("Sangrias:", "- " + dinheiro(r.sangriasPorForma.value("Dinheiro"))));
         d += linha(esquerdaDireita("Dinheiro esperado:", dinheiro(r.esperadoPorForma.value("Dinheiro", 0.0))));
         d += linha(separador());
     }

@@ -310,6 +310,27 @@ void TestCaixaService::sangria_pode_ser_editada_ou_removida_no_caixa_aberto()
     QCOMPARE(cs.resumo(id).esperadoPorForma.value("Dinheiro"), 54.5);          // 100 - 45,50
 }
 
+void TestCaixaService::sangria_desconta_da_forma_escolhida()
+{
+    Caixa_service cs;
+    const qlonglong id = abrirCaixaNovo(100);
+    QVERIFY(id > 0);
+    QVERIFY(inserirVendaSql(id, "Pix", 80) > 0);
+    QVERIFY(!cs.registrarSangria(10, "banco", "Cheque").ok);                 // forma invalida
+    QVERIFY(cs.registrarSangria(20, "deposito").ok);                         // padrao: dinheiro
+    QVERIFY(cs.registrarSangria(30, "retirada do pix", "Pix").ok);
+
+    ResumoCaixaDTO r = cs.resumo(id);
+    QCOMPARE(r.esperadoPorForma.value("Dinheiro"), 80.0);                    // 100 - 20
+    QCOMPARE(r.esperadoPorForma.value("Pix"), 50.0);                         // 80 - 30
+
+    const auto lista = cs.sangriasESuprimentosDoCaixa(id);
+    QVERIFY(cs.editarSangriaSuprimento(lista.last().id, 30, "retirada do pix", "era dinheiro", "Dinheiro").ok);
+    r = cs.resumo(id);
+    QCOMPARE(r.esperadoPorForma.value("Dinheiro"), 50.0);                    // 100 - 20 - 30
+    QCOMPARE(r.esperadoPorForma.value("Pix"), 80.0);
+}
+
 void TestCaixaService::esperado_soma_vendas_e_recebimentos_por_forma()
 {
     Caixa_service cs;
