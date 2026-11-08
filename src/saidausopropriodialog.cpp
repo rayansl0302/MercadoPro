@@ -4,6 +4,10 @@
 #include "services/sessao_service.h"
 
 #include <QComboBox>
+#include <QListWidget>
+#include <QSqlQueryModel>
+#include <QSqlRecord>
+#include <QDialogButtonBox>
 #include <QDateEdit>
 #include <QDoubleSpinBox>
 #include <QFormLayout>
@@ -115,6 +119,11 @@ void SaidaUsoProprioDialog::atualizarCusto()
 
 void SaidaUsoProprioDialog::confirmar()
 {
+    if (motivo_->currentText() == QLatin1String("Outro") && observacao_->text().trimmed().size() < 3) {
+        QMessageBox::warning(this, "Saída para uso próprio", "Em \"Outro\", explique o motivo no campo de observação.");
+        observacao_->setFocus();
+        return;
+    }
     Sessao_service *sessao = Sessao_service::instancia();
     SaidaUsoProprio_service servico;
     const auto r = servico.registrar(idProduto_, quantidade_->value(), motivo_->currentText(), observacao_->text(),
@@ -173,9 +182,13 @@ HistoricoSaidasDialog::HistoricoSaidasDialog(QWidget *parent)
     auto *btnFechar = new QPushButton("Fechar");
     btnFechar->setStyleSheet(kEstiloSecundario);
     connect(btnFechar, &QPushButton::clicked, this, &QDialog::accept);
+    auto *btnNova = new QPushButton("Nova saída...");
+    btnNova->setToolTip("Tirar um produto do estoque (consumo, quebra, vencido...) com motivo");
+    connect(btnNova, &QPushButton::clicked, this, &HistoricoSaidasDialog::novaSaida);
 
     auto *rodape = new QHBoxLayout;
     rodape->addWidget(lblTotal_, 1);
+    rodape->addWidget(btnNova);
     rodape->addWidget(btnFechar);
 
     auto *layout = new QVBoxLayout(this);
@@ -190,6 +203,68 @@ HistoricoSaidasDialog::HistoricoSaidasDialog(QWidget *parent)
     connect(ate_, &QDateEdit::dateChanged, this, &HistoricoSaidasDialog::carregar);
     connect(motivo_, &QComboBox::currentIndexChanged, this, &HistoricoSaidasDialog::carregar);
     carregar();
+}
+
+// Escolhe o produto pelo código de barras (leitor) ou por parte do nome e abre a saída dele.
+void HistoricoSaidasDialog::novaSaida()
+{
+    QDialog busca(this);
+    busca.setWindowTitle("Nova saída de estoque");
+    busca.resize(560, 420);
+    auto *lay = new QVBoxLayout(&busca);
+    lay->addWidget(new QLabel("Leia o código de barras ou digite parte do nome do produto:"));
+    auto *campo = new QLineEdit;
+    lay->addWidget(campo);
+    auto *lista = new QListWidget;
+    lay->addWidget(lista, 1);
+    auto *botoes = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    botoes->button(QDialogButtonBox::Ok)->setText("Continuar");
+    botoes->button(QDialogButtonBox::Cancel)->setText("Cancelar");
+    lay->addWidget(botoes);
+    connect(botoes, &QDialogButtonBox::rejected, &busca, &QDialog::reject);
+    connect(botoes, &QDialogButtonBox::accepted, &busca, &QDialog::accept);
+    connect(lista, &QListWidget::itemDoubleClicked, &busca, &QDialog::accept);
+
+    auto buscar = [&]() {
+        lista->clear();
+        const QString t = campo->text().trimmed();
+        if (t.size() < 2)
+            return;
+        Produto_Service ps;
+        const ProdutoDTO exato = ps.getProdutoPeloCodBarras(t);
+        if (exato.id > 0) {
+            auto *it = new QListWidgetItem(exato.descricao);
+            it->setData(Qt::UserRole, exato.id);
+            lista->addItem(it);
+            lista->setCurrentRow(0);
+            return;
+        }
+        QSqlQueryModel modelo;
+        ps.pesquisar(t, &modelo);
+        while (modelo.canFetchMore())
+            modelo.fetchMore();
+        for (int i = 0; i < modelo.rowCount() && i < 200; ++i) {
+            const QSqlRecord r = modelo.record(i);
+            auto *it = new QListWidgetItem(r.value("descricao").toString());
+            it->setData(Qt::UserRole, r.value("id"));
+            lista->addItem(it);
+        }
+        if (lista->count() > 0)
+            lista->setCurrentRow(0);
+    };
+    connect(campo, &QLineEdit::textChanged, &busca, buscar);
+    // leitor de código termina com Enter: já segue com o primeiro resultado
+    connect(campo, &QLineEdit::returnPressed, &busca, [&]() {
+        if (lista->currentItem())
+            busca.accept();
+    });
+    campo->setFocus();
+    if (busca.exec() != QDialog::Accepted || !lista->currentItem())
+        return;
+
+    SaidaUsoProprioDialog dlg(lista->currentItem()->data(Qt::UserRole).toLongLong(), this);
+    if (dlg.exec() == QDialog::Accepted && dlg.registrou())
+        carregar();
 }
 
 void HistoricoSaidasDialog::carregar()

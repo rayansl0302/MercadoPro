@@ -633,6 +633,7 @@ void MainWindow::montarMenuInicial()
     m->adicionarBotao("shopping-cart", "Vender (PDV)", "Abre a tela de venda (F5)", [this]() { abrirPdv(); }, true);
     m->adicionarBotao("receipt", "Vendas", "Consultar e gerenciar vendas", [this]() { ui->Btn_Venda->click(); });
     m->adicionarBotao("file-text", "Orçamentos", "Criar e consultar orçamentos", [this]() { ui->Btn_Orcamento->click(); });
+    m->adicionarBotao("clipboard-list", "Saída de estoque", "Tirar produto do estoque com motivo (consumo, quebra, vencido...)", [this]() { historicoSaidasUsoProprio(); });
 
     if (gerente) {
     m->adicionarGrupo("Cadastros");
@@ -640,7 +641,6 @@ void MainWindow::montarMenuInicial()
     m->adicionarBotao("package-plus", "Cadastrar produto", "Adicionar um novo produto", [this]() { ui->Btn_AddProd->click(); });
     m->adicionarBotao("users", "Clientes", "Cadastro de clientes", [this]() { ui->Btn_Clientes->click(); });
     m->adicionarBotao("truck", "Compras", "Entrada de mercadorias", [this]() { ui->Btn_Entradas->click(); });
-    m->adicionarBotao("clipboard-list", "Saídas de uso próprio", "Consumo, limpeza e quebras tiradas do estoque", [this]() { historicoSaidasUsoProprio(); });
 
     }
     m->adicionarGrupo("Caixa");

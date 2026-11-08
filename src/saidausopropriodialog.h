@@ -44,6 +44,7 @@ public:
 
 private slots:
     void carregar();
+    void novaSaida();
 
 private:
     QDateEdit *de_ = nullptr;
