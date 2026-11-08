@@ -8,6 +8,7 @@ import { entrar, horasDaSessao, lojaDoToken, sair, usuarioDaSessao } from './aut
 import { cancelarCiclo, concluirCiclo, ErroHttp, iniciarCiclo, receberLote } from './ciclo.js';
 import { cancelarPedido, criarPedido, entregarPedidos, listarPedidos, registrarResultado, FORMAS_PAGAMENTO } from './pedidos.js';
 import { registrarRotasConsulta } from './consultas.js';
+import { lerMetas, removerDespesa, salvarConfig, salvarDespesa } from './metas.js';
 import { alterarMinhaSenha, atualizarUsuario, criarUsuario, listarUsuarios, redefinirDoisFatores, redefinirSenha } from './usuarios.js';
 
 const COOKIE = 'sid';
@@ -169,6 +170,28 @@ export function criarApp({ pool, config }) {
     painel.post('/api/painel/pedidos/:id/cancelar', async (req) => {
       await exigirGerente(req);
       return cancelarPedido(pool, req.usuario, req.params.id);
+    });
+
+    // ---- metas: despesas fixas e ponto de equilíbrio (ver: qualquer usuário; editar: gerente/administrador)
+    painel.get('/api/painel/metas', async (req) => {
+      await exigirSessao(req);
+      await lojaUnica(req);
+      return lerMetas(pool, req.loja);
+    });
+    painel.post('/api/painel/metas/despesas', async (req) => {
+      await exigirGerente(req);
+      await lojaUnica(req);
+      return salvarDespesa(pool, req.loja, req.body ?? {});
+    });
+    painel.post('/api/painel/metas/despesas/:id/remover', async (req) => {
+      await exigirGerente(req);
+      await lojaUnica(req);
+      return removerDespesa(pool, req.loja, req.params.id);
+    });
+    painel.post('/api/painel/metas/config', async (req) => {
+      await exigirGerente(req);
+      await lojaUnica(req);
+      return salvarConfig(pool, req.loja, req.body ?? {});
     });
 
     registrarRotasConsulta(painel, { pool, config, exigirSessao, lojaUnica });

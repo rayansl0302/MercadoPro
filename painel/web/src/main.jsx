@@ -6,9 +6,10 @@ import { Agrupada, Caixas, ContasPagar, Devedores, Estoque, Fiscal, Fluxo, Opera
 import { useDados } from './ui.jsx';
 import { CampoSenha, TrocarSenha, Usuarios } from './conta.jsx';
 import { Balanca } from './balanca.jsx';
+import { Metas } from './metas.jsx';
 
 const MENU = [
-  ['geral', 'Início'], ['vendas', 'Vendas'], ['caixas', 'Caixas'], ['pagar', 'Contas a pagar'], ['receber', 'A receber'],
+  ['geral', 'Início'], ['vendas', 'Vendas'], ['caixas', 'Caixas'], ['pagar', 'Contas a pagar'], ['metas', 'Metas e despesas fixas'], ['receber', 'A receber'],
   ['estoque', 'Estoque'], ['fiscal', 'Fiscal e segurança'], ['loja', 'Loja e pedidos'],
 ];
 
@@ -99,6 +100,7 @@ function App() {
     vendas: <Agrupada abas={[['v', 'Vendas', <Vendas empresa={emp} />], ['o', 'Operadores', <Operadores empresa={emp} />]]} />,
     caixas: <Caixas />,
     pagar: <ContasPagar empresa={emp} empresas={empresas} formas={formas} podeAgir={podeAgir} avisar={setAviso} />,
+    metas: <Metas podeAgir={podeAgir} />,
     receber: <Devedores empresa={emp} />,
     estoque: <Estoque />,
     fiscal: <Agrupada abas={[['f', 'Notas fiscais', <Fiscal />], ['s', 'Segurança', <Seguranca />]]} />,

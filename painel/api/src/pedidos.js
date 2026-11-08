@@ -29,6 +29,21 @@ const esquemas = {
     observacao: z.string().trim().max(500).optional().default(''),
     idEmpresa: z.number().int().positive(),
   }),
+  // editar: conta em aberto muda tudo; conta paga só os textos (a loja ignora valor e vencimento nesse caso)
+  CONTA_PAGAR_EDITAR: z.object({
+    contaId: z.number().int().positive(),
+    descricao: z.string().trim().min(2).max(200),
+    fornecedor: z.string().trim().max(200).optional().default(''),
+    categoria: z.string().trim().max(100).optional().default(''),
+    documento: z.string().trim().max(100).optional().default(''),
+    observacao: z.string().trim().max(500).optional().default(''),
+    valor: dinheiro,
+    vencimento: data,
+  }),
+  CONTA_PAGAR_CANCELAR: z.object({
+    contaId: z.number().int().positive(),
+    motivo: z.string().trim().min(3, 'Informe o motivo (mínimo 3 letras)').max(300),
+  }),
 };
 
 export const tiposDePedido = Object.keys(esquemas);
@@ -55,6 +70,13 @@ export async function criarPedido(pool, config, { loja, usuario, tipo, payload, 
     const r = await pool.query('SELECT id, status, descricao, valor FROM espelho.contas_pagar WHERE loja_id = $1 AND id = $2', [loja.id, dados.contaId]);
     if (r.rowCount === 0) throw new ErroHttp(404, 'Conta não encontrada no painel. Aguarde a próxima sincronização.');
     if (r.rows[0].status !== 'ABERTA') throw new ErroHttp(409, `Esta conta já está ${r.rows[0].status === 'PAGA' ? 'paga' : 'cancelada'}.`);
+    visto = { statusVisto: r.rows[0].status, descricao: r.rows[0].descricao, valor: r.rows[0].valor };
+  }
+  if (tipo === 'CONTA_PAGAR_EDITAR' || tipo === 'CONTA_PAGAR_CANCELAR') {
+    const r = await pool.query('SELECT id, status, descricao, valor FROM espelho.contas_pagar WHERE loja_id = $1 AND id = $2', [loja.id, dados.contaId]);
+    if (r.rowCount === 0) throw new ErroHttp(404, 'Conta não encontrada no painel. Aguarde a próxima sincronização.');
+    if (r.rows[0].status === 'CANCELADA') throw new ErroHttp(409, 'Esta conta já está cancelada.');
+    if (tipo === 'CONTA_PAGAR_CANCELAR' && r.rows[0].status !== 'ABERTA') throw new ErroHttp(409, 'Só dá para cancelar conta em aberto (esta já está paga).');
     visto = { statusVisto: r.rows[0].status, descricao: r.rows[0].descricao, valor: r.rows[0].valor };
   }
   if (tipo === 'CONTA_PAGAR_LANCAR') {

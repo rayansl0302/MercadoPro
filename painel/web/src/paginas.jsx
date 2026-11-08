@@ -234,6 +234,8 @@ function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
   const r = useDados('/api/painel/contas-pagar', { status, empresa, de: de || undefined, ate: ate || undefined, categoria: categoria || undefined, busca: buscaAplicada || undefined });
   const [baixando, setBaixando] = useState(null);
   const [lancando, setLancando] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [cancelando, setCancelando] = useState(null);
   const noMesAtual = de === mesAtual.de && ate === mesAtual.ate;
   const filtrando = !noMesAtual || categoria || busca;
   const limpar = () => { setDe(mesAtual.de); setAte(mesAtual.ate); setCategoria(''); setBusca(''); };
@@ -294,13 +296,23 @@ function ListaContas({ empresa, empresas, formas, podeAgir, avisar }) {
                   return <Selo texto={vencida ? 'VENCIDA' : l.status} tom={STATUS_TOM[vencida ? 'VENCIDA' : l.status] ?? 'cinza'} />;
                 } },
                 dinheiroCol('Valor', (l) => l.valor),
-                { titulo: '', direita: true, render: (l) => (podeAgir && l.status === 'ABERTA' ? <button className="rounded border border-marca px-2 py-1 text-xs text-marca hover:bg-marca-claro" onClick={() => setBaixando(l)}>Marcar como paga</button> : l.status === 'PAGA' ? <span className="text-xs text-slate-500">{moeda(l.valor_pago)} · {l.forma_pagamento}</span> : null) },
+                { titulo: 'Ações', direita: true, render: (l) => (
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {l.status === 'PAGA' && <span className="text-xs text-slate-500">{moeda(l.valor_pago)} · {l.forma_pagamento}</span>}
+                    {l.status === 'CANCELADA' && <span className="whitespace-normal text-xs text-slate-500">Cancelada{l.motivo_cancelamento ? `: ${l.motivo_cancelamento}` : ''}</span>}
+                    {podeAgir && l.status === 'ABERTA' && <button className="rounded border border-marca px-2 py-1 text-xs text-marca hover:bg-marca-claro" onClick={() => setBaixando(l)}>Marcar como paga</button>}
+                    {podeAgir && l.status !== 'CANCELADA' && <button className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50" onClick={() => setEditando(l)}>Editar</button>}
+                    {podeAgir && l.status === 'ABERTA' && <button className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50" onClick={() => setCancelando(l)}>Cancelar conta</button>}
+                  </div>
+                ) },
               ]} />
             </Secao>
           </>
         )}
       </Estado>
       {baixando && <ModalBaixa conta={baixando} formas={formas} onFechar={() => setBaixando(null)} onEnviado={() => { setBaixando(null); avisar('Pedido enviado. Será aplicado quando o programa da loja estiver aberto.'); r.recarregar(); }} />}
+      {editando && <ModalEditar conta={editando} onFechar={() => setEditando(null)} onEnviado={() => { setEditando(null); avisar('Pedido de edição enviado. Será aplicado quando o programa da loja estiver aberto.'); r.recarregar(); }} />}
+      {cancelando && <ModalCancelarConta conta={cancelando} onFechar={() => setCancelando(null)} onEnviado={() => { setCancelando(null); avisar('Pedido de cancelamento enviado. Será aplicado quando o programa da loja estiver aberto.'); r.recarregar(); }} />}
       {lancando && <ModalLancar empresas={empresas} empresaPadrao={empresa} onFechar={() => setLancando(false)} onEnviado={() => { setLancando(false); avisar('Pedido enviado. A conta aparece aqui depois que a loja aplicar.'); }} />}
     </div>
   );
@@ -354,6 +366,63 @@ function ModalBaixa({ conta, formas, onFechar, onEnviado }) {
   );
 }
 
+function ModalEditar({ conta, onFechar, onEnviado }) {
+  const paga = conta.status === 'PAGA';
+  const [f, setF] = useState({
+    descricao: conta.descricao ?? '', fornecedor: conta.fornecedor ?? '', categoria: conta.categoria ?? '', documento: conta.documento ?? '',
+    observacao: conta.observacao ?? '', valor: String(conta.valor).replace('.', ','), vencimento: String(conta.vencimento).slice(0, 10),
+  });
+  const { erro, enviando, enviar } = useEnvio(onEnviado);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  return (
+    <Modal titulo="Editar conta a pagar" onFechar={onFechar}>
+      {paga && <p className="mb-3 rounded bg-amber-50 p-2 text-xs text-amber-900">Conta já paga: só os textos podem mudar. Para mudar valor ou vencimento, estorne o pagamento na loja.</p>}
+      {conta.total_parcelas > 1 && <p className="mb-3 text-xs text-slate-500">Parcela {conta.parcela}/{conta.total_parcelas}: a edição vale só para esta parcela.</p>}
+      <Campo rotulo="Descrição"><input className={entrada} value={f.descricao} onChange={set('descricao')} /></Campo>
+      <div className="grid grid-cols-2 gap-3">
+        <Campo rotulo="Fornecedor"><input className={entrada} value={f.fornecedor} onChange={set('fornecedor')} /></Campo>
+        <Campo rotulo="Tipo / categoria"><input className={entrada} value={f.categoria} onChange={set('categoria')} /></Campo>
+        <Campo rotulo="Nº do boleto / documento"><input className={entrada} value={f.documento} onChange={set('documento')} /></Campo>
+        <Campo rotulo="Valor (R$)"><input className={entrada} inputMode="decimal" disabled={paga} value={f.valor} onChange={set('valor')} /></Campo>
+        <Campo rotulo="Vencimento"><input type="date" className={entrada} disabled={paga} value={f.vencimento} onChange={set('vencimento')} /></Campo>
+      </div>
+      <Campo rotulo="Observação"><input className={entrada} value={f.observacao} onChange={set('observacao')} /></Campo>
+      {erro && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-800">{erro}</p>}
+      <div className="flex justify-end gap-2">
+        <button className="rounded px-3 py-2 text-sm" onClick={onFechar}>Fechar</button>
+        <button disabled={enviando} className="rounded bg-marca px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          onClick={() => enviar('CONTA_PAGAR_EDITAR', {
+            contaId: Number(conta.id), descricao: f.descricao, fornecedor: f.fornecedor, categoria: f.categoria, documento: f.documento,
+            observacao: f.observacao, valor: paga ? Number(conta.valor) : lerDinheiro(f.valor), vencimento: f.vencimento,
+          })}>Enviar pedido</button>
+      </div>
+    </Modal>
+  );
+}
+
+function ModalCancelarConta({ conta, onFechar, onEnviado }) {
+  const [motivo, setMotivo] = useState('');
+  const { erro, enviando, enviar } = useEnvio(onEnviado);
+  return (
+    <Modal titulo="Cancelar conta a pagar" onFechar={onFechar}>
+      <p className="mb-4 text-sm text-slate-600">{conta.descricao} · vence {dataBr(conta.vencimento)} · {moeda(conta.valor)}</p>
+      <Campo rotulo="Motivo do cancelamento (obrigatório)"><textarea className={entrada} rows="3" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex.: boleto lançado em duplicidade" /></Campo>
+      <div className="mb-3 flex flex-wrap gap-1">
+        {['Lançado em duplicidade', 'Valor lançado errado', 'Negociado com o fornecedor', 'Compra devolvida'].map((m) => (
+          <button key={m} type="button" onClick={() => setMotivo(m)} className="rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-50">{m}</button>
+        ))}
+      </div>
+      {erro && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-800">{erro}</p>}
+      <p className="mb-4 text-xs text-slate-500">Só vale para conta em aberto. O motivo fica registrado na loja.</p>
+      <div className="flex justify-end gap-2">
+        <button className="rounded px-3 py-2 text-sm" onClick={onFechar}>Voltar</button>
+        <button disabled={enviando || motivo.trim().length < 3} className="rounded bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          onClick={() => enviar('CONTA_PAGAR_CANCELAR', { contaId: Number(conta.id), motivo })}>Cancelar a conta</button>
+      </div>
+    </Modal>
+  );
+}
+
 function ModalLancar({ empresas, empresaPadrao, onFechar, onEnviado }) {
   const [f, setF] = useState({ descricao: '', fornecedor: '', categoria: '', documento: '', valor: '', vencimento: new Date().toLocaleDateString('sv-SE'), idEmpresa: empresaPadrao ?? empresas[0]?.id, parcelas: 1 });
   const { erro, enviando, enviar } = useEnvio(onEnviado);
@@ -365,11 +434,20 @@ function ModalLancar({ empresas, empresaPadrao, onFechar, onEnviado }) {
         <Campo rotulo="Fornecedor"><input className={entrada} value={f.fornecedor} onChange={set('fornecedor')} /></Campo>
         <Campo rotulo="Tipo / categoria"><input className={entrada} list="cats" placeholder="Boleto, Aluguel…" value={f.categoria} onChange={set('categoria')} /><datalist id="cats">{['Boleto', 'Fornecedor', 'Aluguel', 'Energia', 'Água', 'Internet', 'Impostos', 'Salários', 'Outros'].map((c) => <option key={c} value={c} />)}</datalist></Campo>
         <Campo rotulo="Nº do boleto / documento"><input className={entrada} value={f.documento} onChange={set('documento')} /></Campo>
-        <Campo rotulo="Valor de cada parcela (R$)"><input className={entrada} inputMode="decimal" value={f.valor} onChange={set('valor')} /></Campo>
+        <Campo rotulo={Number(f.parcelas) > 1 ? 'Valor TOTAL (R$), dividido nas parcelas' : 'Valor (R$)'}><input className={entrada} inputMode="decimal" value={f.valor} onChange={set('valor')} /></Campo>
         <Campo rotulo="Parcelas"><input type="number" min="1" max="60" className={entrada} value={f.parcelas} onChange={set('parcelas')} /></Campo>
         <Campo rotulo="1º vencimento"><input type="date" className={entrada} value={f.vencimento} onChange={set('vencimento')} /></Campo>
         <Campo rotulo="Empresa"><select className={entrada} value={f.idEmpresa} onChange={set('idEmpresa')}>{empresas.map((e) => <option key={e.id} value={e.id}>{e.apelido}</option>)}</select></Campo>
       </div>
+      {(() => {
+        const total = lerDinheiro(f.valor);
+        const n = Number(f.parcelas);
+        if (!(total > 0) || !(n >= 1)) return null;
+        const centavos = Math.round(total * 100);
+        const cada = Math.floor(centavos / n) / 100;
+        const ultima = (centavos - Math.floor(centavos / n) * (n - 1)) / 100;
+        return <p className="mb-3 rounded bg-slate-50 p-2 text-sm text-slate-700">{n > 1 ? <>{n} parcelas de <b>{moeda(cada)}</b>{ultima !== cada && <> (a última de <b>{moeda(ultima)}</b>)</>} · total <b>{moeda(total)}</b></> : <>Uma conta de <b>{moeda(total)}</b></>}</p>;
+      })()}
       {erro && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-800">{erro}</p>}
       <div className="flex justify-end gap-2">
         <button className="rounded px-3 py-2 text-sm" onClick={onFechar}>Cancelar</button>
@@ -568,13 +646,15 @@ export function Seguranca() {
 
 // ------------------------------------------------------------------ pedidos enviados à loja
 const PEDIDO_TOM = { PENDENTE: 'amarelo', ENTREGUE: 'azul', APLICADO: 'verde', RECUSADO: 'vermelho', CONFLITO: 'vermelho', EXPIRADO: 'cinza', CANCELADO: 'cinza' };
-const PEDIDO_TIPO = { CONTA_PAGAR_BAIXAR: 'Baixar conta a pagar', CONTA_PAGAR_LANCAR: 'Lançar conta a pagar' };
+const PEDIDO_TIPO = { CONTA_PAGAR_BAIXAR: 'Baixar conta a pagar', CONTA_PAGAR_LANCAR: 'Lançar conta a pagar', CONTA_PAGAR_EDITAR: 'Editar conta a pagar', CONTA_PAGAR_CANCELAR: 'Cancelar conta a pagar' };
 
 export function Pedidos({ podeAgir }) {
   const r = useDados('/api/painel/pedidos', {});
   const cancelar = async (id) => { await api.post(`/api/painel/pedidos/${id}/cancelar`); r.recarregar(); };
   const resumo = (p) => (p.tipo === 'CONTA_PAGAR_BAIXAR'
     ? `Conta ${p.payload.contaId} · ${moeda(p.payload.valorPago)} · ${p.payload.forma}`
+    : p.tipo === 'CONTA_PAGAR_CANCELAR' ? `Conta ${p.payload.contaId} · motivo: ${p.payload.motivo}`
+    : p.tipo === 'CONTA_PAGAR_EDITAR' ? `Conta ${p.payload.contaId} · ${p.payload.descricao} · ${moeda(p.payload.valor)}`
     : `${p.payload.descricao} · ${moeda(p.payload.valor)}${p.payload.parcelas > 1 ? ` × ${p.payload.parcelas}` : ''}`);
   return (
     <Secao titulo="Pedidos enviados à loja" acao={<button className="text-sm text-marca underline" onClick={r.recarregar}>Atualizar</button>}>

@@ -50,6 +50,25 @@ describe('validação dos pedidos', () => {
   });
 });
 
+describe('editar e cancelar conta', () => {
+  const editar = (extra = {}) => ({ contaId: 10, descricao: 'Aluguel corrigido', valor: 1500, vencimento: hojeIso(), ...extra });
+  it('valida os dados; cancelar exige motivo', () => {
+    expect(validarPayload('CONTA_PAGAR_EDITAR', editar()).valor).toBe(1500);
+    expect(() => validarPayload('CONTA_PAGAR_EDITAR', editar({ descricao: 'x' }))).toThrow();
+    expect(validarPayload('CONTA_PAGAR_CANCELAR', { contaId: 10, motivo: 'Lançado em duplicidade' }).motivo).toBe('Lançado em duplicidade');
+    expect(() => validarPayload('CONTA_PAGAR_CANCELAR', { contaId: 10, motivo: 'ab' })).toThrow(/motivo/i);
+    expect(() => validarPayload('CONTA_PAGAR_CANCELAR', { contaId: 10 })).toThrow();
+  });
+  it('só pede para conta que existe; cancelar só conta em aberto', async () => {
+    await expect(criarPedido(pool, config, { loja, usuario, tipo: 'CONTA_PAGAR_EDITAR', payload: editar({ contaId: 999 }) })).rejects.toMatchObject({ status: 404 });
+    await expect(criarPedido(pool, config, { loja, usuario, tipo: 'CONTA_PAGAR_CANCELAR', payload: { contaId: 11, motivo: 'engano' } })).rejects.toMatchObject({ status: 409 });   // paga
+    const ed = await criarPedido(pool, config, { loja, usuario, tipo: 'CONTA_PAGAR_EDITAR', payload: editar({ contaId: 11 }) });                 // paga: editar textos pode
+    expect(ed.pedido.tipo).toBe('CONTA_PAGAR_EDITAR');
+    const ca = await criarPedido(pool, config, { loja, usuario, tipo: 'CONTA_PAGAR_CANCELAR', payload: { contaId: 10, motivo: 'engano' } });
+    expect(ca.pedido.payload).toMatchObject({ contaId: 10, motivo: 'engano' });
+  });
+});
+
 describe('fila de pedidos', () => {
   it('cria, entrega, recebe o resultado e não deixa responder duas vezes', async () => {
     const { pedido, repetido } = await criarPedido(pool, config, { loja, usuario, tipo: 'CONTA_PAGAR_BAIXAR', payload: baixa(), chave: 'abc' });
