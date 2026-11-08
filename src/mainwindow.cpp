@@ -614,9 +614,17 @@ void MainWindow::atualizarSaudacao()
 
 void MainWindow::montarMenuInicial()
 {
+    const bool gerente = perfilGerente;
+    if (menuInicial) {
+        delete menuInicial;
+        menuInicial = nullptr;
+    }
+    auto *layout = qobject_cast<QVBoxLayout *>(ui->paginaMenu->layout());
+    if (!layout) {
+        layout = new QVBoxLayout(ui->paginaMenu);
+        layout->setContentsMargins(0, 0, 0, 0);
+    }
     menuInicial = new MenuInicial(ui->paginaMenu);
-    auto *layout = new QVBoxLayout(ui->paginaMenu);
-    layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(menuInicial);
 
     auto *m = menuInicial;
@@ -625,6 +633,7 @@ void MainWindow::montarMenuInicial()
     m->adicionarBotao("receipt", "Vendas", "Consultar e gerenciar vendas", [this]() { ui->Btn_Venda->click(); });
     m->adicionarBotao("file-text", "Orçamentos", "Criar e consultar orçamentos", [this]() { ui->Btn_Orcamento->click(); });
 
+    if (gerente) {
     m->adicionarGrupo("Cadastros");
     m->adicionarBotao("package", "Produtos", "Lista de produtos e estoque", [this]() { irParaProdutos(); });
     m->adicionarBotao("package-plus", "Cadastrar produto", "Adicionar um novo produto", [this]() { ui->Btn_AddProd->click(); });
@@ -632,13 +641,16 @@ void MainWindow::montarMenuInicial()
     m->adicionarBotao("truck", "Compras", "Entrada de mercadorias", [this]() { ui->Btn_Entradas->click(); });
     m->adicionarBotao("clipboard-list", "Saídas de uso próprio", "Consumo, limpeza e quebras tiradas do estoque", [this]() { historicoSaidasUsoProprio(); });
 
+    }
     m->adicionarGrupo("Caixa");
     m->adicionarBotao("wallet", "Abrir caixa", "Abrir o seu caixa", [this]() { abrirCaixaClicked(); });
     m->adicionarBotao("lock", "Fechar caixa", "Conferir e fechar o seu caixa", [this]() { fecharCaixaClicked(); });
     m->adicionarBotao("circle-arrow-down", "Sangria", "Retirar dinheiro do caixa", [this]() { sangriaClicked(); });
     m->adicionarBotao("circle-arrow-up", "Suprimento", "Colocar dinheiro no caixa", [this]() { suprimentoClicked(); });
-    m->adicionarBotao("history", "Histórico de caixas", "Caixas abertos e fechados", [this]() { historicoCaixaClicked(); });
+    if (gerente)
+        m->adicionarBotao("history", "Histórico de caixas", "Caixas abertos e fechados", [this]() { historicoCaixaClicked(); });
 
+    if (gerente) {
     m->adicionarGrupo("Financeiro");
     m->adicionarBotao("banknote", "Contas a pagar", "Contas, vencimentos e baixas", [this]() { contasPagarClicked(); });
     m->adicionarBotao("plus", "Nova conta a pagar", "Lançar uma conta ou compra parcelada",
@@ -655,15 +667,24 @@ void MainWindow::montarMenuInicial()
     m->adicionarBotao("calculator", "Monitor fiscal", "Notas fiscais e contingência", [this]() { ui->actionMonitor_Fiscal->trigger(); });
     m->adicionarBotao("mail", "Enviar ao contador", "Enviar as notas ao contador", [this]() { ui->actionEnviar_Notas_Contador->trigger(); });
 
+    }
     m->adicionarGrupo("Sistema");
+    if (gerente) {
     m->adicionarBotao("repeat", "Nuvem (painel)", "Sincronização com o painel de gestão online", [this]() { nuvemClicked(); });
     m->adicionarBotao("database-backup", "Backup do banco", "Cópia de segurança em uma pasta (ex.: MEGA)", [this]() { backupClicked(); });
     m->adicionarBotao("settings", "Configurações", "Empresa, fiscal, e-mail e outros", [this]() { ui->actionConfig->trigger(); });
+    }
     m->adicionarBotao("book-open", "Ajuda", "Documentação do sistema", [this]() { ui->actionDocumenta_o->trigger(); });
     m->adicionarBotao("log-out", "Sair da conta", "Encerrar a sessão do operador", [this]() { sairSessaoClicked(); });
 
     // na lista de produtos: botão para voltar ao menu
+    if (ui->paginaProdutos->findChild<QPushButton *>(QStringLiteral("Btn_InicioProdutos"))) {
+        atualizarSaudacao();
+        irParaInicio();
+        return;
+    }
     auto *btnInicio = new QPushButton(QStringLiteral("  Início"), ui->paginaProdutos);
+    btnInicio->setObjectName(QStringLiteral("Btn_InicioProdutos"));
     btnInicio->setIcon(Icones::icone("arrow-left", QColor("#142D45"), 18));
     btnInicio->setCursor(Qt::PointingHandCursor);
     btnInicio->setToolTip("Voltar ao menu inicial");
@@ -675,8 +696,37 @@ void MainWindow::montarMenuInicial()
     ui->horizontalLayout_6->insertSpacing(1, 8);
 
     connect(Sessao_service::instancia(), &Sessao_service::sessaoMudou, this, &MainWindow::atualizarSaudacao);
+    connect(Sessao_service::instancia(), &Sessao_service::sessaoMudou, this, &MainWindow::aplicarPerfilNaInterface);
     atualizarSaudacao();
     irParaInicio();
+}
+
+void MainWindow::aplicarPerfilNaInterface()
+{
+    Sessao_service *sessao = Sessao_service::instancia();
+    if (!sessao->ativa())
+        return;
+    const bool gerente = sessao->sessao().gerente;
+
+    // barra escura: operador comum só vê o atendimento (vendas, PDV, orçamento, clientes)
+    for (QWidget *w : {static_cast<QWidget *>(ui->Btn_AddProd), static_cast<QWidget *>(ui->Btn_Alterar),
+                       static_cast<QWidget *>(ui->Btn_Delete), static_cast<QWidget *>(ui->Btn_Relatorios),
+                       static_cast<QWidget *>(ui->Btn_Entradas)})
+        w->setVisible(gerente);
+
+    // barra de menus: operador comum fica com Vendas, Caixa, Sessão e Ajuda
+    for (QAction *a : ui->menuBar->actions()) {
+        const QString t = a->text().remove(QLatin1Char('&'));
+        const bool livre = t == QLatin1String("Vendas") || t == QLatin1String("Caixa") ||
+                           t == QLatin1String("Sessão") || t == QLatin1String("Ajuda");
+        a->setVisible(gerente || livre);
+    }
+
+    if (gerente != perfilGerente) {
+        perfilGerente = gerente;
+        montarMenuInicial();
+        atualizarAlertaContas();
+    }
 }
 
 namespace { QString estiloChip(const QString &cor); }
@@ -1158,6 +1208,7 @@ void MainWindow::atualizarIndicadorSessao()
 
 void MainWindow::aplicarSessao()
 {
+    aplicarPerfilNaInterface();
     atualizarIndicadorSessao();
     Sessao_service::instancia()->iniciarTimeout(configDTO.caixaTimeoutAtivo, configDTO.caixaTimeoutMinutos);
 }

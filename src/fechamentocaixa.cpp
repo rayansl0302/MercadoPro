@@ -37,6 +37,21 @@ FechamentoCaixa::FechamentoCaixa(QWidget *parent, qlonglong idCaixaAlvo)
             itens << QString("%1: R$ %2").arg(it.key(), portugues.toString(it.value(), 'f', 2));
         aviso += "\nAtenção: há valores em formas que não entram na conferência (" + itens.join("; ") + ").";
     }
+    {
+        // a conta do dinheiro esperado, para o operador ver que as sangrias já foram descontadas
+        double vendasDinheiro = 0;
+        for (const VendasFormaDTO &v : resumoAtual.vendasPorForma)
+            if (v.formaPagamento == "Dinheiro")
+                vendasDinheiro += v.total;
+        const double receb = resumoAtual.recebimentosPorForma.value("Dinheiro", 0.0);
+        auto r = [&](double v) { return portugues.toString(v, 'f', 2); };
+        aviso += "\nDinheiro esperado: troco inicial " + r(resumoAtual.caixa.trocoInicial) +
+                 " + vendas " + r(vendasDinheiro) +
+                 (receb > 0.004 ? " + recebimentos " + r(receb) : QString()) +
+                 (resumoAtual.totalSuprimentos > 0.004 ? " + suprimentos " + r(resumoAtual.totalSuprimentos) : QString()) +
+                 " − sangrias " + r(resumoAtual.totalSangrias) +
+                 " = " + r(resumoAtual.esperadoPorForma.value("Dinheiro", 0.0)) + ".";
+    }
     ui->Lbl_Tolerancia->setText(aviso);
     ui->Lbl_Tolerancia->setWordWrap(true);
 

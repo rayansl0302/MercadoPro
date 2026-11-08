@@ -125,7 +125,7 @@ QTableView { alternate-background-color: #f1f5f9; }</string>
              <string>Gerente pode abrir histórico de caixas, cadastro de operadores, configurações e relatórios gerenciais.</string>
             </property>
             <property name="text">
-             <string>É gerente</string>
+             <string>É gerente (acesso total). Desmarcado: somente caixa e atendimento</string>
             </property>
            </widget>
           </item>

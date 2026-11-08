@@ -133,6 +133,7 @@ private slots:
     void historicoCaixaClicked();
     // tela inicial (menu de botões) x lista de produtos
     void montarMenuInicial();
+    void aplicarPerfilNaInterface();   // operador comum (não gerente): só atendimento e caixa
     void irParaInicio();
     void irParaProdutos();
     bool naListaDeProdutos() const;
@@ -225,6 +226,7 @@ private:
     QToolButton *btnSair = nullptr;       // "Sair da conta", sempre à vista
     QLabel *lblAvisoTimeout = nullptr;
     MenuInicial *menuInicial = nullptr;
+    bool perfilGerente = true;
     QToolButton *btnEmpresa = nullptr;
     QToolButton *btnNuvem = nullptr;        // estado da sincronização com o painel online     // empresa (CNPJ) em uso, no rodapé
     bool empresaPerguntada = false;
