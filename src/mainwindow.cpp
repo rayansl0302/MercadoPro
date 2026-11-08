@@ -77,6 +77,9 @@
 #include "util/catalogobarras.h"
 #include "util/etiquetaspreco.h"
 #include <QDialog>
+#include <QTimer>
+#include "promocoesdialog.h"
+#include "services/promocao_service.h"
 #include <QShortcut>
 #include <QDialogButtonBox>
 #include <QLabel>
@@ -115,6 +118,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(atalhoTelaCheia, &QShortcut::activated, this, [this]() {
         if (isFullScreen()) showMaximized(); else showFullScreen();
     });
+
+    // promoção com data vencida volta ao preço de antes sozinha (ao abrir e a cada 30 minutos)
+    auto *relogioPromocoes = new QTimer(this);
+    connect(relogioPromocoes, &QTimer::timeout, this, []() { Promocao_service().encerrarVencidas(); });
+    relogioPromocoes->start(30 * 60 * 1000);
 
     QCoreApplication::setApplicationVersion(VERSAO_QE);
 
@@ -1003,6 +1011,13 @@ void MainWindow::montarMenuCaixa()
                                 [this]() { exportarProdutosBalanca(); });
     ui->menuExportar->addAction(QStringLiteral("Etiquetas de preço para a gôndola (A4, recortar)..."), this,
                                 [this]() { exportarEtiquetasPreco(); });
+    ui->menuExportar->addAction(QStringLiteral("Promoções (de/por): gôndola e Instagram..."), this, [this]() {
+        if (!exigirGerente(QStringLiteral("As promoções (mudam o preço dos produtos)")))
+            return;
+        PromocoesDialog dlg(this);
+        dlg.exec();
+        atualizarTableview();
+    });
 
     // Ajuda > Verificar atualizações (mostra a versão instalada)
     ui->menuAjuda->addSeparator();

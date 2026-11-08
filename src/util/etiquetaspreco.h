@@ -13,6 +13,8 @@ struct Item {
     QString descricao;
     QString unidade;     // ex.: "UN", "KG" (opcional)
     double preco = 0;    // já é o preço que o cliente paga (com a taxa da maquininha, se for o caso)
+    double precoDe = 0;  // promoção: preço de antes (já com taxa). 0 = sem promoção. Sai riscado, com o preço em destaque
+    QString validade;    // promoção: texto curto, ex.: "válido até 15/11" (opcional)
 };
 
 constexpr int kColunas = 3;

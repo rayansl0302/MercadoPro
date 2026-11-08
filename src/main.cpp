@@ -1,5 +1,6 @@
     #include "mainwindow.h"
     #include "util/tema.h"
+    #include "services/promocao_service.h"
     #include "loginoperador.h"
     #include "operadores.h"
 
@@ -154,6 +155,7 @@
 
         w.setModoDesenvolvimento(modoDesenvolvimento);
         w.aplicarSessao();
+        Promocao_service().encerrarVencidas();   // promoção que venceu enquanto o sistema estava fechado
         w.showMaximized();
         // sincronização com o painel online (desligada por padrão; só age se configurada neste computador)
         Nuvem_service::instancia()->iniciar();

@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QPdfWriter>
 #include <QPen>
+#include <QStringList>
 
 namespace EtiquetasPreco {
 
@@ -102,23 +103,41 @@ bool gerarPdf(const QString &caminho, const QString &empresa, const QString &obs
             p.drawText(areaNome, Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap, item.descricao);
 
             // preço grande, reduzido se não couber na largura da etiqueta
+            const bool promocao = item.precoDe > item.preco + 0.004;
             const QString preco = QStringLiteral("R$ ") + ptBR.toString(item.preco, 'f', 2);
-            int pontos = 30;
+            int pontos = promocao ? 22 : 30;   // com o "de" riscado sobra menos altura
             QFont fontePreco("Arial", pontos, QFont::Bold);
             while (pontos > 12 && QFontMetrics(fontePreco).horizontalAdvance(preco) > miolo.width()) {
                 --pontos;
                 fontePreco.setPointSize(pontos);
             }
-            const int alturaUn = item.unidade.trimmed().isEmpty() ? 0 : 44;
-            const QRect areaPreco(miolo.left(), areaNome.bottom() + 4, miolo.width(), miolo.bottom() - areaNome.bottom() - 4 - alturaUn);
+            QStringList partesRodape;
+            if (!item.unidade.trimmed().isEmpty())
+                partesRodape << QStringLiteral("por ") + item.unidade.trimmed().toLower();
+            if (promocao && !item.validade.trimmed().isEmpty())
+                partesRodape << item.validade.trimmed();
+            const int alturaUn = partesRodape.isEmpty() ? 0 : 44;
+            int topoPreco = areaNome.bottom() + 4;
+            if (promocao) {
+                // "de R$ x" riscado, menor, acima do preço promocional
+                QFont fonteDe("Arial", 11);
+                fonteDe.setStrikeOut(true);
+                p.setFont(fonteDe);
+                p.setPen(QColor("#5B6B7F"));
+                const QRect areaDe(miolo.left(), topoPreco, miolo.width(), 44);
+                p.drawText(areaDe, Qt::AlignHCenter | Qt::AlignVCenter,
+                           QStringLiteral("de R$ ") + ptBR.toString(item.precoDe, 'f', 2));
+                topoPreco = areaDe.bottom();
+            }
+            const QRect areaPreco(miolo.left(), topoPreco, miolo.width(), miolo.bottom() - topoPreco - alturaUn);
             p.setFont(fontePreco);
-            p.setPen(QColor("#000000"));
+            p.setPen(promocao ? QColor("#C00000") : QColor("#000000"));
             p.drawText(areaPreco, Qt::AlignHCenter | Qt::AlignVCenter, preco);
             if (alturaUn > 0) {
                 p.setFont(fonteUn);
                 p.setPen(QColor("#5B6B7F"));
                 p.drawText(QRect(miolo.left(), miolo.bottom() - alturaUn, miolo.width(), alturaUn), Qt::AlignHCenter | Qt::AlignVCenter,
-                           QStringLiteral("por ") + item.unidade.trimmed().toLower());
+                           partesRodape.join(QStringLiteral(" · ")));
             }
         }
     }

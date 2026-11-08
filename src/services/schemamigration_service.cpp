@@ -2351,6 +2351,40 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 29:
+        {
+            // versao 30: produto em promoção (de/por). Enquanto dura, produtos.preco guarda o preço promocional e
+            // preco_de guarda o preço de antes (volta quando a promoção acaba). promocao_ate: AAAA-MM-DD ou vazio.
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 30", dbSchemaVersion};
+            }
+            const QStringList comandos30 = {
+                "ALTER TABLE produtos ADD COLUMN em_promocao BOOLEAN NOT NULL DEFAULT false",
+                "ALTER TABLE produtos ADD COLUMN preco_de DECIMAL(10,2) NULL",
+                "ALTER TABLE produtos ADD COLUMN promocao_ate TEXT NULL"
+            };
+            for (const QString &sql : comandos30) {
+                QSqlQuery query(db);
+                if (!query.exec(sql)) {
+                    qDebug() << "Erro migracao 30:" << query.lastError().text() << "SQL:" << sql;
+                    db.rollback();
+                    return {false, SchemaErro::ErroMigracao, "Erro na migracao 30 (produto em promocao)", dbSchemaVersion};
+                }
+            }
+            if (!setSchemaVersion(30)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 30", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 30", dbSchemaVersion};
+            }
+            dbSchemaVersion = 30;
+            qDebug() << "Migracao para versao 30 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;

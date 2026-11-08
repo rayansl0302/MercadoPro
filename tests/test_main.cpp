@@ -25,6 +25,7 @@
 #include "services/test_maquinacartao.h"
 #include "services/test_precotaxa.h"
 #include "services/test_pagamentodividido.h"
+#include "services/test_promocao.h"
 #include "services/test_backup.h"
 #include "services/test_tema.h"
 #include <QSqlDatabase>
@@ -73,6 +74,7 @@ int main(int argc, char *argv[])
     rodar(new TestMaquinaCartao);
     rodar(new TestPrecoTaxa);
     rodar(new TestPagamentoDividido);
+    rodar(new TestPromocao);
     rodar(new TestBackup);
     rodar(new TestTema);
 

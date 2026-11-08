@@ -99,6 +99,9 @@ set(QESTOQUE_SOURCES
     src/services/Produto_service.cpp
     src/services/barcode_service.cpp
     src/services/pagamentodividido_service.h src/services/pagamentodividido_service.cpp
+    src/services/promocao_service.h src/services/promocao_service.cpp
+    src/repository/promocao_repository.h src/repository/promocao_repository.cpp
+    src/dto/Promocao_dto.h
     src/services/config_service.cpp
     src/services/cliente_service.cpp
     src/services/dfe_service.cpp
@@ -189,6 +192,7 @@ set(QESTOQUE_SOURCES
     src/util/cardapiolanches.cpp
     src/util/catalogobarras.cpp
     src/util/etiquetaspreco.cpp
+    src/util/postpromocao.h src/util/postpromocao.cpp
     src/util/cardapio.qrc
 
 
@@ -335,6 +339,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/util/cardapiolanches.h src/util/cardapiolanches.cpp
         src/util/catalogobarras.h src/util/catalogobarras.cpp
         src/util/etiquetaspreco.h src/util/etiquetaspreco.cpp
+        src/util/postpromocao.h src/util/postpromocao.cpp
         src/util/cardapio.qrc
         src/infra/databaseconnection_service.h src/infra/databaseconnection_service.cpp
         src/services/schemamigration_service.cpp src/services/schemamigration_service.h
@@ -406,8 +411,12 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/fechamentocaixa.h src/fechamentocaixa.cpp src/fechamentocaixa.ui
         src/historicocaixas.h src/historicocaixas.cpp src/historicocaixas.ui
         src/sangriasdialog.h src/sangriasdialog.cpp
+        src/promocoesdialog.h src/promocoesdialog.cpp
         src/dividirpagamentodialog.h src/dividirpagamentodialog.cpp
         src/services/pagamentodividido_service.h src/services/pagamentodividido_service.cpp
+        src/services/promocao_service.h src/services/promocao_service.cpp
+        src/repository/promocao_repository.h src/repository/promocao_repository.cpp
+        src/dto/Promocao_dto.h
         src/nota/pagamentomisto.h
         src/relatoriocaixajanela.h src/relatoriocaixajanela.cpp src/relatoriocaixajanela.ui
         src/dto/Cliente_dto.h
