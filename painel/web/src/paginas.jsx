@@ -446,6 +446,15 @@ export function Estoque() {
               dinheiroCol('Preço', (l) => l.preco),
             ]} />
           </Secao>
+          <Secao titulo="Onde está o valor do estoque (maiores valores)">
+            <p className="mb-3 text-sm text-slate-600">Quantidade × preço de venda. Se algum item estiver com quantidade ou preço absurdo, é ele que infla o total acima. Corrija no cadastro da loja.</p>
+            <Tabela linhas={d.maioresValores} vazio="Sem produtos em estoque." colunas={[
+              { titulo: 'Produto', render: (l) => l.descricao },
+              { titulo: 'Qtd', direita: true, render: (l) => l.quantidade },
+              dinheiroCol('Preço', (l) => l.preco),
+              dinheiroCol('Valor em estoque', (l) => l.valor),
+            ]} />
+          </Secao>
           <Secao titulo="Mais vendidos (30 dias)">
             <Tabela linhas={d.maisVendidos30Dias} vazio="Sem vendas." colunas={[
               { titulo: 'Produto', render: (l) => l.descricao }, { titulo: 'Qtd', direita: true, render: (l) => l.quantidade }, dinheiroCol('Total', (l) => l.total),

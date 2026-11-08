@@ -479,9 +479,17 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
               count(*)::int AS produtos FROM espelho.produtos WHERE loja_id = $1 AND NOT painel.sem_estoque(codigo_barras, (coalesce(sem_controle_estoque, false) OR coalesce(uso_loja, false)), $2, $3)`,
       [L, config.lancheMin, config.lancheMax],
     );
+    // os produtos que mais pesam no valor de estoque (ajuda a achar quantidade ou preço digitado errado)
+    const maiores = await pool.query(
+      `SELECT id, descricao, quantidade, preco, preco_fornecedor, quantidade * preco AS valor FROM espelho.produtos
+       WHERE loja_id = $1 AND quantidade > 0 AND NOT painel.sem_estoque(codigo_barras, (coalesce(sem_controle_estoque, false) OR coalesce(uso_loja, false)), $2, $3)
+       ORDER BY quantidade * preco DESC NULLS LAST LIMIT 15`,
+      [L, config.lancheMin, config.lancheMax],
+    );
     const v = valores.rows[0];
     return {
       limite,
+      maioresValores: maiores.rows.map((x) => ({ id: x.id, descricao: x.descricao, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco), custo: x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor), valor: dinheiro(x.valor) })),
       resumo: { produtos: v.produtos, valorAPrecoDeVenda: dinheiro(v.a_preco_de_venda), valorACusto: dinheiro(v.a_custo) },
       baixoEstoque: baixo.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco), preco_fornecedor: x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor) })),
       parados60Dias: parados.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco) })),
