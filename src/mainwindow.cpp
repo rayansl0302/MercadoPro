@@ -1,5 +1,6 @@
 #include <QBoxLayout>
 #include "mainwindow.h"
+#include "sangriascaixadialog.h"
 #include "./ui_mainwindow.h"
 #include <QFile>
 #include <QTextStream>
@@ -1521,7 +1522,7 @@ void MainWindow::sangriaClicked()
 {
     if (!garantirCaixaAberto())
         return;
-    MovimentacaoCaixa dlg(MovimentacaoCaixa::Tipo::Sangria, this);
+    SangriasCaixaDialog dlg(false, this);
     dlg.exec();
 }
 
@@ -1529,7 +1530,7 @@ void MainWindow::suprimentoClicked()
 {
     if (!garantirCaixaAberto())
         return;
-    MovimentacaoCaixa dlg(MovimentacaoCaixa::Tipo::Suprimento, this);
+    SangriasCaixaDialog dlg(true, this);
     dlg.exec();
 }
 

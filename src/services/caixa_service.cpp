@@ -139,6 +139,67 @@ Caixa_service::Resultado Caixa_service::registrarSuprimento(double valor, const 
     return registrarMovimentacaoSimples("SUPRIMENTO", valor, motivo);
 }
 
+QList<MovimentacaoCaixaDTO> Caixa_service::sangriasESuprimentosDoCaixa(qlonglong idCaixa)
+{
+    QList<MovimentacaoCaixaDTO> lista;
+    for (const MovimentacaoCaixaDTO &m : repo.listarMovimentacoes(idCaixa))
+        if (m.tipo == "SANGRIA" || m.tipo == "SUPRIMENTO")
+            lista << m;
+    return lista;
+}
+
+namespace {
+QString dinheiroBr(double v) { return "R$ " + QLocale(QLocale::Portuguese, QLocale::Brazil).toString(v, 'f', 2); }
+}
+
+Caixa_service::Resultado Caixa_service::editarSangriaSuprimento(qlonglong idMovimentacao, double novoValor,
+                                                                const QString &novoMotivo,
+                                                                const QString &motivoDaCorrecao)
+{
+    const MovimentacaoCaixaDTO mov = repo.getMovimentacao(idMovimentacao);
+    if (mov.id <= 0 || (mov.tipo != "SANGRIA" && mov.tipo != "SUPRIMENTO"))
+        return {false, "Lançamento não encontrado."};
+    if (!repo.getPorId(mov.idCaixa).aberto())
+        return {false, QString("Este lançamento é do caixa #%1, já fechado, e não pode ser alterado.").arg(mov.idCaixa)};
+    if (novoValor <= 0)
+        return {false, "Informe um valor maior que zero."};
+    if (novoMotivo.trimmed().isEmpty())
+        return {false, "Informe o motivo."};
+    if (motivoDaCorrecao.trimmed().size() < 3)
+        return {false, "Informe por que está corrigindo."};
+    QString erro;
+    if (!repo.atualizarMovimentacao(idMovimentacao, arredondar2(novoValor), novoMotivo.trimmed(), &erro))
+        return {false, "Não foi possível alterar: " + erro};
+    Sessao_service::instancia()->registrarAcao(
+        mov.tipo == "SANGRIA" ? QStringLiteral("SANGRIA_EDITADA") : QStringLiteral("SUPRIMENTO_EDITADO"),
+        QStringLiteral("Caixa #%1, %2 #%3: de %4 (%5) para %6 (%7). Motivo da correção: %8")
+            .arg(mov.idCaixa).arg(mov.tipo.toLower()).arg(mov.id)
+            .arg(dinheiroBr(mov.valor), mov.motivo, dinheiroBr(arredondar2(novoValor)), novoMotivo.trimmed(),
+                 motivoDaCorrecao.trimmed()));
+    return {true, "Lançamento alterado.", idMovimentacao};
+}
+
+Caixa_service::Resultado Caixa_service::removerSangriaSuprimento(qlonglong idMovimentacao,
+                                                                 const QString &motivoDaRemocao)
+{
+    const MovimentacaoCaixaDTO mov = repo.getMovimentacao(idMovimentacao);
+    if (mov.id <= 0 || (mov.tipo != "SANGRIA" && mov.tipo != "SUPRIMENTO"))
+        return {false, "Lançamento não encontrado."};
+    if (!repo.getPorId(mov.idCaixa).aberto())
+        return {false, QString("Este lançamento é do caixa #%1, já fechado, e não pode ser removido.").arg(mov.idCaixa)};
+    if (motivoDaRemocao.trimmed().size() < 3)
+        return {false, "Informe por que está removendo."};
+    QString erro;
+    if (!repo.deletarMovimentacao(idMovimentacao, &erro))
+        return {false, "Não foi possível remover: " + erro};
+    Sessao_service::instancia()->registrarAcao(
+        mov.tipo == "SANGRIA" ? QStringLiteral("SANGRIA_REMOVIDA") : QStringLiteral("SUPRIMENTO_REMOVIDO"),
+        QStringLiteral("Caixa #%1, %2 #%3 de %4 (%5) removido. Motivo: %6")
+            .arg(mov.idCaixa).arg(mov.tipo.toLower()).arg(mov.id)
+            .arg(dinheiroBr(mov.valor), mov.motivo, motivoDaRemocao.trimmed()));
+    return {true, "Lançamento removido.", idMovimentacao};
+}
+
 Caixa_service::Resultado Caixa_service::registrarRecebimento(qlonglong idVenda, qlonglong idEntradaVenda,
                                                              const QString &forma, double valor)
 {

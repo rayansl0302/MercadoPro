@@ -23,6 +23,7 @@ private slots:
     void abrir_recusa_operador_com_caixa_em_outro_terminal();
     void banco_impede_dois_caixas_abertos();
     void sangria_e_suprimento_exigem_valor_e_motivo_e_entram_no_esperado();
+    void sangria_pode_ser_editada_ou_removida_no_caixa_aberto();
     void esperado_soma_vendas_e_recebimentos_por_forma();
     void fechar_dentro_da_tolerancia_sem_justificativa_e_marca_ocorrencia_tecnica();
     void fechar_valida_formas_pin_e_nao_fecha_duas_vezes();

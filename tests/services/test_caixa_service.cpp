@@ -288,6 +288,28 @@ void TestCaixaService::sangria_e_suprimento_exigem_valor_e_motivo_e_entram_no_es
     QCOMPARE(r.movimentacoes.size(), 2);
 }
 
+void TestCaixaService::sangria_pode_ser_editada_ou_removida_no_caixa_aberto()
+{
+    Caixa_service cs;
+    const qlonglong id = abrirCaixaNovo(100);
+    QVERIFY(id > 0);
+    QVERIFY(cs.registrarSangria(30, "deposito").ok);
+    QVERIFY(cs.registrarSangria(30, "deposito").ok);           // lancada duas vezes sem querer
+    QList<MovimentacaoCaixaDTO> lista = cs.sangriasESuprimentosDoCaixa(id);
+    QCOMPARE(lista.size(), 2);
+
+    QVERIFY(!cs.removerSangriaSuprimento(lista.at(1).id, "").ok);              // exige motivo
+    QVERIFY(cs.removerSangriaSuprimento(lista.at(1).id, "lancada em duplicidade").ok);
+    QVERIFY(!cs.editarSangriaSuprimento(lista.at(0).id, 0, "deposito", "valor errado").ok);
+    QVERIFY(cs.editarSangriaSuprimento(lista.at(0).id, 45.5, "deposito no banco", "valor errado").ok);
+
+    lista = cs.sangriasESuprimentosDoCaixa(id);
+    QCOMPARE(lista.size(), 1);
+    QCOMPARE(lista.first().valor, 45.5);
+    QCOMPARE(lista.first().motivo, QString("deposito no banco"));
+    QCOMPARE(cs.resumo(id).esperadoPorForma.value("Dinheiro"), 54.5);          // 100 - 45,50
+}
+
 void TestCaixaService::esperado_soma_vendas_e_recebimentos_por_forma()
 {
     Caixa_service cs;

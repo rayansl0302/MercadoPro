@@ -408,6 +408,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/contaspagarjanela.h src/contaspagarjanela.cpp
         src/contapagardialogs.h src/contapagardialogs.cpp
         src/movimentacaocaixa.h src/movimentacaocaixa.cpp src/movimentacaocaixa.ui
+        src/sangriascaixadialog.h src/sangriascaixadialog.cpp
         src/fechamentocaixa.h src/fechamentocaixa.cpp src/fechamentocaixa.ui
         src/historicocaixas.h src/historicocaixas.cpp src/historicocaixas.ui
         src/sangriasdialog.h src/sangriasdialog.cpp

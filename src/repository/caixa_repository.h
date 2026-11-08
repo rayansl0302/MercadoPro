@@ -30,6 +30,8 @@ public:
     MovimentacaoCaixaDTO getMovimentacaoPorEntradaVenda(qlonglong idEntradaVenda);
     MovimentacaoCaixaDTO getMovimentacaoPorPagamentoDivida(qlonglong idPagamentoDivida);
     bool deletarMovimentacao(qlonglong id, QString *erro = nullptr);
+    MovimentacaoCaixaDTO getMovimentacao(qlonglong id);
+    bool atualizarMovimentacao(qlonglong id, double valor, const QString &motivo, QString *erro = nullptr);
     bool deletarRecebimentosPorVenda(qlonglong idVenda, QString *erro = nullptr);
     // recebimentos desta venda lançados em caixas que não estão mais abertos
     int contarRecebimentosEmCaixaFechado(qlonglong idVenda);

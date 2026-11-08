@@ -35,6 +35,12 @@ public:
     Resultado abrirCaixa(qlonglong idOperador, const QString &pin, double trocoInicial, double trocoSugerido);
     Resultado registrarSangria(double valor, const QString &motivo);
     Resultado registrarSuprimento(double valor, const QString &motivo);
+    // Corrigir ou desfazer uma sangria/suprimento lançado por engano (lançou duas vezes, valor errado).
+    // Só no caixa ainda aberto; o motivo da correção é obrigatório e fica no log de acesso.
+    QList<MovimentacaoCaixaDTO> sangriasESuprimentosDoCaixa(qlonglong idCaixa);
+    Resultado editarSangriaSuprimento(qlonglong idMovimentacao, double novoValor, const QString &novoMotivo,
+                                      const QString &motivoDaCorrecao);
+    Resultado removerSangriaSuprimento(qlonglong idMovimentacao, const QString &motivoDaRemocao);
 
     // Chamados pelos fluxos de venda
     Resultado exigirCaixaAberto();

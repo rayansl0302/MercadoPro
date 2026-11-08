@@ -326,6 +326,38 @@ bool Caixa_repository::deletarMovimentacao(qlonglong id, QString *erro)
     return true;
 }
 
+MovimentacaoCaixaDTO Caixa_repository::getMovimentacao(qlonglong id)
+{
+    MovimentacaoCaixaDTO m;
+    if (!DatabaseConnection_service::open())
+        return m;
+    QSqlQuery query(db);
+    query.prepare("SELECT m.*, o.nome AS nome_operador FROM movimentacoes_caixa m "
+                  "LEFT JOIN operadores o ON o.id = m.id_operador WHERE m.id = :id");
+    query.bindValue(":id", id);
+    if (!query.exec() || !query.next())
+        return m;
+    return lerMovimentacao(query);
+}
+
+bool Caixa_repository::atualizarMovimentacao(qlonglong id, double valor, const QString &motivo, QString *erro)
+{
+    if (!DatabaseConnection_service::open()) {
+        setErro(erro, "Banco de dados indisponível.");
+        return false;
+    }
+    QSqlQuery query(db);
+    query.prepare("UPDATE movimentacoes_caixa SET valor = :valor, motivo = :motivo WHERE id = :id");
+    query.bindValue(":valor", valor);
+    query.bindValue(":motivo", motivo);
+    query.bindValue(":id", id);
+    if (!query.exec()) {
+        setErro(erro, query.lastError().text());
+        return false;
+    }
+    return true;
+}
+
 bool Caixa_repository::deletarRecebimentosPorVenda(qlonglong idVenda, QString *erro)
 {
     if (!DatabaseConnection_service::open()) {
