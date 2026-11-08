@@ -407,6 +407,88 @@ export function Fluxo({ empresa }) {
 }
 
 // ------------------------------------------------------------------ estoque
+const semAcento = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const ORDENS = [
+  ['valor', 'Valor em estoque'], ['quantidade', 'Quantidade'], ['preco', 'Preço de venda'], ['custo', 'Custo'], ['descricao', 'Nome'],
+];
+
+// Lista completa de produtos para entender de onde vem o valor do estoque: busca, faixa de quantidade e ordenação livre.
+function ExploradorEstoque() {
+  const r = useDados('/api/painel/estoque-lista', {});
+  const [busca, setBusca] = useState('');
+  const [min, setMin] = useState('');
+  const [max, setMax] = useState('');
+  const [ordem, setOrdem] = useState('valor');
+  const [crescente, setCrescente] = useState(false);
+  const [mostrarFora, setMostrarFora] = useState(false);
+  const [soNegativos, setSoNegativos] = useState(false);
+  const [semCusto, setSemCusto] = useState(false);
+  const num = (t) => (t === '' || Number.isNaN(Number(String(t).replace(',', '.'))) ? null : Number(String(t).replace(',', '.')));
+  return (
+    <Secao titulo="Explorar produtos e valor em estoque">
+      <p className="mb-3 text-sm text-slate-600">Valor em estoque = quantidade × preço de venda. Ordene por valor para achar o que infla o total; corrija quantidade ou preço no cadastro da loja.</p>
+      <Estado r={r}>
+        {(d) => {
+          const termo = semAcento(busca);
+          const mn = num(min);
+          const mx = num(max);
+          let linhas = d.produtos.filter((p) => {
+            if (!mostrarFora && p.foraDoEstoque) return false;
+            if (termo && !semAcento(`${p.descricao} ${p.codigoBarras ?? ''}`).includes(termo)) return false;
+            if (mn !== null && p.quantidade < mn) return false;
+            if (mx !== null && p.quantidade > mx) return false;
+            if (soNegativos && p.quantidade >= 0) return false;
+            if (semCusto && p.custo && p.custo > 0) return false;
+            return true;
+          });
+          const dir = crescente ? 1 : -1;
+          linhas = [...linhas].sort((a, b) => {
+            if (ordem === 'descricao') return dir * a.descricao.localeCompare(b.descricao, 'pt-BR');
+            return dir * ((a[ordem] ?? -Infinity) - (b[ordem] ?? -Infinity));
+          });
+          const totalValor = linhas.reduce((s, p) => s + (p.quantidade > 0 ? p.valor : 0), 0);
+          const campo = 'rounded-lg border border-slate-300 px-2 py-1 text-sm';
+          return (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="flex-1 text-xs text-slate-600" style={{ minWidth: '12rem' }}>Buscar
+                  <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="nome ou código" className={`${campo} mt-0.5 block w-full`} />
+                </label>
+                <label className="text-xs text-slate-600">Qtd de
+                  <input value={min} onChange={(e) => setMin(e.target.value)} inputMode="decimal" className={`${campo} mt-0.5 block w-20`} />
+                </label>
+                <label className="text-xs text-slate-600">até
+                  <input value={max} onChange={(e) => setMax(e.target.value)} inputMode="decimal" className={`${campo} mt-0.5 block w-20`} />
+                </label>
+                <label className="text-xs text-slate-600">Ordenar por
+                  <select value={ordem} onChange={(e) => setOrdem(e.target.value)} className={`${campo} mt-0.5 block`}>
+                    {ORDENS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
+                  </select>
+                </label>
+                <button type="button" onClick={() => setCrescente((c) => !c)} className={`${campo} bg-white`}>{crescente ? 'Menor → maior' : 'Maior → menor'}</button>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
+                <label><input type="checkbox" checked={soNegativos} onChange={(e) => setSoNegativos(e.target.checked)} /> só quantidade negativa</label>
+                <label><input type="checkbox" checked={semCusto} onChange={(e) => setSemCusto(e.target.checked)} /> só sem custo cadastrado</label>
+                <label><input type="checkbox" checked={mostrarFora} onChange={(e) => setMostrarFora(e.target.checked)} /> incluir lanches, uso da loja e sem controle</label>
+              </div>
+              <p className="text-sm text-slate-600"><b>{linhas.length}</b> produto(s) · valor em estoque dessa lista (só quantidades positivas): <b>{moeda(totalValor)}</b></p>
+              <Tabela linhas={linhas.slice(0, 300)} vazio="Nenhum produto com esses filtros." colunas={[
+                { titulo: 'Produto', render: (l) => <span>{l.descricao}{l.foraDoEstoque && <span className="ml-1 text-xs text-slate-500">({l.motivoFora})</span>}</span> },
+                { titulo: 'Qtd', direita: true, render: (l) => <span className={l.quantidade < 0 ? 'font-medium text-red-700' : ''}>{l.quantidade}{l.unidade ? ` ${String(l.unidade).toLowerCase()}` : ''}</span> },
+                dinheiroCol('Preço', (l) => l.preco),
+                { titulo: 'Custo', direita: true, render: (l) => (l.custo ? moeda(l.custo) : '—') },
+                dinheiroCol('Valor em estoque', (l) => l.valor),
+              ]} />
+              {linhas.length > 300 && <p className="text-xs text-slate-500">Mostrando os 300 primeiros; use os filtros para refinar.</p>}
+            </div>
+          );
+        }}
+      </Estado>
+    </Secao>
+  );
+}
+
 export function Estoque() {
   const [limite, setLimite] = useState(5);
   const r = useDados('/api/painel/estoque', { limite });
@@ -446,15 +528,7 @@ export function Estoque() {
               dinheiroCol('Preço', (l) => l.preco),
             ]} />
           </Secao>
-          <Secao titulo="Onde está o valor do estoque (maiores valores)">
-            <p className="mb-3 text-sm text-slate-600">Quantidade × preço de venda. Se algum item estiver com quantidade ou preço absurdo, é ele que infla o total acima. Corrija no cadastro da loja.</p>
-            <Tabela linhas={d.maioresValores} vazio="Sem produtos em estoque." colunas={[
-              { titulo: 'Produto', render: (l) => l.descricao },
-              { titulo: 'Qtd', direita: true, render: (l) => l.quantidade },
-              dinheiroCol('Preço', (l) => l.preco),
-              dinheiroCol('Valor em estoque', (l) => l.valor),
-            ]} />
-          </Secao>
+          <ExploradorEstoque />
           <Secao titulo="Mais vendidos (30 dias)">
             <Tabela linhas={d.maisVendidos30Dias} vazio="Sem vendas." colunas={[
               { titulo: 'Produto', render: (l) => l.descricao }, { titulo: 'Qtd', direita: true, render: (l) => l.quantidade }, dinheiroCol('Total', (l) => l.total),

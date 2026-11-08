@@ -518,6 +518,31 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     };
   });
 
+  // todos os produtos com quantidade, preço e valor em estoque (a tela filtra e ordena do lado do navegador)
+  app.get('/api/painel/estoque-lista', async (req) => {
+    await comLoja(req);
+    const r = await pool.query(
+      `SELECT id, descricao, codigo_barras, un_comercial, quantidade, preco, preco_fornecedor,
+              coalesce(sem_controle_estoque, false) AS sem_controle, coalesce(uso_loja, false) AS uso_loja,
+              painel.eh_lanche(codigo_barras, $2, $3) AS lanche
+       FROM espelho.produtos WHERE loja_id = $1 ORDER BY descricao LIMIT 5000`,
+      [req.loja.id, config.lancheMin, config.lancheMax],
+    );
+    return {
+      produtos: r.rows.map((x) => {
+        const quantidade = inteiro(x.quantidade);
+        const preco = dinheiro(x.preco);
+        return {
+          id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, quantidade, preco,
+          custo: x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor),
+          valor: Math.round(quantidade * preco * 100) / 100,
+          foraDoEstoque: Boolean(x.sem_controle || x.uso_loja || x.lanche),
+          motivoFora: x.lanche ? 'lanche' : x.sem_controle ? 'sem controle de estoque' : x.uso_loja ? 'uso da loja' : null,
+        };
+      }),
+    };
+  });
+
   // busca por nome (qualquer parte, sem acento/caixa) ou código de barras; com ?id= devolve os detalhes do produto
   app.get('/api/painel/produtos', async (req) => {
     await comLoja(req);
