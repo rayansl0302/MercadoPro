@@ -49,3 +49,11 @@ export const somaDias = (iso, n) => {
   d.setDate(d.getDate() + n);
   return d.toLocaleDateString('sv-SE');
 };
+
+// "1.564,08", "1564,08", "1564.08" e "R$ 1.564,08" viram 1564.08; texto inválido vira NaN
+export function lerDinheiro(texto) {
+  let t = String(texto ?? '').replace(/[R$\s]/g, '');
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  return t === '' ? NaN : Number(t);
+}

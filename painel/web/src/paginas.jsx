@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, dataBr, dataHoraLoja, horaBr, moeda } from './api.js';
+import { api, dataBr, dataHoraLoja, horaBr, lerDinheiro, moeda } from './api.js';
 import { Grade } from './grade.jsx';
 import { Barras, Cartao, Estado, Periodo, periodoInicial, Secao, Selo, Tabela, useDados } from './ui.jsx';
 
@@ -348,7 +348,7 @@ function ModalBaixa({ conta, formas, onFechar, onEnviado }) {
       <div className="flex justify-end gap-2">
         <button className="rounded px-3 py-2 text-sm" onClick={onFechar}>Cancelar</button>
         <button disabled={enviando} className="rounded bg-marca px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          onClick={() => enviar('CONTA_PAGAR_BAIXAR', { contaId: Number(conta.id), valorPago: Number(String(valor).replace(',', '.')), forma, data })}>Enviar pedido</button>
+          onClick={() => enviar('CONTA_PAGAR_BAIXAR', { contaId: Number(conta.id), valorPago: lerDinheiro(valor), forma, data })}>Enviar pedido</button>
       </div>
     </Modal>
   );
@@ -376,7 +376,7 @@ function ModalLancar({ empresas, empresaPadrao, onFechar, onEnviado }) {
         <button disabled={enviando} className="rounded bg-marca px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           onClick={() => enviar('CONTA_PAGAR_LANCAR', {
             descricao: f.descricao, fornecedor: f.fornecedor || undefined, categoria: f.categoria || undefined, documento: f.documento || undefined,
-            valor: Number(String(f.valor).replace(',', '.')), vencimento: f.vencimento, idEmpresa: Number(f.idEmpresa), parcelas: Number(f.parcelas),
+            valor: lerDinheiro(f.valor), vencimento: f.vencimento, idEmpresa: Number(f.idEmpresa), parcelas: Number(f.parcelas),
           })}>Enviar pedido</button>
       </div>
     </Modal>
