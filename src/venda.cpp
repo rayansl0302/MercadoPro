@@ -1480,8 +1480,10 @@ void venda::keyPressEvent(QKeyEvent *event)
         // fora da página de produtos, Esc só volta para ela
         if (ui->stack_Pages->currentIndex() > 0)
             irParaPagina(0);
-        else if (!ui->Chk_NovaVenda->isChecked() || modeloSelecionados->rowCount() > 0)
-            ui->Btn_CancelarVenda->click();  // no modo contínuo, com carrinho vazio, Esc não fecha a tela
+        else if (modeloSelecionados->rowCount() > 0)
+            ui->Btn_CancelarVenda->click();  // com itens, Esc pergunta (rascunho/cancelar) e continua no PDV
+        else if (!ui->Chk_NovaVenda->isChecked())
+            close();                         // carrinho vazio e modo "uma venda por vez": Esc fecha a tela
     } else if (event->key() == Qt::Key_F10) {
         finalizarRapido();
     } else if (ui->stack_Pages->currentIndex() == 2 && focusWidget() == ui->Btn_Aceitar &&
@@ -1620,25 +1622,21 @@ void venda::on_Ledit_Pesquisa_returnPressed()
 
 void venda::on_Btn_CancelarVenda_clicked()
 {
-    const bool continuo = ui->Chk_NovaVenda->isChecked();
+    // Cancelar nunca sai do PDV: limpa a venda e fica pronto para a próxima. Só o operador fecha a tela.
     if (modeloSelecionados->rowCount() > 0) {
         auto resp = QMessageBox::question(this, "Cancelar Venda",
             "Deseja salvar um rascunho para continuar esta venda depois?",
             QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
         if (resp == QMessageBox::Cancel) return;
-        if (resp == QMessageBox::No) {
-            rascunhoTimer->stop();
+        rascunhoTimer->stop();
+        if (resp == QMessageBox::No)
             descartarRascunho();
-        } else if (continuo) {
-            rascunhoTimer->stop();
+        else
             salvarRascunho();
-        }
-        if (continuo) {
-            reiniciarVenda(resp == QMessageBox::Yes);
-            return;
-        }
+        reiniciarVenda(resp == QMessageBox::Yes);
+        return;
     }
-    this->close();
+    reiniciarVenda(false);
 }
 
 void venda::selecionarClienteNovo()
