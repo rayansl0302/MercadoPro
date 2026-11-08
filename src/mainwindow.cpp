@@ -115,9 +115,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     // F11: alterna entre tela cheia e maximizado
     auto *atalhoTelaCheia = new QShortcut(QKeySequence(Qt::Key_F11), this);
-    connect(atalhoTelaCheia, &QShortcut::activated, this, [this]() {
+    const auto alternarTelaCheia = [this]() {
         if (isFullScreen()) showMaximized(); else showFullScreen();
-    });
+    };
+    connect(atalhoTelaCheia, &QShortcut::activated, this, alternarTelaCheia);
+    connect(ui->Btn_TelaCheia, &QPushButton::clicked, this, alternarTelaCheia);
 
     // promoção com data vencida volta ao preço de antes sozinha (ao abrir e a cada 30 minutos)
     auto *relogioPromocoes = new QTimer(this);

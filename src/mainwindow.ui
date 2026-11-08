@@ -536,6 +536,22 @@ Produto</string>
                </widget>
               </item>
               <item>
+               <widget class="QPushButton" name="Btn_TelaCheia">
+                <property name="minimumSize">
+                 <size>
+                  <width>115</width>
+                  <height>43</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>Alterna entre tela cheia e maximizado (F11)</string>
+                </property>
+                <property name="text">
+                 <string>Tela cheia</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <spacer name="horizontalSpacer">
                 <property name="orientation">
                  <enum>Qt::Orientation::Horizontal</enum>
