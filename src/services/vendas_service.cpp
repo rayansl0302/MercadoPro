@@ -1,5 +1,6 @@
 #include "vendas_service.h"
 #include "../infra/empresaativa.h"
+#include "../nuvem/nuvem_service.h"
 #include <QDebug>
 
 Vendas_service::Vendas_service(QObject *parent)
@@ -86,6 +87,7 @@ Vendas_service::Resultado Vendas_service::deletarVenda(qlonglong id){
     if(!vendasRepo.deletarVenda(id)){
         return {false, VendasErro::DeleteFalhou, "Erro ao deletar venda."};
     }else{
+        Nuvem_service::avisarMudanca();
         return {true, VendasErro::Nenhum, "Sucesso ao deletar venda"};
     }
 }
@@ -150,6 +152,7 @@ Vendas_service::deletarVendaRegraNegocio(qlonglong idVenda, bool cancelarNf,
             if(!reg.ok)
                 qDebug() << "cancelamento nao registrado no caixa:" << reg.msg;
         }
+        Nuvem_service::avisarMudanca();
         return {true, VendasErro::Nenhum, "Venda deletada com sucesso"};
 }
 
@@ -205,6 +208,7 @@ Vendas_service::Resultado Vendas_service::devolverProdutoRegraNegocio(qlonglong 
         return {false, VendasErro::UpdateFalhou, result2.msg};
     }
 
+    Nuvem_service::avisarMudanca();
     return {true, VendasErro::Nenhum, "Produto Devolvido com sucesso"};
 }
 
@@ -279,6 +283,7 @@ Vendas_service::ResultadoInsercaoRN Vendas_service::inserirVendaRegraDeNegocio(V
         }
     }
 
+    Nuvem_service::avisarMudanca();
     return{true, VendasErro::Nenhum, "Sucesso ao inserir venda.", idVenda};
 
 }

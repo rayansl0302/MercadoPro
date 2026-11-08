@@ -1,4 +1,5 @@
 #include "Produto_service.h"
+#include "../nuvem/nuvem_service.h"
 #include "../util/lanches.h"
 #include <QSqlQuery>
 #include <cmath>
@@ -109,6 +110,7 @@ Produto_Service::Resultado Produto_Service::inserir(const ProdutoDTO &p)
         return {false, ProdutoErro::ErroBanco, erroSQL};
     }
 
+    Nuvem_service::avisarMudanca();
     return {true, ProdutoErro::Nenhum, ""};
 }
 
@@ -129,6 +131,7 @@ Produto_Service::Resultado Produto_Service::deletar(const QString &id){
     if(!repo.deletar(id, errosql)){
         return {false, ProdutoErro::ErroBanco, errosql};
     }else{
+        Nuvem_service::avisarMudanca();
         return {true, ProdutoErro::Nenhum, ""};
     }
 
@@ -214,6 +217,7 @@ Produto_Service::Resultado Produto_Service::alterarVerificarCodigoBarras(const P
         return {false, ProdutoErro::ErroBanco, erroSQL};
     }
 
+    Nuvem_service::avisarMudanca();
     return {true, ProdutoErro::Nenhum, ""};
 }
 
@@ -237,6 +241,7 @@ Produto_Service::Resultado Produto_Service::alterar(const ProdutoDTO &p, const Q
         return {false, ProdutoErro::ErroBanco, erroSQL};
     }
 
+    Nuvem_service::avisarMudanca();
     return {true, ProdutoErro::Nenhum, ""};
 }
 
@@ -256,6 +261,7 @@ Produto_Service::Resultado Produto_Service::atualizarLocalProduto(qlonglong id, 
         return {false, ProdutoErro::ErroBanco, erroSQL};
     }
 
+    Nuvem_service::avisarMudanca();
     return {true, ProdutoErro::Nenhum, ""};
 }
 
@@ -284,6 +290,7 @@ Produto_Service::Resultado Produto_Service::updateAumentarQuantidadeProduto(qlon
     if(!repo.updateAumentarQuantidadeProduto(idprod, quantia)){
         return {false, ProdutoErro::Update, "Erro ao atualizar quantia produto."};
     }else{
+        Nuvem_service::avisarMudanca();
         return {true, ProdutoErro::Nenhum, "Quantia atualizada com sucesso"};
     }
 }
@@ -308,6 +315,7 @@ Produto_Service::Resultado Produto_Service::atualizarCamposMap(qlonglong id, con
     if(!repo.atualizarCamposMap(id, campos, marcarNf)){
         return {false, ProdutoErro::Update, "Erro ao atualizar produto."};
     }
+    Nuvem_service::avisarMudanca();
     return {true, ProdutoErro::Nenhum, ""};
 }
 
@@ -318,6 +326,7 @@ Produto_Service::Resultado Produto_Service::updateDiminuirQuantidadeProduto(qlon
     if(!repo.updateDiminuirQuantidadeProduto(idprod, quantia)){
         return {false, ProdutoErro::Update, "Erro ao atualizar quantia produto."};
     }else{
+        Nuvem_service::avisarMudanca();
         return {true, ProdutoErro::Nenhum, "Quantia atualizada com sucesso"};
     }
 }

@@ -52,6 +52,9 @@ public:
     void parar();
     // abandona a chamada em andamento (o programa vai fechar)
     void abortar();
+    // Avisa que dados mudaram (venda, produto, estoque...). Depois de uns segundos de sossego envia ao painel,
+    // sem esperar o intervalo. Sem efeito se o relógio não foi ligado (testes) ou a Nuvem está desligada.
+    static void avisarMudanca();
 
     ResultadoCiclo executar(bool comDados = true);
     ResultadoCiclo testarConexao();
@@ -68,6 +71,8 @@ signals:
 private:
     NuvemControle_repository controle;
     QTimer *relogio = nullptr;
+    QTimer *atrasoMudanca = nullptr;
+    void agendarEnvioPorMudanca();
     bool emExecucao = false;
     bool abortado = false;
     int linhasPorLote = 400;

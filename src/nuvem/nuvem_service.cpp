@@ -70,6 +70,30 @@ void Nuvem_service::iniciar()
     QTimer::singleShot(15 * 1000, this, &Nuvem_service::tique);
 }
 
+void Nuvem_service::avisarMudanca()
+{
+    Nuvem_service *n = instancia();
+    if (n && n->relogio && n->relogio->isActive())
+        n->agendarEnvioPorMudanca();
+}
+
+void Nuvem_service::agendarEnvioPorMudanca()
+{
+    if (!atrasoMudanca) {
+        atrasoMudanca = new QTimer(this);
+        atrasoMudanca->setSingleShot(true);
+        connect(atrasoMudanca, &QTimer::timeout, this, [this]() {
+            if (emExecucao) {          // já enviando: tenta de novo logo depois
+                atrasoMudanca->start(10 * 1000);
+                return;
+            }
+            if (configAtual().pronta())
+                executar(true);
+        });
+    }
+    atrasoMudanca->start(10 * 1000);   // várias mudanças seguidas viram um envio só
+}
+
 void Nuvem_service::parar()
 {
     if (relogio)
