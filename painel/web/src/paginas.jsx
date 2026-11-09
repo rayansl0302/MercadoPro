@@ -493,11 +493,11 @@ function GradeEstoque() {
     { chave: 'descricao', titulo: 'Produto', tipo: 'texto' },
     { chave: 'codigoBarras', titulo: 'Código', tipo: 'texto' },
     { chave: 'situacao', titulo: 'Situação', tipo: 'opcoes' },
-    { chave: 'quantidade', titulo: 'Qtd', tipo: 'numero', somar: true, render: (l) => <span className={l.quantidade < 0 ? 'font-medium text-red-700' : l.quantidade === 0 ? 'text-red-700' : ''}>{l.quantidade}{l.unidade ? ` ${String(l.unidade).toLowerCase()}` : ''}</span> },
+    { chave: 'quantidade', titulo: 'Qtd', tipo: 'numero', somar: true, somarSe: (l) => l.situacao === 'Estoque controlado', render: (l) => <span className={l.quantidade < 0 ? 'font-medium text-red-700' : l.quantidade === 0 ? 'text-red-700' : ''}>{l.quantidade}{l.unidade ? ` ${String(l.unidade).toLowerCase()}` : ''}</span> },
     { chave: 'preco', titulo: 'Preço de venda', tipo: 'moeda' },
     { chave: 'custo', titulo: 'Custo', tipo: 'moeda' },
     { chave: 'margemPercentual', titulo: 'Margem %', tipo: 'numero' },
-    { chave: 'valor', titulo: 'Valor em estoque', tipo: 'moeda', somar: true },
+    { chave: 'valor', titulo: 'Valor em estoque', tipo: 'moeda', somar: true, somarSe: (l) => l.situacao === 'Estoque controlado' },
   ];
   const base = { situacao: { t: 'Estoque controlado' } };
   const atalhos = [

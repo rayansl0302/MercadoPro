@@ -121,7 +121,7 @@ export function Grade({ colunas, linhas, inicial = {}, atalhos = [], nomeArquivo
     if (a.ordem) setOrdem(a.ordem);
     setVisiveis(porPagina);
   };
-  const somas = colunas.filter((c) => c.somar).map((c) => ({ c, total: resultado.reduce((s, l) => s + (Number(valorDe(c, l)) || 0), 0) }));
+  const somas = colunas.filter((c) => c.somar).map((c) => ({ c, total: resultado.reduce((s, l) => s + (c.somarSe && !c.somarSe(l) ? 0 : Number(valorDe(c, l)) || 0), 0) }));
   const mostradas = resultado.slice(0, visiveis);
   const [primeira, ...demais] = colunas;
 
