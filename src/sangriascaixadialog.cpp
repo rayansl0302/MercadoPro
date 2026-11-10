@@ -2,7 +2,12 @@
 #include "movimentacaocaixa.h"
 #include "services/relatoriocaixa_service.h"
 
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
+#include <QFormLayout>
 #include <QHBoxLayout>
+#include <QLineEdit>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QLabel>
@@ -122,25 +127,41 @@ void SangriasCaixaDialog::editar()
         if (m.id == id)
             atual = m;
 
-    bool ok = false;
-    const double valor = QInputDialog::getDouble(this, "Editar lançamento", "Valor correto (R$):", atual.valor,
-                                                 0.01, 99999999.99, 2, &ok);
-    if (!ok)
-        return;
-    const QString motivo = QInputDialog::getText(this, "Editar lançamento", "Motivo do lançamento:",
-                                                 QLineEdit::Normal, atual.motivo, &ok).trimmed();
-    if (!ok)
-        return;
+    // uma unica janela com tudo que pode ser corrigido
+    QDialog ed(this);
+    ed.setWindowTitle("Editar lançamento");
+    ed.setMinimumWidth(480);
+    auto *form = new QFormLayout;
+    auto *sbValor = new QDoubleSpinBox(&ed);
+    sbValor->setRange(0.01, 99999999.99);
+    sbValor->setDecimals(2);
+    sbValor->setLocale(portugues);
+    sbValor->setValue(atual.valor);
+    auto *edMotivo = new QLineEdit(atual.motivo, &ed);
+    auto *cbForma = new QComboBox(&ed);
     const QStringList formas{"Dinheiro", "Crédito", "Débito", "Pix"};
-    const QString forma = QInputDialog::getItem(this, "Editar lançamento", "Forma de pagamento:", formas,
-                                                qMax(0, int(formas.indexOf(atual.formaPagamento))), false, &ok);
-    if (!ok)
+    cbForma->addItems(formas);
+    cbForma->setCurrentIndex(qMax(0, int(formas.indexOf(atual.formaPagamento))));
+    auto *edCorrecao = new QLineEdit(&ed);
+    edCorrecao->setPlaceholderText("ex.: digitei errado (fica registrado no log)");
+    form->addRow("Valor correto (R$):", sbValor);
+    form->addRow("Motivo:", edMotivo);
+    form->addRow("Forma de pagamento:", cbForma);
+    form->addRow("Por que está corrigindo?", edCorrecao);
+    auto *bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &ed);
+    connect(bb, &QDialogButtonBox::accepted, &ed, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &ed, &QDialog::reject);
+    auto *lay = new QVBoxLayout(&ed);
+    lay->addLayout(form);
+    lay->addWidget(bb);
+    edMotivo->setFocus();
+    edMotivo->selectAll();
+    if (ed.exec() != QDialog::Accepted)
         return;
-    const QString correcao = QInputDialog::getText(this, "Editar lançamento",
-                                                   "Por que está corrigindo? (fica registrado no log)",
-                                                   QLineEdit::Normal, QString(), &ok).trimmed();
-    if (!ok)
-        return;
+    const double valor = sbValor->value();
+    const QString motivo = edMotivo->text().trimmed();
+    const QString forma = cbForma->currentText();
+    const QString correcao = edCorrecao->text().trimmed();
     const auto r = caixaServ.editarSangriaSuprimento(id, valor, motivo, correcao, forma);
     if (!r.ok)
         QMessageBox::warning(this, "Caixa", r.msg);
