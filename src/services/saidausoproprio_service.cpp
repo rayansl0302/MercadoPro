@@ -41,6 +41,22 @@ SaidaUsoProprio_service::Resultado SaidaUsoProprio_service::registrar(qlonglong 
     return {true, "Saída registrada.", id};
 }
 
+SaidaUsoProprio_service::Resultado SaidaUsoProprio_service::remover(qlonglong idSaida)
+{
+    const SaidaUsoProprioDTO s = repo.obter(idSaida);
+    if (s.id <= 0)
+        return {false, "Saída não encontrada (talvez já tenha sido removida)."};
+
+    // produto sem controle de estoque nunca teve a quantidade baixada: não há o que devolver
+    Produto_Service produtos;
+    const bool devolver = produtos.getProduto(s.idProduto).id > 0 && !produtos.semControleDeEstoque(s.idProduto);
+
+    QString erro;
+    if (!repo.remover(idSaida, devolver, &erro))
+        return {false, erro.isEmpty() ? QStringLiteral("Não foi possível remover a saída.") : erro};
+    return {true, devolver ? "Saída removida e quantidade devolvida ao estoque." : "Saída removida.", idSaida};
+}
+
 QList<SaidaUsoProprioDTO> SaidaUsoProprio_service::listar(const QDate &de, const QDate &ate, const QString &motivo)
 {
     return repo.listar(de, ate, motivo);

@@ -107,6 +107,47 @@ void TestSaidaUsoProprio::produto_sem_controle_de_estoque_registra_sem_baixar()
     QVERIFY(saidas.listar(QDate::currentDate(), QDate::currentDate(), "Consumo próprio").size() >= 1);
 }
 
+void TestSaidaUsoProprio::remover_saida_devolve_o_estoque_e_so_remove_uma_vez()
+{
+    Produto_Service produtos;
+    SaidaUsoProprio_service saidas;
+    const qlonglong id = novoProduto(produtos, "PALITO DE DENTE", "7898100000099", 10, 1.0, 2.0);
+    QVERIFY(id > 0);
+
+    // o operador lançou duas vezes sem querer
+    const auto a = saidas.registrar(id, 2, "Consumo próprio", "", 1, "Op");
+    const auto b = saidas.registrar(id, 2, "Consumo próprio", "", 1, "Op");
+    QVERIFY(a.ok && b.ok);
+    QCOMPARE(produtos.getProduto(id).quantidade, 6.0);
+
+    const auto r = saidas.remover(b.id);
+    QVERIFY2(r.ok, qPrintable(r.msg));
+    QCOMPARE(produtos.getProduto(id).quantidade, 8.0);          // voltou o que o lançamento repetido tirou
+
+    int doProduto = 0;
+    for (const auto &s : saidas.listar(QDate::currentDate(), QDate::currentDate()))
+        if (s.idProduto == id)
+            ++doProduto;
+    QCOMPARE(doProduto, 1);                                     // sobrou só a saída certa
+
+    QVERIFY(!saidas.remover(b.id).ok);                          // remover de novo não devolve estoque em dobro
+    QCOMPARE(produtos.getProduto(id).quantidade, 8.0);
+    QVERIFY(!saidas.remover(999999).ok);
+}
+
+void TestSaidaUsoProprio::remover_saida_de_produto_sem_controle_nao_mexe_no_estoque()
+{
+    Produto_Service produtos;
+    SaidaUsoProprio_service saidas;
+    const qlonglong id = novoProduto(produtos, "OVO DA CASA", "7898100000100", 0, 0.5, 1.0, true);
+    QVERIFY(id > 0);
+    const auto a = saidas.registrar(id, 3, "Consumo próprio", "", 1, "Op");
+    QVERIFY(a.ok);
+    const double antes = produtos.getProduto(id).quantidade;
+    QVERIFY(saidas.remover(a.id).ok);
+    QCOMPARE(produtos.getProduto(id).quantidade, antes);
+}
+
 void TestSaidaUsoProprio::historico_filtra_por_periodo_e_motivo_e_soma_o_custo()
 {
     Produto_Service produtos;

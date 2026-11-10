@@ -45,6 +45,7 @@ public:
 private slots:
     void carregar();
     void novaSaida();
+    void removerSelecionada();
 
 private:
     QDateEdit *de_ = nullptr;

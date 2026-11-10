@@ -20,6 +20,9 @@ public:
     Resultado registrar(qlonglong idProduto, double quantidade, const QString &motivo, const QString &observacao,
                         qlonglong idOperadorSessao, const QString &nomeOperador);
 
+    // Remove uma saída lançada por engano e devolve a quantidade ao estoque (se o produto controla estoque).
+    Resultado remover(qlonglong idSaida);
+
     QList<SaidaUsoProprioDTO> listar(const QDate &de, const QDate &ate, const QString &motivo = QString());
 
     // soma dos custos (quantidade x custo do momento)

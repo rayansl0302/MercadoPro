@@ -186,8 +186,14 @@ HistoricoSaidasDialog::HistoricoSaidasDialog(QWidget *parent)
     btnNova->setToolTip("Tirar um produto do estoque (consumo, quebra, vencido...) com motivo");
     connect(btnNova, &QPushButton::clicked, this, &HistoricoSaidasDialog::novaSaida);
 
+    auto *btnRemover = new QPushButton("Remover saída...");
+    btnRemover->setStyleSheet(kEstiloSecundario);
+    btnRemover->setToolTip("Apagar a saída selecionada (lançada por engano) e devolver a quantidade ao estoque");
+    connect(btnRemover, &QPushButton::clicked, this, &HistoricoSaidasDialog::removerSelecionada);
+
     auto *rodape = new QHBoxLayout;
     rodape->addWidget(lblTotal_, 1);
+    rodape->addWidget(btnRemover);
     rodape->addWidget(btnNova);
     rodape->addWidget(btnFechar);
 
@@ -267,6 +273,34 @@ void HistoricoSaidasDialog::novaSaida()
         carregar();
 }
 
+void HistoricoSaidasDialog::removerSelecionada()
+{
+    const int linha = tabela_->currentRow();
+    if (linha < 0 || !tabela_->item(linha, 0)) {
+        QMessageBox::information(this, "Saídas para uso próprio", "Clique na saída que deseja remover.");
+        return;
+    }
+    const qlonglong id = tabela_->item(linha, 0)->data(Qt::UserRole).toLongLong();
+    const QString produto = tabela_->item(linha, 1)->text();
+    const QString qtd = tabela_->item(linha, 2)->text();
+
+    QMessageBox pergunta(QMessageBox::Question, "Remover saída",
+                         QStringLiteral("Remover a saída de %1 x %2?\n\nA quantidade volta para o estoque e a saída "
+                                        "deixa de aparecer no histórico.").arg(qtd, produto),
+                         QMessageBox::NoButton, this);
+    QPushButton *sim = pergunta.addButton("Remover", QMessageBox::AcceptRole);
+    pergunta.addButton("Cancelar", QMessageBox::RejectRole);
+    pergunta.exec();
+    if (pergunta.clickedButton() != sim)
+        return;
+
+    SaidaUsoProprio_service servico;
+    const auto r = servico.remover(id);
+    if (!r.ok)
+        QMessageBox::warning(this, "Saídas para uso próprio", r.msg);
+    carregar();
+}
+
 void HistoricoSaidasDialog::carregar()
 {
     SaidaUsoProprio_service servico;
@@ -281,6 +315,7 @@ void HistoricoSaidasDialog::carregar()
         };
         const QDateTime d = QDateTime::fromString(s.dataHora, "yyyy-MM-dd HH:mm:ss");
         celula(0, d.isValid() ? d.toString("dd/MM/yyyy HH:mm") : s.dataHora);
+        tabela_->item(i, 0)->setData(Qt::UserRole, s.id);
         celula(1, s.descricaoProduto);
         celula(2, numero(s.quantidade), Qt::AlignCenter);
         celula(3, s.motivo);

@@ -12,6 +12,8 @@ private slots:
     void quantidade_invalida_motivo_invalido_e_estoque_insuficiente_sao_recusados();
     void mudar_o_preco_depois_nao_reescreve_o_historico();
     void produto_sem_controle_de_estoque_registra_sem_baixar();
+    void remover_saida_devolve_o_estoque_e_so_remove_uma_vez();
+    void remover_saida_de_produto_sem_controle_nao_mexe_no_estoque();
     void historico_filtra_por_periodo_e_motivo_e_soma_o_custo();
 };
 

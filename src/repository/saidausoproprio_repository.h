@@ -20,6 +20,13 @@ public:
 
     QList<SaidaUsoProprioDTO> listar(const QDate &de, const QDate &ate, const QString &motivo = QString());
 
+    // Uma saída pelo id (id <= 0 no resultado se não existir).
+    SaidaUsoProprioDTO obter(qlonglong id);
+
+    // Remove a saída (lançada por engano) e, se `devolverEstoque`, devolve a quantidade ao produto, tudo na mesma
+    // transação. Só remove uma vez: se outra tela já removeu, recusa em vez de devolver o estoque em dobro.
+    bool remover(qlonglong id, bool devolverEstoque, QString *erro = nullptr);
+
 private:
     QSqlDatabase db;
 };
