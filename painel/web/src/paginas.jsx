@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { baixarListaBalanca } from './pdfbalanca.js';
+import { unidadeEhQuilo } from './balanca.js';
 import { api, dataBr, dataHoraLoja, horaBr, lerDinheiro, moeda } from './api.js';
 import { Grade } from './grade.jsx';
 import { Barras, Cartao, Estado, Periodo, periodoInicial, Secao, Selo, Tabela, useDados } from './ui.jsx';
@@ -492,7 +494,7 @@ function GradeEstoque() {
   const colunas = [
     { chave: 'descricao', titulo: 'Produto', tipo: 'texto' },
     { chave: 'codigoBarras', titulo: 'Código', tipo: 'texto' },
-    { chave: 'unidade', titulo: 'Unidade', tipo: 'opcoes', valor: (l) => String(l.unidade ?? '').trim().toUpperCase() || '—' },
+    { chave: 'unidade', titulo: 'Unidade', tipo: 'opcoes', valor: (l) => (unidadeEhQuilo(l.unidade) ? 'KG' : String(l.unidade ?? '').trim().toUpperCase() || '—') },
     { chave: 'situacao', titulo: 'Situação', tipo: 'opcoes' },
     { chave: 'quantidade', titulo: 'Qtd', tipo: 'numero', somar: true, somarSe: (l) => l.situacao === 'Estoque controlado', render: (l) => <span className={l.quantidade < 0 ? 'font-medium text-red-700' : l.quantidade === 0 ? 'text-red-700' : ''}>{l.quantidade}{l.unidade ? ` ${String(l.unidade).toLowerCase()}` : ''}</span> },
     { chave: 'preco', titulo: 'Preço de venda', tipo: 'moeda' },
@@ -513,7 +515,10 @@ function GradeEstoque() {
     <Secao titulo="Produtos e estoque (analisar, filtrar e ordenar)">
       <p className="mb-3 text-sm text-slate-600">Clique no título de uma coluna para ordenar (clique de novo para inverter). Filtre em cada coluna, com "de/até" nas numéricas. Por padrão aparece só o estoque controlado; mude "Situação" para ver lanches, uso da loja e sem controle.</p>
       <Estado r={r}>
-        {(d) => <Grade colunas={colunas} linhas={d.produtos} inicial={{ filtros: base, ordem: { chave: 'valor', dir: 'desc' } }} atalhos={atalhos} nomeArquivo="estoque" />}
+        {(d) => (<>
+          <div className="mb-3"><button type="button" onClick={() => baixarListaBalanca(d.produtos)} className="rounded-lg bg-marca px-4 py-2 text-sm font-medium text-white">Baixar lista da balança (PDF)</button> <span className="ml-2 text-xs text-slate-500">nome e código de todos os produtos vendidos por kg</span></div>
+          <Grade colunas={colunas} linhas={d.produtos} inicial={{ filtros: base, ordem: { chave: 'valor', dir: 'desc' } }} atalhos={atalhos} nomeArquivo="estoque" />
+        </>)}
       </Estado>
     </Secao>
   );
