@@ -25,6 +25,8 @@ export function carregarConfig(env = process.env) {
     // códigos de barras de lanche (produção): fora do estoque e analisados à parte
     lancheMin: inteiro(env.LANCHE_MIN, 200),
     lancheMax: inteiro(env.LANCHE_MAX, 500),
+    // chave do servidor MCP de produtos para a IA de design (vazia = desligado)
+    mcpDesignChave: env.MCP_DESIGN_CHAVE || '',
     pastaWeb: env.PASTA_WEB || '',
     ambiente: env.NODE_ENV || 'development',
   };

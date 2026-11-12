@@ -29,6 +29,7 @@ services:
       NODE_ENV: production
       COOKIE_SEGURO: "true"
       EXIGIR_2FA: "true"
+      MCP_DESIGN_CHAVE: ${MCP_DESIGN_CHAVE:-}   # liga o MCP de produtos para a IA de design (>= 24 caracteres)
     ports:
       - "127.0.0.1:3000:3000"   # o proxy HTTPS (Caddy/Nginx) do servidor aponta para cá
     labels:

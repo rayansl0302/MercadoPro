@@ -8,6 +8,7 @@ import { entrar, horasDaSessao, lojaDoToken, sair, usuarioDaSessao } from './aut
 import { cancelarCiclo, concluirCiclo, ErroHttp, iniciarCiclo, receberLote } from './ciclo.js';
 import { cancelarPedido, criarPedido, entregarPedidos, listarPedidos, registrarResultado, FORMAS_PAGAMENTO } from './pedidos.js';
 import { registrarRotasConsulta } from './consultas.js';
+import { registrarMcp } from './mcp.js';
 import { lerMetas, removerDespesa, salvarConfig, salvarDespesa } from './metas.js';
 import { alterarMinhaSenha, atualizarUsuario, criarUsuario, listarUsuarios, redefinirDoisFatores, redefinirSenha } from './usuarios.js';
 
@@ -235,6 +236,8 @@ export function criarApp({ pool, config }) {
     const comTaxa = base > 0 && taxa > 0 && taxa < 100 ? base / (1 - taxa / 100) : base;
     return { produto: { id: Number(x.id), descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, precoKg: Math.round(comTaxa * 100) / 100, taxaMaquina: taxa } };
   });
+
+  registrarMcp(app, { pool, config });
 
   app.get('/saude', async () => ({ ok: true }));
   return app;
