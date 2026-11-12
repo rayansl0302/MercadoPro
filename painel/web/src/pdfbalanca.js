@@ -47,6 +47,11 @@ export async function baixarListaBalanca(produtos, nomeLoja = '') {
     doc.setPage(i); doc.setFontSize(8);
     doc.text(`Página ${i} de ${paginas}`, larg - margem, alt - 8, { align: 'right' });
   }
-  doc.save(`lista-balanca-${new Date().toISOString().slice(0, 10)}.pdf`);
+  // download pelo mesmo caminho do CSV (link + blob), que funciona no painel; o doc.save() do jsPDF falha em alguns navegadores
+  const url = URL.createObjectURL(doc.output('blob'));
+  const link = document.createElement('a');
+  link.href = url; link.download = `lista-balanca-${new Date().toISOString().slice(0, 10)}.pdf`;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
   return lista.length;
 }

@@ -516,7 +516,7 @@ function GradeEstoque() {
       <p className="mb-3 text-sm text-slate-600">Clique no título de uma coluna para ordenar (clique de novo para inverter). Filtre em cada coluna, com "de/até" nas numéricas. Por padrão aparece só o estoque controlado; mude "Situação" para ver lanches, uso da loja e sem controle.</p>
       <Estado r={r}>
         {(d) => (<>
-          <div className="mb-3"><button type="button" onClick={() => baixarListaBalanca(d.produtos)} className="rounded-lg bg-marca px-4 py-2 text-sm font-medium text-white">Baixar lista da balança (PDF)</button> <span className="ml-2 text-xs text-slate-500">nome e código de todos os produtos vendidos por kg</span></div>
+          <div className="mb-3"><button type="button" onClick={() => baixarListaBalanca(d.produtos).catch((e) => window.alert('Não consegui gerar o PDF: ' + (e?.message ?? e)))} className="rounded-lg bg-marca px-4 py-2 text-sm font-medium text-white">Baixar lista da balança (PDF)</button> <span className="ml-2 text-xs text-slate-500">nome e código de todos os produtos vendidos por kg</span></div>
           <Grade colunas={colunas} linhas={d.produtos} inicial={{ filtros: base, ordem: { chave: 'valor', dir: 'desc' } }} atalhos={atalhos} nomeArquivo="estoque" />
         </>)}
       </Estado>
