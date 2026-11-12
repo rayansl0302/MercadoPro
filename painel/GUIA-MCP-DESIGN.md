@@ -25,7 +25,8 @@ https://mercadopro.atlantica-e.com.br/mcp/<CHAVE>
 
 1. Abra a IA (Claude) e vá em **Configurações > Conectores** (ou "Integrações").
 2. Escolha **Adicionar conector personalizado** (ou "Add custom connector").
-3. Nome: `Produtos da loja`. URL: o endereço acima. Não precisa de login nem senha, a chave já está no endereço.
+3. Nome: `Produtos da loja`. URL: o endereço acima, **inteiro, com a chave no final** (termina em `/mcp/<CHAVE>`, não só `/mcp/`).
+   Em **Autenticação**, marque **Sem login**. Não use "Entrar agora" nem "Fazer login quando necessário" (o servidor não tem OAuth e a conexão falha). Deixe **Cabeçalhos de requisição** vazio. A chave já está no endereço.
 4. Salve. Em uma conversa nova, ative o conector `Produtos da loja`, junto com os de **Canva** e/ou **Figma**.
 
 Teste: peça "busque o produto pão no conector da loja". Se aparecer nome e preço, está funcionando.
