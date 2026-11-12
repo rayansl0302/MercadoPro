@@ -2,6 +2,7 @@
 #include <QBoxLayout>
 #include <QCheckBox>
 #include <QGridLayout>
+#include <QScrollArea>
 #include <QLabel>
 #include "services/precotaxa_service.h"
 #include "ui_inserirproduto.h"
@@ -21,6 +22,19 @@ InserirProduto::InserirProduto(QWidget *parent)
     , ui(new Ui::InserirProduto)
 {
     ui->setupUi(this);
+
+    // em tela pequena as abas eram espremidas e os campos se sobrepunham: agora rolam em vez de encolher
+    if (auto *raiz = qobject_cast<QBoxLayout *>(layout())) {
+        const int pos = raiz->indexOf(ui->tabWidget);
+        raiz->removeWidget(ui->tabWidget);
+        auto *rolagem = new QScrollArea(this);
+        rolagem->setWidgetResizable(true);
+        rolagem->setFrameShape(QFrame::NoFrame);
+        rolagem->setStyleSheet("QScrollArea { background: transparent; } QScrollArea > QWidget > QWidget { background: transparent; }");
+        rolagem->setWidget(ui->tabWidget);
+        raiz->insertWidget(pos, rolagem, 1);
+        setMinimumHeight(420);
+    }
 
     // produto sem controle de estoque (ovos, a granel...): venda e devolução não mexem na quantidade
     chSemEstoque = new QCheckBox(QStringLiteral("Não controlar o estoque deste produto (ovos, a granel)"), this);

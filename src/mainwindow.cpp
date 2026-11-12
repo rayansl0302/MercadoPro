@@ -114,6 +114,20 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // barra escura: antes tinha geometria fixa (1201 px) e largura minima de 1500; botoes novos espremiam o texto
+    ui->frameHeaderBar->setMinimumWidth(0);
+    if (!ui->frameHeaderBar->layout()) {
+        auto *lbarra = new QHBoxLayout(ui->frameHeaderBar);
+        lbarra->setContentsMargins(0, 0, 0, 0);
+        lbarra->addWidget(ui->layoutWidget);
+    }
+    ui->Btn_AddProd->setText(QStringLiteral("Cadastrar produto"));
+    for (QPushButton *b : ui->layoutWidget->findChildren<QPushButton *>()) {
+        b->setMaximumWidth(QWIDGETSIZE_MAX);
+        b->setMinimumWidth(qMax(b->minimumWidth(), b->sizeHint().width() + 6));
+        b->setSizePolicy(QSizePolicy::Minimum, b->sizePolicy().verticalPolicy());
+    }
+
     // F11: alterna entre tela cheia e maximizado
     auto *atalhoTelaCheia = new QShortcut(QKeySequence(Qt::Key_F11), this);
     const auto alternarTelaCheia = [this]() {
