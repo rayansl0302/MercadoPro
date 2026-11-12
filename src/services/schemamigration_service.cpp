@@ -2385,6 +2385,41 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 30:
+        {
+            // versao 31: quantidade de produtos e de itens vendidos passa a aceitar decimais (kg, litro...).
+            // No PostgreSQL a coluna era INTEGER: 2,320 - 0,141 virava 2. (SQLite guarda o decimal como esta.)
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 31", dbSchemaVersion};
+            }
+            if (DatabaseConnection_service::isPostgres()) {
+                const QStringList comandos31 = {
+                    "ALTER TABLE produtos ALTER COLUMN quantidade TYPE NUMERIC(14,3) USING quantidade::numeric",
+                    "ALTER TABLE produtos_vendidos ALTER COLUMN quantidade TYPE NUMERIC(14,3) USING quantidade::numeric"
+                };
+                for (const QString &sql : comandos31) {
+                    QSqlQuery query(db);
+                    if (!query.exec(sql)) {
+                        qDebug() << "Erro migracao 31:" << query.lastError().text() << "SQL:" << sql;
+                        db.rollback();
+                        return {false, SchemaErro::ErroMigracao, "Erro na migracao 31 (quantidade decimal)", dbSchemaVersion};
+                    }
+                }
+            }
+            if (!setSchemaVersion(31)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 31", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 31", dbSchemaVersion};
+            }
+            dbSchemaVersion = 31;
+            qDebug() << "Migracao para versao 31 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;
