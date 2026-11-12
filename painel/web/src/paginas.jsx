@@ -492,6 +492,7 @@ function GradeEstoque() {
   const colunas = [
     { chave: 'descricao', titulo: 'Produto', tipo: 'texto' },
     { chave: 'codigoBarras', titulo: 'Código', tipo: 'texto' },
+    { chave: 'unidade', titulo: 'Unidade', tipo: 'opcoes', valor: (l) => String(l.unidade ?? '').trim().toUpperCase() || '—' },
     { chave: 'situacao', titulo: 'Situação', tipo: 'opcoes' },
     { chave: 'quantidade', titulo: 'Qtd', tipo: 'numero', somar: true, somarSe: (l) => l.situacao === 'Estoque controlado', render: (l) => <span className={l.quantidade < 0 ? 'font-medium text-red-700' : l.quantidade === 0 ? 'text-red-700' : ''}>{l.quantidade}{l.unidade ? ` ${String(l.unidade).toLowerCase()}` : ''}</span> },
     { chave: 'preco', titulo: 'Preço de venda', tipo: 'moeda' },
@@ -505,6 +506,7 @@ function GradeEstoque() {
     { nome: 'Até 5 un.', filtros: { ...base, quantidade: { max: '5' } }, ordem: { chave: 'quantidade', dir: 'asc' } },
     { nome: 'Maiores valores', filtros: base, ordem: { chave: 'valor', dir: 'desc' } },
     { nome: 'Sem custo cadastrado', filtros: { ...base, custo: { max: '0' } }, ordem: { chave: 'valor', dir: 'desc' } },
+    { nome: 'Vendidos por KG', filtros: { unidade: { t: 'KG' } }, ordem: { chave: 'descricao', dir: 'asc' } },
     { nome: 'Todos (inclui lanches e sem controle)', filtros: {}, ordem: { chave: 'descricao', dir: 'asc' } },
   ];
   return (
