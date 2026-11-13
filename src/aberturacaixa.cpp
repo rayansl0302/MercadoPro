@@ -101,23 +101,26 @@ void AberturaCaixa::on_Btn_Cancelar_clicked()
     reject();
 }
 
+bool AberturaCaixa::exigirFechamentoDoVencido(QWidget *parent)
+{
+    Caixa_service caixaServ;
+    const CaixaDTO atual = caixaServ.caixaAtual();
+    QString motivoVencido;
+    if (!atual.aberto() || !caixaServ.caixaVencido(atual, &motivoVencido))
+        return true;
+    QMessageBox::warning(parent, "Fechar o caixa anterior",
+                         motivoVencido + "\n\nFeche-o agora (conte o dinheiro e informe os valores). "
+                                         "Só depois será possível abrir o caixa de hoje.");
+    FechamentoCaixa fechamento(parent, 0, true);
+    fechamento.exec();
+    return !caixaServ.caixaAtual().aberto();
+}
+
 bool AberturaCaixa::garantirCaixaAberto(QWidget *parent)
 {
     Caixa_service caixaServ;
-    {
-        const CaixaDTO atual = caixaServ.caixaAtual();
-        QString motivoVencido;
-        if (atual.aberto() && caixaServ.caixaVencido(atual, &motivoVencido)) {
-            const auto resp = QMessageBox::warning(parent, "Caixa vencido", motivoVencido + "\n\nDeseja fechar o caixa agora?",
-                                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-            if (resp != QMessageBox::Yes)
-                return false;
-            FechamentoCaixa fechamento(parent);
-            fechamento.exec();
-            if (caixaServ.caixaAtual().aberto())
-                return false;       // não fechou: segue sem caixa
-        }
-    }
+    if (!exigirFechamentoDoVencido(parent))
+        return false;
     const auto r = caixaServ.exigirCaixaAberto();
     if (r.ok)
         return true;

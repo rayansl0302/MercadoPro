@@ -9,13 +9,19 @@
 #include <QDoubleValidator>
 #include <cmath>
 
-FechamentoCaixa::FechamentoCaixa(QWidget *parent, qlonglong idCaixaAlvo)
+FechamentoCaixa::FechamentoCaixa(QWidget *parent, qlonglong idCaixaAlvo, bool obrigatorio)
     : QDialog(parent)
     , ui(new Ui::FechamentoCaixa)
     , portugues(QLocale::Portuguese, QLocale::Brazil)
 {
     ui->setupUi(this);
     setWindowModality(Qt::ApplicationModal);
+    obrigatorio_ = obrigatorio;
+    if (obrigatorio_) {
+        ui->Btn_Cancelar->setVisible(false);
+        setWindowFlag(Qt::WindowCloseButtonHint, false);
+        setWindowTitle("Fechar o caixa anterior (obrigatório)");
+    }
 
     const CaixaDTO caixa = idCaixaAlvo > 0 ? caixaServ.getCaixa(idCaixaAlvo) : caixaServ.caixaAtual();
     idCaixa = caixa.id;
@@ -199,6 +205,13 @@ void FechamentoCaixa::on_Btn_Fechar_clicked()
     RelatorioCaixaJanela rel(idCaixa, this);
     rel.exec();
     accept();
+}
+
+void FechamentoCaixa::reject()
+{
+    if (obrigatorio_ && !fechouOk)
+        return;
+    QDialog::reject();
 }
 
 void FechamentoCaixa::on_Btn_Cancelar_clicked()

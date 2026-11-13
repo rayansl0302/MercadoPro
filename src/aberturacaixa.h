@@ -21,6 +21,9 @@ public:
 
     // true se já há caixa aberto neste terminal; senão oferece abrir agora (usado antes de vender)
     static bool garantirCaixaAberto(QWidget *parent);
+    // Caixa vencido (mais de 15 h ou de outro dia): obriga o operador a fechá-lo. Devolve true se não há
+    // mais caixa vencido (já estava ok ou acabou de ser fechado).
+    static bool exigirFechamentoDoVencido(QWidget *parent);
 
 private slots:
     void on_Btn_Abrir_clicked();

@@ -19,10 +19,12 @@ class FechamentoCaixa : public QDialog
 public:
     // idCaixaAlvo = 0: fecha o caixa aberto deste terminal. Com um id, fecha aquele caixa (ex.: turno
     // esquecido aberto em outro computador), sempre com o PIN de quem o abriu.
-    explicit FechamentoCaixa(QWidget *parent = nullptr, qlonglong idCaixaAlvo = 0);
+    explicit FechamentoCaixa(QWidget *parent = nullptr, qlonglong idCaixaAlvo = 0, bool obrigatorio = false);
     ~FechamentoCaixa();
     bool fechou() const { return fechouOk; }
     qlonglong idCaixaFechado() const { return idCaixa; }
+
+    void reject() override;     // no modo obrigatório só fecha depois de o caixa ser fechado
 
 private slots:
     void on_Btn_Fechar_clicked();
@@ -37,6 +39,7 @@ private:
     ResumoCaixaDTO resumoAtual;
     qlonglong idCaixa = 0;
     bool fechouOk = false;
+    bool obrigatorio_ = false;
 
     QMap<QString, double> valoresInformados() const;
     double dinheiroQueFica() const;

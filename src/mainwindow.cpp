@@ -113,6 +113,11 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    {
+        auto *relogioCaixa = new QTimer(this);
+        connect(relogioCaixa, &QTimer::timeout, this, &MainWindow::verificarCaixaVencido);
+        relogioCaixa->start(60 * 1000);
+    }
 
     // barra escura: antes tinha geometria fixa (1201 px) e largura minima de 1500; botoes novos espremiam o texto
     ui->frameHeaderBar->setMinimumWidth(0);
@@ -1225,7 +1230,32 @@ void MainWindow::aplicarSessao()
 {
     aplicarPerfilNaInterface();
     atualizarIndicadorSessao();
+    QTimer::singleShot(500, this, &MainWindow::verificarCaixaVencido);
     Sessao_service::instancia()->iniciarTimeout(configDTO.caixaTimeoutAtivo, configDTO.caixaTimeoutMinutos);
+}
+
+void MainWindow::verificarCaixaVencido()
+{
+    if (verificandoCaixaVencido || !Sessao_service::instancia()->ativa())
+        return;
+    Caixa_service caixaServ;
+    QString motivo;
+    const CaixaDTO atual = caixaServ.caixaAtual();
+    if (!atual.aberto() || !caixaServ.caixaVencido(atual, &motivo))
+        return;
+    verificandoCaixaVencido = true;
+    if (AberturaCaixa::exigirFechamentoDoVencido(this)) {
+        atualizarIndicadorCaixa();
+        const auto resp = QMessageBox::question(this, "Caixa",
+                                                "Caixa anterior fechado.\n\nDeseja abrir o caixa de hoje agora?",
+                                                QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+        if (resp == QMessageBox::Yes) {
+            AberturaCaixa dlg(this);
+            dlg.exec();
+        }
+    }
+    atualizarIndicadorCaixa();
+    verificandoCaixaVencido = false;
 }
 
 void MainWindow::setModoDesenvolvimento(bool ativo)

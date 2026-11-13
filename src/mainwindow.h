@@ -219,6 +219,8 @@ private:
     void atualizarConfigDTO();
     void montarMenuCaixa();
     void atualizarIndicadorCaixa();
+    void verificarCaixaVencido();
+    bool verificandoCaixaVencido = false;
     bool garantirCaixaAberto();
     QLabel *lblCaixaStatus = nullptr;
     bool saindoDoPrograma = false;
