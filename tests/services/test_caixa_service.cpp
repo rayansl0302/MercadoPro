@@ -331,6 +331,59 @@ void TestCaixaService::sangria_desconta_da_forma_escolhida()
     QCOMPARE(r.esperadoPorForma.value("Pix"), 80.0);
 }
 
+void TestCaixaService::caixa_vencido_nao_vende_e_o_do_dia_nao_vira_o_do_outro()
+{
+    Caixa_service cs;
+    const qlonglong id = abrirCaixaNovo(50);
+    QVERIFY(id > 0);
+    QVERIFY(cs.exigirCaixaAberto().ok);                                 // recem aberto: vale
+    QVERIFY(!cs.caixaVencido(cs.caixaAtual()));
+
+    DatabaseConnection_service::open();
+    QSqlQuery q(DatabaseConnection_service::db());
+    q.prepare("UPDATE caixas SET aberto_em = :t WHERE id = :id");
+    q.bindValue(":t", QDateTime::currentDateTime().addSecs(-16 * 3600));
+    q.bindValue(":id", id);
+    QVERIFY(q.exec());
+    QString motivo;
+    QVERIFY(cs.caixaVencido(cs.caixaAtual(), &motivo));                 // 16 h: passou das 15
+    QVERIFY(!motivo.isEmpty());
+    QVERIFY(!cs.exigirCaixaAberto().ok);
+
+    q.bindValue(":t", QDateTime::currentDateTime().addDays(-1));        // ontem, mesmo com poucas horas a mais
+    q.bindValue(":id", id);
+    QVERIFY(q.exec());
+    QVERIFY(!cs.exigirCaixaAberto().ok);
+
+    q.bindValue(":t", QDateTime::currentDateTime().addSecs(-3600));     // 1 h atras (se ainda for hoje, vale)
+    q.bindValue(":id", id);
+    QVERIFY(q.exec());
+    if (QDateTime::currentDateTime().addSecs(-3600).date() == QDate::currentDate())
+        QVERIFY(cs.exigirCaixaAberto().ok);
+}
+
+void TestCaixaService::fechamento_leva_o_dinheiro_para_deposito_e_deixa_o_troco()
+{
+    Caixa_service cs;
+    const qlonglong id = abrirCaixaNovo(100);
+    QVERIFY(id > 0);
+    QVERIFY(inserirVendaSql(id, "Dinheiro", 50) > 0);
+    const auto antes = cs.resumo(id);
+    QCOMPARE(antes.esperadoPorForma.value("Dinheiro"), 150.0);
+
+    QVERIFY(!cs.fecharCaixa(id, "1234", informadosIguaisAoEsperado(antes), "", 200).ok);   // fica mais do que contou
+    QVERIFY(cs.fecharCaixa(id, "1234", informadosIguaisAoEsperado(antes), "", 20).ok);
+
+    const auto depois = cs.resumo(id);
+    QCOMPARE(depois.esperadoPorForma.value("Dinheiro"), 150.0);                 // o deposito nao muda o esperado
+    double recolhido = 0;
+    for (const MovimentacaoCaixaDTO &m : depois.movimentacoes)
+        if (m.tipo == "RECOLHIMENTO")
+            recolhido += m.valor;
+    QCOMPARE(recolhido, 130.0);                                                 // 150 contados - 20 que ficam
+    QCOMPARE(cs.sugerirTrocoInicial(), 20.0);                                   // o que ficou vira o troco sugerido
+}
+
 void TestCaixaService::esperado_soma_vendas_e_recebimentos_por_forma()
 {
     Caixa_service cs;

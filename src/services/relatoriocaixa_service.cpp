@@ -45,6 +45,7 @@ QString tipoLegivel(const QString &tipo)
     if (tipo == "SUPRIMENTO") return "Suprimento";
     if (tipo == "RECEBIMENTO") return "Recebimento a prazo";
     if (tipo == "CANCELAMENTO") return "Cancelamento";
+    if (tipo == "RECOLHIMENTO") return "Depósito no fechamento";
     return tipo;
 }
 }
@@ -135,7 +136,7 @@ QString RelatorioCaixa_service::gerarHtml(const ResumoCaixaDTO &r, const QString
     for (const MovimentacaoCaixaDTO &m : r.movimentacoes)
         h += "<tr><td>" + formatarDataHora(m.dataHora).mid(11) + "</td><td>" + tipoLegivel(m.tipo) + "</td><td>" +
              m.formaPagamento.toHtmlEscaped() + "</td><td>" + m.motivo.toHtmlEscaped() + "</td><td class='n'>" +
-             (m.tipo == "SANGRIA" ? "- " : "+ ") + dinheiro(m.valor) + "</td></tr>";
+             (m.tipo == "SANGRIA" || m.tipo == "RECOLHIMENTO" ? "- " : "+ ") + dinheiro(m.valor) + "</td></tr>";
     if (r.movimentacoes.isEmpty())
         h += "<tr><td colspan='5' class='muted'>Nenhuma sangria, suprimento ou recebimento.</td></tr>";
     h += "<tr><th colspan='4'>Suprimentos</th><th class='n'>" + dinheiro(r.totalSuprimentos) + "</th></tr>";

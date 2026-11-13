@@ -126,6 +126,44 @@ CaixaDTO Caixa_repository::getAbertoDoOperador(qlonglong idOperador)
     return lerCaixa(query);
 }
 
+bool Caixa_repository::getTrocoProximo(const QString &terminal, double *valor)
+{
+    if (!DatabaseConnection_service::open())
+        return false;
+    QSqlQuery query(db);
+    query.prepare("SELECT valor FROM config_caixa WHERE chave = :c");
+    query.bindValue(":c", "troco_proximo_" + terminal);
+    if (!query.exec() || !query.next())
+        return false;
+    bool ok = false;
+    const double v = query.value(0).toString().toDouble(&ok);
+    if (!ok)
+        return false;
+    if (valor)
+        *valor = v;
+    return true;
+}
+
+bool Caixa_repository::setTrocoProximo(const QString &terminal, double valor)
+{
+    if (!DatabaseConnection_service::open())
+        return false;
+    const QString chave = "troco_proximo_" + terminal;
+    QSqlQuery up(db);
+    up.prepare("UPDATE config_caixa SET valor = :v WHERE chave = :c");
+    up.bindValue(":v", QString::number(valor, 'f', 2));
+    up.bindValue(":c", chave);
+    if (!up.exec())
+        return false;
+    if (up.numRowsAffected() > 0)
+        return true;
+    QSqlQuery ins(db);
+    ins.prepare("INSERT INTO config_caixa (chave, valor) VALUES (:c, :v)");
+    ins.bindValue(":c", chave);
+    ins.bindValue(":v", QString::number(valor, 'f', 2));
+    return ins.exec();
+}
+
 double Caixa_repository::getDinheiroInformadoUltimoFechamento(const QString &terminal)
 {
     if (!DatabaseConnection_service::open())

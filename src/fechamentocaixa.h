@@ -2,6 +2,8 @@
 #define FECHAMENTOCAIXA_H
 
 #include <QDialog>
+#include <QLabel>
+#include <QLineEdit>
 #include <QLocale>
 #include <QMap>
 #include "services/caixa_service.h"
@@ -26,6 +28,7 @@ private slots:
     void on_Btn_Fechar_clicked();
     void on_Btn_Cancelar_clicked();
     void recalcularDiferencas();
+    void atualizarDeposito();
 
 private:
     Ui::FechamentoCaixa *ui;
@@ -36,6 +39,9 @@ private:
     bool fechouOk = false;
 
     QMap<QString, double> valoresInformados() const;
+    double dinheiroQueFica() const;
+    QLineEdit *ledFica = nullptr;
+    QLabel *lblDeposito = nullptr;
 };
 
 #endif // FECHAMENTOCAIXA_H

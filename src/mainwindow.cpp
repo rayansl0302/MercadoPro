@@ -1488,7 +1488,12 @@ void MainWindow::atualizarIndicadorCaixa()
         return;
     Caixa_service caixaServ;
     const CaixaDTO caixa = caixaServ.caixaAtual();
-    if (caixa.aberto()) {
+    if (caixa.aberto() && caixaServ.caixaVencido(caixa)) {
+        lblCaixaStatus->setTextFormat(Qt::RichText);
+        lblCaixaStatus->setText(QString("  <span style='color:#D97706'>&#9679;</span> Caixa #%1 VENCIDO · feche e abra outro  ").arg(caixa.id));
+        lblCaixaStatus->setStyleSheet("background: white; color: rgb(180, 83, 9); border: 2px solid rgb(217, 119, 6);"
+                                      " border-radius: 8px; padding: 4px 8px;");
+    } else if (caixa.aberto()) {
         lblCaixaStatus->setTextFormat(Qt::RichText);
         lblCaixaStatus->setText(QString("  <span style='color:#16A34A'>&#9679;</span> Seu caixa: aberto · #%1  ").arg(caixa.id));
         lblCaixaStatus->setStyleSheet("background: white; color: rgb(21, 128, 61); border: 2px solid rgb(21, 128, 61);"

@@ -25,6 +25,8 @@ private slots:
     void sangria_e_suprimento_exigem_valor_e_motivo_e_entram_no_esperado();
     void sangria_pode_ser_editada_ou_removida_no_caixa_aberto();
     void sangria_desconta_da_forma_escolhida();
+    void caixa_vencido_nao_vende_e_o_do_dia_nao_vira_o_do_outro();
+    void fechamento_leva_o_dinheiro_para_deposito_e_deixa_o_troco();
     void esperado_soma_vendas_e_recebimentos_por_forma();
     void fechar_dentro_da_tolerancia_sem_justificativa_e_marca_ocorrencia_tecnica();
     void fechar_valida_formas_pin_e_nao_fecha_duas_vezes();

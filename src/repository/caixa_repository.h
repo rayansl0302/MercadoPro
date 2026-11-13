@@ -30,6 +30,9 @@ public:
     MovimentacaoCaixaDTO getMovimentacaoPorEntradaVenda(qlonglong idEntradaVenda);
     MovimentacaoCaixaDTO getMovimentacaoPorPagamentoDivida(qlonglong idPagamentoDivida);
     bool deletarMovimentacao(qlonglong id, QString *erro = nullptr);
+    // dinheiro que ficou na gaveta no último fechamento do terminal (vira o troco sugerido do próximo caixa)
+    bool getTrocoProximo(const QString &terminal, double *valor);
+    bool setTrocoProximo(const QString &terminal, double valor);
     MovimentacaoCaixaDTO getMovimentacao(qlonglong id);
     bool atualizarMovimentacao(qlonglong id, double valor, const QString &motivo, const QString &forma, QString *erro = nullptr);
     bool deletarRecebimentosPorVenda(qlonglong idVenda, QString *erro = nullptr);

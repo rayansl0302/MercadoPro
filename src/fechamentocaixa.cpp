@@ -3,6 +3,9 @@
 #include "relatoriocaixajanela.h"
 #include "services/relatoriocaixa_service.h"
 #include <QMessageBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QDoubleValidator>
 #include <cmath>
 
@@ -31,6 +34,8 @@ FechamentoCaixa::FechamentoCaixa(QWidget *parent, qlonglong idCaixaAlvo)
                                         caixa.terminal));
     QString aviso = "Tolerância: " + caixaServ.descricaoTolerancia() +
                     ". Divergência em cartão/PIX é registrada como ocorrência técnica.";
+    aviso += "\nRegistre antes as sangrias (dinheiro retirado para depósito) e conte só o que ficou na gaveta; "
+             "sangria esquecida vira diferença no fechamento.";
     if (!resumoAtual.outrasFormas.isEmpty()) {
         QStringList itens;
         for (auto it = resumoAtual.outrasFormas.constBegin(); it != resumoAtual.outrasFormas.constEnd(); ++it)
@@ -72,6 +77,27 @@ FechamentoCaixa::FechamentoCaixa(QWidget *parent, qlonglong idCaixaAlvo)
     aplicarEsperado(ui->Lbl_EspCredito, ui->Ledit_Credito, "Crédito");
     aplicarEsperado(ui->Lbl_EspDebito, ui->Ledit_Debito, "Débito");
     aplicarEsperado(ui->Lbl_EspPix, ui->Ledit_Pix, "Pix");
+    // quanto do dinheiro contado fica na gaveta para o próximo caixa; o resto é levado para depósito
+    {
+        auto *linha = new QHBoxLayout;
+        auto *rotulo = new QLabel("Dinheiro que fica na gaveta (troco do próximo caixa):", this);
+        ledFica = new QLineEdit(this);
+        ledFica->setPlaceholderText("0,00");
+        ledFica->setMaximumWidth(120);
+        auto *val = new QDoubleValidator(0.0, 99999999.99, 2, this);
+        val->setLocale(portugues);
+        ledFica->setValidator(val);
+        lblDeposito = new QLabel(this);
+        lblDeposito->setStyleSheet("color: rgb(21, 128, 61); font-weight: 700;");
+        linha->addWidget(rotulo);
+        linha->addWidget(ledFica);
+        linha->addWidget(lblDeposito, 1);
+        const int pos = ui->verticalLayout->indexOf(ui->hlPin);
+        ui->verticalLayout->insertLayout(pos >= 0 ? pos : ui->verticalLayout->count(), linha);
+        connect(ledFica, &QLineEdit::textChanged, this, &FechamentoCaixa::atualizarDeposito);
+        connect(ui->Ledit_Dinheiro, &QLineEdit::textChanged, this, &FechamentoCaixa::atualizarDeposito);
+        atualizarDeposito();
+    }
     recalcularDiferencas();
     ui->Ledit_Dinheiro->setFocus();
 }
@@ -116,6 +142,28 @@ void FechamentoCaixa::recalcularDiferencas()
     pintar(ui->Lbl_DifPix, "Pix", ui->Ledit_Pix->text());
 }
 
+double FechamentoCaixa::dinheiroQueFica() const
+{
+    bool ok = false;
+    const double v = portugues.toDouble(ledFica ? ledFica->text() : QString(), &ok);
+    return ok ? v : 0.0;
+}
+
+void FechamentoCaixa::atualizarDeposito()
+{
+    if (!lblDeposito)
+        return;
+    bool ok = false;
+    const double contado = portugues.toDouble(ui->Ledit_Dinheiro->text(), &ok);
+    if (!ok) {
+        lblDeposito->clear();
+        return;
+    }
+    const double levar = contado - dinheiroQueFica();
+    lblDeposito->setText(levar < -0.005 ? QStringLiteral("Maior que o dinheiro contado.")
+                                        : QStringLiteral("Levar para depósito: R$ ") + portugues.toString(levar, 'f', 2));
+}
+
 void FechamentoCaixa::on_Btn_Fechar_clicked()
 {
     if (idCaixa <= 0)
@@ -139,7 +187,7 @@ void FechamentoCaixa::on_Btn_Fechar_clicked()
         return;
 
     const auto r = caixaServ.fecharCaixa(idCaixa, ui->Ledit_Pin->text(), valoresInformados(),
-                                         ui->PTEdit_Obs->toPlainText());
+                                         ui->PTEdit_Obs->toPlainText(), dinheiroQueFica());
     if (!r.ok) {
         QMessageBox::warning(this, "Fechar caixa", r.msg);
         ui->Ledit_Pin->clear();

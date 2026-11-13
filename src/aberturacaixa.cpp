@@ -1,4 +1,5 @@
 #include "aberturacaixa.h"
+#include "fechamentocaixa.h"
 #include "ui_aberturacaixa.h"
 #include "operadores.h"
 #include "services/sessao_service.h"
@@ -103,6 +104,20 @@ void AberturaCaixa::on_Btn_Cancelar_clicked()
 bool AberturaCaixa::garantirCaixaAberto(QWidget *parent)
 {
     Caixa_service caixaServ;
+    {
+        const CaixaDTO atual = caixaServ.caixaAtual();
+        QString motivoVencido;
+        if (atual.aberto() && caixaServ.caixaVencido(atual, &motivoVencido)) {
+            const auto resp = QMessageBox::warning(parent, "Caixa vencido", motivoVencido + "\n\nDeseja fechar o caixa agora?",
+                                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+            if (resp != QMessageBox::Yes)
+                return false;
+            FechamentoCaixa fechamento(parent);
+            fechamento.exec();
+            if (caixaServ.caixaAtual().aberto())
+                return false;       // não fechou: segue sem caixa
+        }
+    }
     const auto r = caixaServ.exigirCaixaAberto();
     if (r.ok)
         return true;

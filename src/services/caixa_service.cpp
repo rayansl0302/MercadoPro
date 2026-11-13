@@ -45,6 +45,9 @@ CaixaDTO Caixa_service::getCaixa(qlonglong id)
 
 double Caixa_service::sugerirTrocoInicial()
 {
+    double deixado = 0;
+    if (repo.getTrocoProximo(terminalAtual(), &deixado))
+        return deixado;
     return repo.getDinheiroInformadoUltimoFechamento(terminalAtual());
 }
 
@@ -99,7 +102,33 @@ Caixa_service::Resultado Caixa_service::exigirCaixaAberto()
     const CaixaDTO caixa = caixaAtual();
     if (!caixa.aberto())
         return {false, "Você não tem caixa aberto. Abra o caixa em Caixa > Abrir caixa antes de vender."};
+    QString motivo;
+    if (caixaVencido(caixa, &motivo))
+        return {false, motivo};
     return {true, QString(), caixa.id};
+}
+
+bool Caixa_service::caixaVencido(const CaixaDTO &caixa, QString *motivo) const
+{
+    if (!caixa.aberto())
+        return false;
+    const QDateTime aberto = QDateTime::fromString(caixa.abertoEm, Qt::ISODate);
+    if (!aberto.isValid())
+        return false;
+    const QDateTime agora = QDateTime::currentDateTime();
+    const bool outroDia = aberto.date() != agora.date();
+    const bool passouDoLimite = aberto.secsTo(agora) > kHorasMaximasCaixa * 3600;
+    if (!outroDia && !passouDoLimite)
+        return false;
+    if (motivo)
+        *motivo = QString("O seu caixa #%1 está aberto desde %2 e venceu (%3).\n"
+                          "Cada caixa vale no máximo %4 horas e não passa para o dia seguinte. "
+                          "Feche este caixa e abra um novo para continuar.")
+                      .arg(caixa.id)
+                      .arg(aberto.toString("dd/MM/yyyy HH:mm"),
+                           outroDia ? QStringLiteral("é de outro dia") : QStringLiteral("passou do limite de horas"))
+                      .arg(kHorasMaximasCaixa);
+    return true;
 }
 
 Caixa_service::Resultado Caixa_service::registrarMovimentacaoSimples(const QString &tipo, double valor,
@@ -452,7 +481,7 @@ QString Caixa_service::descricaoTolerancia() const
 
 Caixa_service::Resultado Caixa_service::fecharCaixa(qlonglong idCaixa, const QString &pin,
                                                     const QMap<QString, double> &informados,
-                                                    const QString &observacao)
+                                                    const QString &observacao, double dinheiroQueFica)
 {
     cfg = confServ.carregarTudo();
     const ResumoCaixaDTO r = resumo(idCaixa);
@@ -464,6 +493,9 @@ Caixa_service::Resultado Caixa_service::fecharCaixa(qlonglong idCaixa, const QSt
     const auto pinOk = operadorServ.validarPin(r.caixa.idOperador, pin);
     if (!pinOk.ok)
         return {false, pinOk.msg};
+
+    if (dinheiroQueFica > informados.value("Dinheiro") + 0.005)
+        return {false, "O dinheiro que fica na gaveta não pode ser maior que o dinheiro contado."};
 
     QList<FechamentoFormaDTO> formas;
     bool exigeJustificativa = false;
@@ -495,6 +527,24 @@ Caixa_service::Resultado Caixa_service::fecharCaixa(qlonglong idCaixa, const QSt
     if (!repo.fechar(idCaixa, observacao.trimmed(), formas, &erro, r.quantidadeVendas,
                      int(r.movimentacoes.size() + r.cancelamentos.size())))
         return {false, "Não foi possível fechar o caixa: " + erro};
+
+    // o dinheiro contado é levado para depósito, exceto o que o operador deixa de troco para o próximo caixa
+    const double contado = arredondar2(informados.value("Dinheiro"));
+    const double fica = dinheiroQueFica >= 0 ? arredondar2(dinheiroQueFica) : contado;
+    const double recolhido = arredondar2(contado - fica);
+    if (recolhido > 0.004) {
+        MovimentacaoCaixaDTO mov;
+        mov.idCaixa = idCaixa;
+        mov.tipo = "RECOLHIMENTO";
+        mov.valor = recolhido;
+        mov.formaPagamento = "Dinheiro";
+        mov.motivo = "Dinheiro levado para depósito no fechamento";
+        mov.idOperador = r.caixa.idOperador;
+        mov.idOperadorSessao = Sessao_service::instancia()->idOperador();
+        QString erroMov;
+        repo.inserirMovimentacao(mov, &erroMov);
+    }
+    repo.setTrocoProximo(r.caixa.terminal, fica);
     return {true, "Caixa fechado.", idCaixa};
 }
 

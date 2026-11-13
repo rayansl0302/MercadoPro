@@ -44,6 +44,10 @@ public:
     Resultado removerSangriaSuprimento(qlonglong idMovimentacao, const QString &motivoDaRemocao);
 
     // Chamados pelos fluxos de venda
+    // Um caixa vale no máximo 15 horas de relógio e nunca atravessa a meia-noite: o do dia 11 não
+    // serve para vender no dia 12. Vencido, o caixa precisa ser fechado e um novo aberto.
+    static constexpr int kHorasMaximasCaixa = 15;
+    bool caixaVencido(const CaixaDTO &caixa, QString *motivo = nullptr) const;
     Resultado exigirCaixaAberto();
     // recebimento de dívida lançada à mão (contas a receber): entra no caixa aberto de quem está logado
     Resultado registrarRecebimentoDivida(qlonglong idDivida, qlonglong idPagamento, const QString &forma,
@@ -63,8 +67,11 @@ public:
     ResumoCaixaDTO resumo(qlonglong idCaixa);
     bool dentroDaTolerancia(double diferenca, double esperado) const;
     QString descricaoTolerancia() const;
+    // dinheiroQueFica: parte do dinheiro contado que continua na gaveta como troco do próximo caixa; o resto é
+    // levado para depósito (movimentação "RECOLHIMENTO", que não entra na conta do esperado). -1 = fica tudo.
     Resultado fecharCaixa(qlonglong idCaixa, const QString &pin, const QMap<QString, double> &informados,
-                          const QString &observacao);
+                          const QString &observacao,
+                          double dinheiroQueFica = -1);
 
     QList<MovimentacaoCaixaDTO> sangrias(const QDate &de, const QDate &ate) { return repo.listarSangrias(de, ate); }
     void listarHistorico(QSqlQueryModel *model, const QString &de = QString(), const QString &ate = QString());
