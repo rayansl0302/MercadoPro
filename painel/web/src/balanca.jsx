@@ -161,6 +161,20 @@ function QrAcesso({ imp, altura, botao, botaoClaro }) {
   );
 }
 
+// últimos 5 produtos impressos neste aparelho (para não digitar o mesmo código toda hora)
+const CHAVE_RECENTES = 'mp_balanca_recentes';
+function lerRecentes() {
+  try {
+    const v = JSON.parse(localStorage.getItem(CHAVE_RECENTES) ?? '[]');
+    return Array.isArray(v) ? v.filter((x) => x && x.codigo && x.descricao).slice(0, 5) : [];
+  } catch { return []; }
+}
+function lembrarProduto(produto) {
+  const lista = [{ codigo: produto.codigoBarras, descricao: produto.descricao }, ...lerRecentes().filter((x) => x.codigo !== produto.codigoBarras)].slice(0, 5);
+  try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(lista)); } catch { /* sem armazenamento */ }
+  return lista;
+}
+
 export function Balanca() {
   const [passo, setPasso] = useState(1); // 1 código, 2 peso, 3 confirmação, 4 impresso
   const [codigo, setCodigo] = useState('');
@@ -171,10 +185,26 @@ export function Balanca() {
   const [imprimindo, setImprimindo] = useState(false);
   const [altura, setAltura] = useState(lerAltura);
   const previa = useRef(null);
+  const [recentes, setRecentes] = useState(lerRecentes);
+  const [sugestoes, setSugestoes] = useState([]);
   const campo = useRef(null);
   const imp = useImpressora();
 
   useEffect(() => { campo.current?.focus(); }, [passo]);
+
+  // digitou letras: procura pelo nome (só produtos em kg); só números: é código de barras
+  useEffect(() => {
+    const t = codigo.trim();
+    if (passo !== 1 || t.length < 2 || !/[a-zA-ZÀ-ÿ]/.test(t)) { setSugestoes([]); return undefined; }
+    let vivo = true;
+    const id = setTimeout(async () => {
+      try {
+        const r = await api.get('/api/publico/balanca/busca', { q: t });
+        if (vivo) setSugestoes(r.produtos);
+      } catch { if (vivo) setSugestoes([]); }
+    }, 300);
+    return () => { vivo = false; clearTimeout(id); };
+  }, [codigo, passo]);
 
   const gramas = lerPesoEmGramas(pesoTxt);
   const precoKgCentavos = produto ? paraCentavos(produto.precoKg) : 0;
@@ -193,10 +223,15 @@ export function Balanca() {
     desenharEtiqueta({ nome: produto.descricao, gramas, precoKgCentavos, totalCentavos: total, ean, formato }, altura, previa.current);
   }, [passo, ean, formato, altura, produto, gramas, precoKgCentavos, total]);
 
-  const buscarProduto = async (e) => {
-    e.preventDefault();
-    const c = codigo.trim();
-    if (!c) { setErro('Digite o código do produto.'); return; }
+  const buscarProduto = async (e, codigoDireto) => {
+    e?.preventDefault?.();
+    const c = (codigoDireto ?? codigo).trim();
+    if (!c) { setErro('Digite o código ou o nome do produto.'); return; }
+    if (/[a-zA-ZÀ-ÿ]/.test(c)) {
+      if (sugestoes.length === 1) return buscarProduto(null, sugestoes[0].codigoBarras);
+      setErro('Escolha o produto na lista abaixo do campo.');
+      return;
+    }
     setBuscando(true); setErro('');
     try {
       const r = await api.get('/api/publico/balanca/produto', { codigo: c });
@@ -218,6 +253,7 @@ export function Balanca() {
     setImprimindo(true); setErro('');
     try {
       await imp.imprimir(previa.current);
+      setRecentes(lembrarProduto(produto));
       setPasso(4);
     } catch (x) {
       if (!x?.jaTratado) setErro(`Não foi possível imprimir: ${x?.message ?? x}`);
@@ -264,10 +300,31 @@ export function Balanca() {
 
         {passo === 1 && (
           <form onSubmit={buscarProduto} className="space-y-3">
-            <label className="block text-sm font-medium">Código do produto
-              <input ref={campo} className={entrada} inputMode="numeric" autoComplete="off" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+            <label className="block text-sm font-medium">Código ou nome do produto
+              <input ref={campo} className={entrada} inputMode="text" autoComplete="off" placeholder="código ou parte do nome" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
             </label>
+            {sugestoes.length > 0 && (
+              <ul className="divide-y divide-slate-200 rounded border border-slate-300 bg-white">
+                {sugestoes.map((p) => (
+                  <li key={p.id}><button type="button" className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left hover:bg-slate-50" onClick={() => buscarProduto(null, p.codigoBarras)}>
+                    <span className="font-medium">{p.descricao}</span><span className="text-xs text-slate-500">{p.codigoBarras}</span>
+                  </button></li>
+                ))}
+              </ul>
+            )}
             <button className={botao} disabled={buscando}>{buscando ? 'Buscando…' : 'Próximo'}</button>
+            {recentes.length > 0 && (
+              <div className="border-t border-slate-200 pt-3">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Últimos usados</div>
+                <ul className="space-y-2">
+                  {recentes.map((p) => (
+                    <li key={p.codigo}><button type="button" disabled={buscando} className="flex w-full items-center justify-between gap-2 rounded border border-slate-300 bg-white px-3 py-3 text-left hover:bg-slate-50 disabled:opacity-50" onClick={() => buscarProduto(null, p.codigo)}>
+                      <span className="font-medium">{p.descricao}</span><span className="text-sm text-slate-500">{p.codigo}</span>
+                    </button></li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </form>
         )}
 

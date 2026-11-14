@@ -210,12 +210,34 @@ export function criarApp({ pool, config }) {
   // ---- etiqueta de balança (/balanca): rota ABERTA, sem login, de propósito (só leitura; devolve apenas
   // id, nome, unidade e preço de UM produto achado pelo código de barras exato; nada de custo, estoque ou vendas)
   const tentativas = new Map();   // ip -> { inicio, n }: limite simples contra varredura do cadastro
-  app.get('/api/publico/balanca/produto', async (req) => {
+  const limitarConsultas = (req, maximo = 60) => {
     const agora = Date.now();
     const t = tentativas.get(req.ip);
     if (!t || agora - t.inicio > 60000) tentativas.set(req.ip, { inicio: agora, n: 1 });
-    else if (++t.n > 60) throw new ErroHttp(429, 'Muitas consultas seguidas. Aguarde um minuto.');
+    else if (++t.n > maximo) throw new ErroHttp(429, 'Muitas consultas seguidas. Aguarde um minuto.');
     if (tentativas.size > 5000) for (const [ip, v] of tentativas) if (agora - v.inicio > 60000) tentativas.delete(ip);
+  };
+
+  // busca por nome para a balança: só produtos vendidos por kg, no máximo 8, só nome e código (preço vem na
+  // consulta por código, depois de escolher o produto)
+  app.get('/api/publico/balanca/busca', async (req) => {
+    limitarConsultas(req, 120);
+    const q = z.object({ q: z.string().trim().min(2).max(60) }).parse(req.query ?? {});
+    const l = await pool.query('SELECT id FROM painel.lojas WHERE ativa ORDER BY id LIMIT 1');
+    if (!l.rowCount) throw new ErroHttp(404, 'Nenhuma loja cadastrada.');
+    const r = await pool.query(
+      `SELECT id, descricao, codigo_barras, un_comercial FROM espelho.produtos
+       WHERE loja_id = $1 AND upper(trim(coalesce(un_comercial, ''))) IN ('KG', 'KGS', 'QUILO', 'QUILOS')
+         AND codigo_barras IS NOT NULL
+         AND painel.sem_acento(descricao) ILIKE '%' || painel.sem_acento($2) || '%'
+       ORDER BY descricao LIMIT 8`,
+      [l.rows[0].id, q.q],
+    );
+    return { produtos: r.rows.map((x) => ({ id: Number(x.id), descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial })) };
+  });
+
+  app.get('/api/publico/balanca/produto', async (req) => {
+    limitarConsultas(req);
     const q = z.object({ codigo: z.string().trim().min(1).max(50) }).parse(req.query ?? {});
     const l = await pool.query('SELECT id FROM painel.lojas WHERE ativa ORDER BY id LIMIT 1');
     if (!l.rowCount) throw new ErroHttp(404, 'Nenhuma loja cadastrada.');

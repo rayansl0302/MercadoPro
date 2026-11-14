@@ -529,6 +529,20 @@ describe('produto para a etiqueta de balança', () => {
     expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto' })).statusCode).toBe(422);
   });
 
+  it('busca por nome só entre os produtos em kg, sem acento, e devolve nome e código (sem preço)', async () => {
+    await carregarDados();
+    const L = loja.id;
+    await pool.query(
+      `INSERT INTO espelho.produtos (loja_id, id, descricao, quantidade, preco, codigo_barras, un_comercial) VALUES
+         ($1, 90, 'QUEIJO MUSSARELA', '10', '39.90', '4521', 'KG'),
+         ($1, 91, 'QUEIJO PRATO', '10', '45.00', '4522', 'kg'),
+         ($1, 92, 'QUEIJO RALADO PACOTE', '10', '9.00', '7001', 'UN')`, [L]);
+    const r = (await app.inject({ method: 'GET', url: '/api/publico/balanca/busca?q=queijo' })).json();
+    expect(r.produtos.map((x) => x.codigoBarras)).toEqual(['4521', '4522']);
+    expect(r.produtos[0]).toEqual({ id: 90, descricao: 'QUEIJO MUSSARELA', codigoBarras: '4521', unidade: 'KG' });
+    expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/busca?q=q' })).statusCode).toBe(422);
+  });
+
   it('é aberta (sem login), mas o resto do painel continua exigindo', async () => {
     expect((await app.inject({ method: 'GET', url: '/api/publico/balanca/produto?codigo=1' })).statusCode).toBe(404);
     expect((await app.inject({ method: 'GET', url: '/api/painel/estoque' })).statusCode).toBe(401);
