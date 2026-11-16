@@ -2420,6 +2420,45 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             break;
         }
 
+        case 31:
+        {
+            // versao 32: promoção de venda (ex.: "Promoção rede social"). A promoção só anula a taxa da maquininha
+            // na hora da venda, como desconto; não mexe em estoque nem no preço cadastrado. A venda guarda o NOME
+            // da promoção usada (promocao_venda) para saber quantas vendas vieram do tráfego orgânico.
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 32", dbSchemaVersion};
+            }
+            const QString pk32 = DatabaseConnection_service::isPostgres() ? "SERIAL PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT";
+            const QStringList comandos32 = {
+                "CREATE TABLE IF NOT EXISTS promocoes_venda ("
+                "  id " + pk32 + ","
+                "  nome TEXT NOT NULL,"
+                "  ativa BOOLEAN NOT NULL DEFAULT true,"
+                "  criada_em TEXT NOT NULL)",
+                "ALTER TABLE vendas2 ADD COLUMN promocao_venda TEXT NULL"
+            };
+            for (const QString &sql : comandos32) {
+                QSqlQuery query(db);
+                if (!query.exec(sql)) {
+                    qDebug() << "Erro migracao 32:" << query.lastError().text() << "SQL:" << sql;
+                    db.rollback();
+                    return {false, SchemaErro::ErroMigracao, "Erro na migracao 32 (promocao de venda)", dbSchemaVersion};
+                }
+            }
+            if (!setSchemaVersion(32)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 32", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 32", dbSchemaVersion};
+            }
+            dbSchemaVersion = 32;
+            qDebug() << "Migracao para versao 32 concluida.";
+            break;
+        }
+
         }
     }
     qDebug() << "ultima versao schema " <<  dbSchemaLastVersion;

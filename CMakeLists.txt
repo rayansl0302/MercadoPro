@@ -100,6 +100,7 @@ set(QESTOQUE_SOURCES
     src/services/barcode_service.cpp
     src/services/pagamentodividido_service.h src/services/pagamentodividido_service.cpp
     src/services/promocao_service.h src/services/promocao_service.cpp
+    src/services/promocaovenda_service.h src/services/promocaovenda_service.cpp
     src/repository/promocao_repository.h src/repository/promocao_repository.cpp
     src/dto/Promocao_dto.h
     src/services/config_service.cpp
@@ -416,6 +417,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/dividirpagamentodialog.h src/dividirpagamentodialog.cpp
         src/services/pagamentodividido_service.h src/services/pagamentodividido_service.cpp
         src/services/promocao_service.h src/services/promocao_service.cpp
+        src/services/promocaovenda_service.h src/services/promocaovenda_service.cpp
+        src/promocoesvendadialog.h src/promocoesvendadialog.cpp
         src/repository/promocao_repository.h src/repository/promocao_repository.cpp
         src/dto/Promocao_dto.h
         src/nota/pagamentomisto.h

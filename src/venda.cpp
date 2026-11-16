@@ -44,6 +44,8 @@
 #include "services/config_service.h"
 #include "services/sessao_service.h"
 #include "services/precotaxa_service.h"
+#include "services/promocaovenda_service.h"
+#include <QCheckBox>
 
 namespace {
 // Coluna extra "Ações" em cima do QSqlQueryModel do catálogo, sem alterar o SELECT.
@@ -608,6 +610,7 @@ void venda::configurarPaginaPagamento()
     ui->Ledit_Taxa->setText("0");
     ui->Lbl_TotalTaxa->setText(Total());
     ui->Lbl_Total->setText(Total());
+    recarregarPromocoesVenda();
 
     if (temRascunhoPendente) {
         // aplica forma de pagamento salva e reconfigura visibilidade dos campos
@@ -694,6 +697,87 @@ void venda::descontoTaxa()
     ui->Lbl_Troco->setText("0");
 }
 
+// (Re)monta as caixas das promoções de venda ativas, todas desmarcadas. Sem nenhuma promoção cadastrada a área some.
+void venda::recarregarPromocoesVenda()
+{
+    if (!frPromocoesVenda) {
+        frPromocoesVenda = new QWidget(this);
+        auto *lay = new QVBoxLayout(frPromocoesVenda);
+        lay->setContentsMargins(0, 0, 0, 0);
+        lay->setSpacing(4);
+        ui->hl_desconto->insertWidget(2, frPromocoesVenda, 0, Qt::AlignBottom);
+    }
+    for (QCheckBox *antiga : std::as_const(checksPromocaoVenda))
+        antiga->deleteLater();
+    checksPromocaoVenda.clear();
+
+    const QList<PromocaoVendaDTO> promocoes = PromocaoVenda_service().listar(true);
+    for (const PromocaoVendaDTO &p : promocoes) {
+        auto *check = new QCheckBox(p.nome, frPromocoesVenda);
+        check->setStyleSheet(QStringLiteral("font: 700 15pt \"Ubuntu\"; color: rgb(29, 56, 74);"));
+        check->setToolTip(QStringLiteral("Tira a taxa da maquininha do preço, como desconto nesta venda. "
+                                         "Não altera o estoque nem o preço cadastrado."));
+        frPromocoesVenda->layout()->addWidget(check);
+        checksPromocaoVenda.append(check);
+        connect(check, &QCheckBox::toggled, this, [this, check](bool marcada) {
+            if (marcada) {
+                for (QCheckBox *outra : std::as_const(checksPromocaoVenda)) {
+                    if (outra != check) {
+                        const QSignalBlocker bloqueio(outra);
+                        outra->setChecked(false);
+                    }
+                }
+                if (PrecoTaxa::maiorTaxa() <= 0) {
+                    QMessageBox::information(this, QStringLiteral("Promoção de venda"),
+                        QStringLiteral("Não há maquininha ativa com taxa cadastrada, então esta promoção não dá "
+                                       "desconto. Cadastre as maquininhas e suas taxas primeiro."));
+                    const QSignalBlocker bloqueio(check);
+                    check->setChecked(false);
+                }
+            }
+            aplicarPromocaoVenda();
+        });
+    }
+    frPromocoesVenda->setVisible(!checksPromocaoVenda.isEmpty());
+    aplicarPromocaoVenda();
+}
+
+QString venda::promocaoVendaMarcada() const
+{
+    for (const QCheckBox *check : checksPromocaoVenda)
+        if (check->isChecked())
+            return check->text();
+    return QString();
+}
+
+// Com uma promoção marcada, o desconto é a taxa da maquininha embutida nos preços dos itens (calculada pelos itens
+// do carrinho, sem tocar no cadastro) e o campo fica travado. Sem promoção, o desconto volta a ser manual.
+void venda::aplicarPromocaoVenda()
+{
+    const bool marcada = !promocaoVendaMarcada().isEmpty();
+    ui->CheckPorcentagem->setEnabled(!marcada);
+    ui->Ledit_Desconto->setReadOnly(marcada);
+
+    if (!marcada) {
+        if (ui->Ledit_Desconto->text() != QLatin1String("0"))
+            ui->Ledit_Desconto->setText("0");
+        descontoTaxa();
+        return;
+    }
+
+    ui->CheckPorcentagem->setChecked(false);
+    QList<PromocaoVenda_service::Item> itens;
+    for (int row = 0; row < modeloSelecionados->rowCount(); ++row) {
+        PromocaoVenda_service::Item item;
+        item.quantidade = portugues.toDouble(modeloSelecionados->data(modeloSelecionados->index(row, 1)).toString());
+        item.precoVenda = portugues.toDouble(modeloSelecionados->data(modeloSelecionados->index(row, 3)).toString());
+        itens.append(item);
+    }
+    const double desconto = PromocaoVenda_service::descontoAnulaTaxa(itens, PrecoTaxa::maiorTaxa());
+    ui->Ledit_Desconto->setText(portugues.toString(desconto, 'f', 2));
+    descontoTaxa();
+}
+
 void venda::on_CBox_FormaPagamento_activated(int index)
 {
     seletorMaquina->mostrar(index == 2 || index == 3);
@@ -736,6 +820,9 @@ void venda::on_CBox_FormaPagamento_activated(int index)
         ui->Lbl_Total->setText(Total());
         break;
     }
+    // trocar a forma de pagamento zera o desconto acima; a promoção marcada continua valendo
+    if (!promocaoVendaMarcada().isEmpty())
+        aplicarPromocaoVenda();
 }
 
 void venda::on_Ledit_Recebido_textChanged(const QString &)
@@ -812,6 +899,7 @@ void venda::terminarPagamento()
     newVenda.clienteNome    = CLIENTE.nome;
     newVenda.dataHora       = dataIngles.toString("yyyy-MM-dd hh:mm:ss");
     newVenda.desconto       = portugues.toDouble(desconto);
+    newVenda.promocaoVenda  = promocaoVendaMarcada();
     newVenda.formaPagamento = forma;
     newVenda.estaPago       = (forma != "Prazo");
     newVenda.idCliente      = idClienteAtual;

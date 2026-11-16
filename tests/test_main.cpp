@@ -24,6 +24,7 @@
 #include "services/test_saidausoproprio.h"
 #include "services/test_maquinacartao.h"
 #include "services/test_precotaxa.h"
+#include "services/test_promocaovenda.h"
 #include "services/test_pagamentodividido.h"
 #include "services/test_promocao.h"
 #include "services/test_backup.h"
@@ -73,6 +74,7 @@ int main(int argc, char *argv[])
     rodar(new TestSaidaUsoProprio);
     rodar(new TestMaquinaCartao);
     rodar(new TestPrecoTaxa);
+    rodar(new TestPromocaoVenda);
     rodar(new TestPagamentoDividido);
     rodar(new TestPromocao);
     rodar(new TestBackup);

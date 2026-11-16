@@ -98,6 +98,13 @@ private:
     // a tela de pagamento rola quando a fonte/escala deixa os cartões maiores que a janela
     class QScrollArea *rolagemPagamento = nullptr;
     void mostrarTaxaMaquina(const QString &forma, double taxaPadrao);
+    // promoções de venda (ex.: "Promoção rede social"): caixas no pagamento que anulam a taxa da maquininha como
+    // desconto no fim da venda. Só uma pode estar marcada.
+    QWidget *frPromocoesVenda = nullptr;
+    QList<class QCheckBox *> checksPromocaoVenda;
+    void recarregarPromocoesVenda();
+    void aplicarPromocaoVenda();
+    QString promocaoVendaMarcada() const;
     QSqlQueryModel *modeloProdutos = new QSqlQueryModel;
     QStandardItemModel *modeloSelecionados = new QStandardItemModel;
     Ui::venda *ui;

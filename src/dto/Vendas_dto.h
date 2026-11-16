@@ -28,6 +28,9 @@ struct VendasDTO {
     double taxaMaquina = 0;
     double valorFinal = 0;
     double desconto = 0;
+    // nome da promoção de venda usada (ex.: "Promoção rede social"); vazio = sem promoção. O desconto dela
+    // já está em "desconto": aqui fica só o registro, para saber quantas vendas vieram dela.
+    QString promocaoVenda;
     bool estaPago;
     qlonglong idCliente;
     qlonglong idCaixa = 0;

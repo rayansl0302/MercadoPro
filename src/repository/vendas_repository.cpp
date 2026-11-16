@@ -406,10 +406,12 @@ qlonglong Vendas_repository::inserir(VendasDTO venda){
     QSqlQuery query(db);
     query.prepare("INSERT INTO vendas2 (cliente, total, data_hora, forma_pagamento, "
                   "valor_recebido, troco, taxa, valor_final, desconto, id_cliente, esta_pago, id_caixa, "
-                  "id_operador_sessao, id_empresa, id_maquina, taxa_maquina) "
+                  "id_operador_sessao, id_empresa, id_maquina, taxa_maquina, promocao_venda) "
                   "VALUES (:cliente, :total, :datahora, :formapag, :recebido, :troco, :taxa, "
                   ":valorfinal, :desconto, :idcliente, :estapago, :idcaixa, :idoperadorsessao, :idempresa, "
-                  ":idmaquina, :taxamaquina)");
+                  ":idmaquina, :taxamaquina, :promocaovenda)");
+    query.bindValue(":promocaovenda", venda.promocaoVenda.isEmpty() ? QVariant(QMetaType(QMetaType::QString))
+                                                                    : QVariant(venda.promocaoVenda));
     // só venda no cartão grava a taxa da máquina (NULL nas outras formas: dinheiro, Pix, prazo...)
     const bool cartao = venda.formaPagamento == QStringLiteral("Crédito") || venda.formaPagamento == QStringLiteral("Débito");
     query.bindValue(":idmaquina", cartao && venda.idMaquina > 0 ? QVariant(venda.idMaquina)

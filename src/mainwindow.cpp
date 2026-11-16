@@ -80,6 +80,7 @@
 #include <QDialog>
 #include <QTimer>
 #include "promocoesdialog.h"
+#include "promocoesvendadialog.h"
 #include "services/promocao_service.h"
 #include <QShortcut>
 #include <QDialogButtonBox>
@@ -1091,12 +1092,20 @@ void MainWindow::montarMenuCaixa()
                                 [this]() { exportarProdutosBalanca(); });
     ui->menuExportar->addAction(QStringLiteral("Etiquetas de preço para a gôndola (A4, recortar)..."), this,
                                 [this]() { exportarEtiquetasPreco(); });
-    ui->menuExportar->addAction(QStringLiteral("Promoções (de/por): gôndola e Instagram..."), this, [this]() {
+    // Vendas > Promoções: as de produto (de/por, mudam o preço) e as de venda (desconto marcado no fim da venda)
+    QMenu *menuPromocoes = ui->menuVendas->addMenu(QStringLiteral("Promoções"));
+    menuPromocoes->addAction(QStringLiteral("Produtos em promoção (de/por): gôndola e Instagram..."), this, [this]() {
         if (!exigirGerente(QStringLiteral("As promoções (mudam o preço dos produtos)")))
             return;
         PromocoesDialog dlg(this);
         dlg.exec();
         atualizarTableview();
+    });
+    menuPromocoes->addAction(QStringLiteral("Promoções de venda (rede social)..."), this, [this]() {
+        if (!exigirGerente(QStringLiteral("As promoções de venda (dão desconto no caixa)")))
+            return;
+        PromocoesVendaDialog dlg(this);
+        dlg.exec();
     });
 
     // Ajuda > Verificar atualizações (mostra a versão instalada)

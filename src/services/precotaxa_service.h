@@ -22,6 +22,11 @@ public:
     // Mesma conta com a taxa informada (%). Taxa fora de 0 < t < 100 devolve o preço sem alteração.
     static double comTaxa(double precoBase, double taxaPercentual);
 
+    // O caminho inverso: tira a taxa de um preço de venda e devolve o preço base (R$ 10,41 com 3,9% -> R$ 10,00).
+    // Usado na "promoção rede social", que anula a taxa na hora da venda sem mexer no cadastro.
+    static double semTaxa(double precoVenda);
+    static double semTaxa(double precoVenda, double taxaPercentual);
+
     // Texto para as telas de cadastro: "Preço de venda com a taxa da maquininha (3,90%): R$ 10,41 ...".
     // Vazio quando não há maquininha ativa ou o preço informado é zero.
     static QString textoPrecoDeVenda(double precoBase);

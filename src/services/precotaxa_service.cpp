@@ -38,6 +38,18 @@ double PrecoTaxa::comTaxa(double precoBase, double taxaPercentual)
     return std::round(precoBase / (1.0 - taxaPercentual / 100.0) * 100.0) / 100.0;
 }
 
+double PrecoTaxa::semTaxa(double precoVenda, double taxaPercentual)
+{
+    if (precoVenda <= 0 || taxaPercentual <= 0 || taxaPercentual >= 100)
+        return precoVenda;
+    return std::round(precoVenda * (1.0 - taxaPercentual / 100.0) * 100.0) / 100.0;
+}
+
+double PrecoTaxa::semTaxa(double precoVenda)
+{
+    return semTaxa(precoVenda, maiorTaxa());
+}
+
 QString PrecoTaxa::textoPrecoDeVenda(double precoBase)
 {
     const double taxa = maiorTaxa();
