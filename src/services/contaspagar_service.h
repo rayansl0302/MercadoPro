@@ -24,7 +24,7 @@ public:
 
     explicit ContasPagar_service(QObject *parent = nullptr);
 
-    // Estornar baixa e cancelar são só do gerente. Quem registra o autorizador é o main.cpp
+    // Estornar baixa é só do gerente (cancelar/excluir e editar conta são de todo operador). Quem registra o autorizador é o main.cpp
     // (o mesmo critério do cadastro de operadores); sem autorizador, tudo passa (testes).
     static void definirAutorizador(std::function<bool()> autorizador);
 

@@ -409,8 +409,7 @@ void ContasPagarJanela::cancelar()
     const ContaPagarDTO c = selecionada();
     if (c.id <= 0 || !c.aberta())
         return;
-    if (exigirGerente && !exigirGerente(QStringLiteral("Cancelar conta a pagar")))
-        return;
+    // cancelar (excluir) conta é liberado a todo operador; o motivo fica no log. Estornar pagamento segue só do gerente.
     bool ok = false;
     const QString motivo = QInputDialog::getText(this, "Cancelar conta",
         QStringLiteral("Motivo do cancelamento de \"%1\" (%2):").arg(c.descricao, dinheiro(c.valor)),

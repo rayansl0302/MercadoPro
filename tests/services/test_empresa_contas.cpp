@@ -459,10 +459,8 @@ void TestEmpresaContas::baixar_estornar_e_cancelar_seguem_as_regras()
     QCOMPARE(aberta.valorPago, 0.0);
     QVERIFY(aberta.pagoEm.isEmpty());
 
-    // cancelamento: gerente + motivo
+    // cancelamento (exclusão): qualquer operador, mas com motivo
     gerente = false;
-    QVERIFY(!cs.cancelar(lanc.id, "duplicada").ok);
-    gerente = true;
     QVERIFY(!cs.cancelar(lanc.id, "ab").ok);
     QVERIFY(cs.cancelar(lanc.id, "lançada em duplicidade").ok);
     QCOMPARE(cs.getConta(lanc.id).status, QStringLiteral("CANCELADA"));

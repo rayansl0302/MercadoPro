@@ -193,8 +193,6 @@ ContasPagar_service::Resultado ContasPagar_service::estornarBaixa(qlonglong id)
 
 ContasPagar_service::Resultado ContasPagar_service::cancelar(qlonglong id, const QString &motivo, const QString &origem)
 {
-    if (origem.isEmpty() && !autorizado())
-        return {false, "Cancelar uma conta é restrito a gerentes."};
     if (motivo.trimmed().size() < 3)
         return {false, "Informe o motivo do cancelamento."};
     const ContaPagarDTO c = repo.getPorId(id);
