@@ -670,11 +670,12 @@ void MainWindow::montarMenuInicial()
     if (gerente)
         m->adicionarBotao("history", "Histórico de caixas", "Caixas abertos e fechados", [this]() { historicoCaixaClicked(); });
 
-    if (gerente) {
+    // contas a pagar: todo operador lança e consulta (estornar e cancelar continuam pedindo o PIN do gerente)
     m->adicionarGrupo("Financeiro");
     m->adicionarBotao("banknote", "Contas a pagar", "Contas, vencimentos e baixas", [this]() { contasPagarClicked(); });
     m->adicionarBotao("plus", "Nova conta a pagar", "Lançar uma conta ou compra parcelada",
                       [this]() { contasPagarClicked(QStringLiteral("NOVA")); });
+    if (gerente) {
     m->adicionarBotao("wallet", "Contas a receber", "Fiado e caderneta: o que os clientes devem",
                       [this]() { contasReceberClicked(); });
     m->adicionarBotao("wallet", "Maquininhas de cartão", "Taxas de cada máquina e custo no mês", [this]() { maquinasCartaoClicked(); });
@@ -738,8 +739,15 @@ void MainWindow::aplicarPerfilNaInterface()
     for (QAction *a : ui->menuBar->actions()) {
         const QString t = a->text().remove(QLatin1Char('&'));
         const bool livre = t == QLatin1String("Vendas") || t == QLatin1String("Caixa") ||
-                           t == QLatin1String("Sessão") || t == QLatin1String("Ajuda");
+                           t == QLatin1String("Sessão") || t == QLatin1String("Ajuda") ||
+                           t == QLatin1String("Financeiro");
         a->setVisible(gerente || livre);
+        // no Financeiro o operador comum só lança e consulta contas a pagar
+        if (t == QLatin1String("Financeiro") && a->menu()) {
+            for (QAction *item : a->menu()->actions())
+                item->setVisible(gerente || item->text().startsWith(QLatin1String("Contas a pagar")) ||
+                                 item->text().startsWith(QLatin1String("Nova conta a pagar")));
+        }
     }
 
     if (gerente != perfilGerente) {
