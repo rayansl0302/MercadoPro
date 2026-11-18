@@ -46,7 +46,7 @@ public:
     // Chamados pelos fluxos de venda
     // Um caixa vale no máximo 15 horas de relógio e nunca atravessa a meia-noite: o do dia 11 não
     // serve para vender no dia 12. Vencido, o caixa precisa ser fechado e um novo aberto.
-    static constexpr int kHorasMaximasCaixa = 15;
+    static constexpr int kHorasMaximasCaixa = 18;
     bool caixaVencido(const CaixaDTO &caixa, QString *motivo = nullptr) const;
     Resultado exigirCaixaAberto();
     // recebimento de dívida lançada à mão (contas a receber): entra no caixa aberto de quem está logado

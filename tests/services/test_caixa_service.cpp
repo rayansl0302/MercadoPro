@@ -342,11 +342,11 @@ void TestCaixaService::caixa_vencido_nao_vende_e_o_do_dia_nao_vira_o_do_outro()
     DatabaseConnection_service::open();
     QSqlQuery q(DatabaseConnection_service::db());
     q.prepare("UPDATE caixas SET aberto_em = :t WHERE id = :id");
-    q.bindValue(":t", QDateTime::currentDateTime().addSecs(-16 * 3600));
+    q.bindValue(":t", QDateTime::currentDateTime().addSecs(-19 * 3600));
     q.bindValue(":id", id);
     QVERIFY(q.exec());
     QString motivo;
-    QVERIFY(cs.caixaVencido(cs.caixaAtual(), &motivo));                 // 16 h: passou das 15
+    QVERIFY(cs.caixaVencido(cs.caixaAtual(), &motivo));                 // 19 h: passou das 18
     QVERIFY(!motivo.isEmpty());
     QVERIFY(!cs.exigirCaixaAberto().ok);
 
