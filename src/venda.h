@@ -97,6 +97,12 @@ private:
     class SeletorMaquinaCartao *seletorMaquina = nullptr;
     // a tela de pagamento rola quando a fonte/escala deixa os cartões maiores que a janela
     class QScrollArea *rolagemPagamento = nullptr;
+    // pagamento dividido em 2 ou mais formas (ex.: dinheiro + Pix): a venda sai como "Misto"
+    class QPushButton *btnDividir = nullptr;
+    QList<PagamentoVendaDTO> divididos;
+    double valorDividido = 0;
+    void dividirPagamento();
+    void mostrarDivisao();
     void mostrarTaxaMaquina(const QString &forma, double taxaPadrao);
     // promoções de venda (ex.: "Promoção rede social"): caixas no pagamento que anulam a taxa da maquininha como
     // desconto no fim da venda. Só uma pode estar marcada.

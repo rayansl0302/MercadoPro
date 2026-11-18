@@ -1,5 +1,7 @@
 #include "venda.h"
 #include "seletormaquinacartao.h"
+#include "dividirpagamentodialog.h"
+#include <QPushButton>
 #include <QComboBox>
 #include <QLabel>
 #include <QScrollArea>
@@ -391,6 +393,16 @@ venda::venda(QWidget *parent) :
         rolagemPagamento->setWidget(ui->page_Pagamento);
         ui->stack_Pages->insertWidget(posicao, rolagemPagamento);
     }
+    // pagamento dividido: botão logo abaixo da escolha da forma (antes só existia na janela de pagamento antiga)
+    btnDividir = new QPushButton(QStringLiteral("Dividir em 2 formas (dinheiro + Pix, cartão + dinheiro...)"), ui->frame_Campos);
+    btnDividir->setMinimumHeight(40);
+    btnDividir->setCursor(Qt::PointingHandCursor);
+    btnDividir->setToolTip(QStringLiteral("Pagar uma parte em uma forma e o resto em outra. A venda fica como Misto."));
+    {
+        const int pos = ui->vl_p2_form->indexOf(ui->CBox_FormaPagamento);
+        ui->vl_p2_form->insertWidget(pos >= 0 ? pos + 1 : ui->vl_p2_form->count(), btnDividir);
+    }
+    connect(btnDividir, &QPushButton::clicked, this, &venda::dividirPagamento);
     connect(seletorMaquina, &SeletorMaquinaCartao::escolhaMudou, this, [this]() {
         const int forma = ui->CBox_FormaPagamento->currentIndex();
         if (forma == 2)
@@ -864,6 +876,43 @@ void venda::on_CBox_ModeloEmit_currentIndexChanged(int index)
     }
 }
 
+// ─── Pagamento dividido ──────────────────────────────────────────────────────
+
+void venda::dividirPagamento()
+{
+    const double valorFinal = portugues.toDouble(ui->Lbl_TotalTaxa->text());
+    if (valorFinal <= 0) {
+        QMessageBox::information(this, "Dividir pagamento", "A venda não tem valor a pagar.");
+        return;
+    }
+    DividirPagamentoDialog dlg(valorFinal, configDTO.taxaCreditoFinanceiro, configDTO.taxaDebitoFinanceiro, this);
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+    divididos = dlg.pagamentos();
+    valorDividido = valorFinal;
+    mostrarDivisao();
+}
+
+void venda::mostrarDivisao()
+{
+    if (!btnDividir)
+        return;
+    if (divididos.isEmpty()) {
+        btnDividir->setText(QStringLiteral("Dividir em 2 formas (dinheiro + Pix, cartão + dinheiro...)"));
+        btnDividir->setToolTip(QStringLiteral("Pagar uma parte em uma forma e o resto em outra. A venda fica como Misto."));
+        btnDividir->setStyleSheet(QString());
+        ui->CBox_FormaPagamento->setEnabled(true);
+        return;
+    }
+    QStringList partes;
+    for (const PagamentoVendaDTO &p : divididos)
+        partes << QStringLiteral("%1 R$ %2").arg(p.forma, portugues.toString(p.valor, 'f', 2));
+    btnDividir->setText(QStringLiteral("Dividido: ") + partes.join(QStringLiteral(" + ")) + QStringLiteral("  (alterar)"));
+    btnDividir->setToolTip(QStringLiteral("Clique para alterar a divisão ou remova escolhendo outra forma de pagamento depois de cancelar."));
+    btnDividir->setStyleSheet(QStringLiteral("QPushButton { background: #DCFCE7; color: #166534; font-weight: 700; border: 1px solid #86EFAC; border-radius: 6px; }"));
+    ui->CBox_FormaPagamento->setEnabled(false);
+}
+
 // ─── Finish sale ─────────────────────────────────────────────────────────────
 
 void venda::terminarPagamento()
@@ -913,8 +962,25 @@ void venda::terminarPagamento()
     newVenda.valorFinal     = portugues.toDouble(valor_final);
     newVenda.valorRecebido  = portugues.toDouble(recebido);
 
+    if (!divididos.isEmpty()) {
+        // o valor mudou depois da divisão (ex.: desconto): pede para dividir de novo
+        if (qAbs(newVenda.valorFinal - valorDividido) > 0.009) {
+            QMessageBox::warning(this, "Pagamento dividido",
+                                 "O valor da venda mudou depois de dividir o pagamento. Divida de novo.");
+            divididos.clear();
+            mostrarDivisao();
+            return;
+        }
+        newVenda.pagamentos = divididos;
+        const QString erroMisto = Vendas_service::prepararPagamentoMisto(newVenda);
+        if (!erroMisto.isEmpty()) {
+            QMessageBox::warning(this, "Pagamento dividido", erroMisto);
+            return;
+        }
+    }
+
     // venda a prazo (fiado): cliente identificado, ativo e dentro do limite de crédito
-    if (forma == "Prazo") {
+    if (forma == "Prazo" && divididos.isEmpty()) {
         ContasReceber_service receber;
         auto prazo = receber.validarVendaPrazo(idClienteAtual, newVenda.valorFinal);
         if (!prazo.ok && prazo.limiteExcedido) {
@@ -1140,6 +1206,8 @@ void venda::reiniciarVenda(bool manterRascunho)
     definirClientePadrao();
     ui->DateEdt_Venda->setDateTime(QDateTime::currentDateTime());
 
+    divididos.clear();
+    mostrarDivisao();
     // pagamento volta ao padrão (Dinheiro, sem desconto)
     ui->CBox_FormaPagamento->setCurrentIndex(0);
     ui->CheckPorcentagem->setChecked(false);
