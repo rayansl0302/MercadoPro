@@ -1047,6 +1047,11 @@ void MainWindow::atualizarAlertaContas()
 {
     if (!menuInicial)
         return;
+    // o aviso de contas vencidas é só do gerente
+    if (!Sessao_service::instancia()->sessao().gerente) {
+        menuInicial->definirAlerta(QString());
+        return;
+    }
     ContasPagar_service servico;
     const ResumoContasPagarDTO r = servico.resumo(Empresa_service::instancia()->idAtiva());
     QLocale ptBR(QLocale::Portuguese, QLocale::Brazil);
