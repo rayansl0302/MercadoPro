@@ -497,7 +497,8 @@ function GradeEstoque() {
     { chave: 'unidade', titulo: 'Unidade', tipo: 'opcoes', valor: (l) => (unidadeEhQuilo(l.unidade) ? 'KG' : String(l.unidade ?? '').trim().toUpperCase() || '—') },
     { chave: 'situacao', titulo: 'Situação', tipo: 'opcoes' },
     { chave: 'quantidade', titulo: 'Qtd', tipo: 'numero', somar: true, somarSe: (l) => l.situacao === 'Estoque controlado', render: (l) => <span className={l.quantidade < 0 ? 'font-medium text-red-700' : l.quantidade === 0 ? 'text-red-700' : ''}>{l.quantidade}{l.unidade ? ` ${String(l.unidade).toLowerCase()}` : ''}</span> },
-    { chave: 'preco', titulo: 'Preço de venda', tipo: 'moeda' },
+    { chave: 'precoVenda', titulo: 'Preço na gôndola', tipo: 'moeda' },
+    { chave: 'preco', titulo: 'Preço cadastrado', tipo: 'moeda' },
     { chave: 'custo', titulo: 'Custo', tipo: 'moeda' },
     { chave: 'margemPercentual', titulo: 'Margem %', tipo: 'numero' },
     { chave: 'valor', titulo: 'Valor em estoque', tipo: 'moeda', somar: true, somarSe: (l) => l.situacao === 'Estoque controlado' },
@@ -735,7 +736,7 @@ function BuscaProduto() {
             { titulo: 'Produto', render: (l) => <button className="text-left font-medium text-marca underline" onClick={() => setEscolhido(l.id)}>{l.descricao}</button> },
             { titulo: 'Código de barras', render: (l) => l.codigo_barras ?? '—' },
             { titulo: 'Qtd', direita: true, render: (l) => l.quantidade },
-            dinheiroCol('Preço', (l) => l.preco),
+            dinheiroCol('Preço na gôndola', (l) => l.precoVenda),
           ]} />
         </div>
       )}
@@ -757,7 +758,7 @@ function DetalheProduto({ id }) {
             </div>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Cartao titulo="Em estoque" valor={p.quantidade} tom={p.quantidade <= 0 ? 'ruim' : 'normal'} detalhe={`valor ${moeda(p.valorEmEstoque)}`} />
-              <Cartao titulo="Preço de venda" valor={moeda(p.preco)} />
+              <Cartao titulo="Preço na gôndola" valor={moeda(p.precoVenda)} detalhe={`cadastrado ${moeda(p.preco)} (sem a taxa da maquininha)`} />
               <Cartao titulo="Custo" valor={p.custo == null ? '—' : moeda(p.custo)} detalhe={p.margemPercentual == null ? undefined : `margem ${p.margemPercentual}%`} />
               <Cartao titulo="Vendido em 30 dias" valor={v.qtd30} detalhe={`${moeda(v.total30)} · 90 dias: ${v.qtd90}`} />
             </div>

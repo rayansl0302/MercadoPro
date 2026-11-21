@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ErroHttp } from './ciclo.js';
+import { taxaDaLoja, comTaxa } from './precotaxa.js';
 
 // Consultas do painel (somente leitura, sobre o espelho). A API é o contrato com a tela: se a loja mudar de
 // estrutura, só o espelho e estas consultas se ajustam, a tela não percebe.
@@ -528,12 +529,14 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
        FROM espelho.produtos WHERE loja_id = $1 ORDER BY descricao LIMIT 5000`,
       [req.loja.id, config.lancheMin, config.lancheMax],
     );
+    const taxa = await taxaDaLoja(pool, req.loja.id);
     return {
+      taxaMaquina: taxa,
       produtos: r.rows.map((x) => {
         const quantidade = inteiro(x.quantidade);
         const preco = dinheiro(x.preco);
         return {
-          id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, quantidade, preco,
+          id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, unidade: x.un_comercial, quantidade, preco, precoVenda: comTaxa(preco, taxa),
           custo: x.preco_fornecedor === null ? 0 : dinheiro(x.preco_fornecedor), // 0 = sem custo cadastrado
           // só quantidade positiva vale dinheiro em estoque (igual ao total da tela)
           valor: quantidade > 0 ? Math.round(quantidade * preco * 100) / 100 : 0,
@@ -564,12 +567,13 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
         [L, q.id, dia],
       );
       const preco = dinheiro(x.preco);
+      const precoVenda = comTaxa(preco, await taxaDaLoja(pool, L));
       const custo = x.preco_fornecedor === null ? null : dinheiro(x.preco_fornecedor);
       return {
         produto: {
           id: x.id, descricao: x.descricao, codigoBarras: x.codigo_barras, lanche: (await pool.query('SELECT painel.eh_lanche($1, $2, $3) AS e', [x.codigo_barras, config.lancheMin, config.lancheMax])).rows[0].e,
           semControleEstoque: Boolean(x.sem_controle_estoque), usoLoja: Boolean(x.uso_loja), unidade: x.un_comercial, local: x.local, fiscal: x.nf,
-          quantidade: inteiro(x.quantidade), preco, custo, margemPercentual: custo && custo > 0 ? Math.round(((preco - custo) / custo) * 1000) / 10 : null,
+          quantidade: inteiro(x.quantidade), preco, precoVenda, custo, margemPercentual: custo && custo > 0 ? Math.round(((preco - custo) / custo) * 1000) / 10 : null,
           valorEmEstoque: dinheiro(inteiro(x.quantidade) * preco), adicionadoEm: x.adicionado_em, atualizadoEm: x.atualizado_em,
         },
         vendas: { qtd30: inteiro(v.rows[0].qtd30), qtd90: inteiro(v.rows[0].qtd90), total30: dinheiro(v.rows[0].total30), ultimaVenda: v.rows[0].ultima_venda },
@@ -583,7 +587,8 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
        ORDER BY (codigo_barras = $2) DESC, descricao LIMIT 30`,
       [L, termo],
     );
-    return { produtos: r.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco) })) };
+    const taxa = await taxaDaLoja(pool, L);
+    return { produtos: r.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco), precoVenda: comTaxa(x.preco, taxa) })) };
   });
 
   // ------------------------------------------------------------------ fiscal

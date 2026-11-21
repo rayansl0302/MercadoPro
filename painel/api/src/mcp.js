@@ -6,7 +6,9 @@ import { timingSafeEqual } from 'node:crypto';
 // Só sai nome, preço, unidade e código de barras. Nunca custo, margem, estoque ou vendas.
 // Ligado só se MCP_DESIGN_CHAVE estiver definida (mínimo 24 caracteres); sem ela a rota nem existe.
 
-const VERSAO_PROTOCOLO = '2025-03-26';
+import { taxaDaLoja, comTaxa } from './precotaxa.js';
+
+const VERSAO_PROTOCOLO ='2025-03-26';
 const moeda = (v) => 'R$ ' + Number(v ?? 0).toFixed(2).replace('.', ',');
 
 const FERRAMENTAS = [
@@ -44,12 +46,13 @@ function chaveConfere(informada, esperada) {
 
 const texto = (t, erro = false) => ({ content: [{ type: 'text', text: t }], ...(erro ? { isError: true } : {}) });
 
-function formatar(linhas) {
+// o preço sai com a taxa da maquininha (o mesmo da gôndola e do PDV), não o preço base do cadastro
+function formatar(linhas, taxa = 0) {
   if (!linhas.length) return 'Nenhum produto encontrado.';
   const itens = linhas.map((x) => ({
     nome: x.descricao,
-    preco: Number(Number(x.preco ?? 0).toFixed(2)),
-    precoFormatado: moeda(x.preco) + (x.balanca || /^kg$/i.test(x.un_comercial ?? '') ? ' /kg' : ''),
+    preco: comTaxa(x.preco, taxa),
+    precoFormatado: moeda(comTaxa(x.preco, taxa)) + (x.balanca || /^kg$/i.test(x.un_comercial ?? '') ? ' /kg' : ''),
     unidade: x.un_comercial,
     codigoBarras: x.codigo_barras,
   }));
@@ -69,7 +72,7 @@ async function chamar(pool, lojaId, nome, args) {
        ORDER BY descricao LIMIT $3`,
       [lojaId, termo, limite],
     );
-    return texto(formatar(r.rows));
+    return texto(formatar(r.rows, await taxaDaLoja(pool, lojaId)));
   }
   if (nome === 'produtos_atualizados_recentemente') {
     const dias = Math.min(Math.max(Number.parseInt(args?.dias ?? 7, 10) || 7, 1), 90);
@@ -81,7 +84,7 @@ async function chamar(pool, lojaId, nome, args) {
        ORDER BY greatest(painel.ts_seguro(atualizado_em), painel.ts_seguro(adicionado_em)) DESC LIMIT $3`,
       [lojaId, dias, limite],
     );
-    return texto(formatar(r.rows));
+    return texto(formatar(r.rows, await taxaDaLoja(pool, lojaId)));
   }
   return null;
 }
