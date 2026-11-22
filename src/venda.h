@@ -14,6 +14,7 @@
 #include "dto/Cliente_dto.h"
 #include "services/Produto_service.h"
 #include "services/cliente_service.h"
+#include "services/descontocpf_service.h"
 #include "services/vendas_service.h"
 #include "services/notafiscal_service.h"
 #include "subclass/waitdialog.h"
@@ -111,6 +112,10 @@ private:
     void recarregarPromocoesVenda();
     void aplicarPromocaoVenda();
     QString promocaoVendaMarcada() const;
+    // desconto para cliente cadastrado (CPF): aparece junto das promoções quando o cliente da venda não é o padrão
+    DescontoCpf_service::Config cfgFidelidade;
+    bool clienteIdentificado();
+    bool fidelidadeMarcada() const;
     QSqlQueryModel *modeloProdutos = new QSqlQueryModel;
     QStandardItemModel *modeloSelecionados = new QStandardItemModel;
     Ui::venda *ui;

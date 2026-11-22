@@ -80,6 +80,7 @@
 #include <QDialog>
 #include <QTimer>
 #include "promocoesdialog.h"
+#include "descontocpfdialog.h"
 #include "promocoesvendadialog.h"
 #include "services/promocao_service.h"
 #include <QShortcut>
@@ -1105,6 +1106,12 @@ void MainWindow::montarMenuCaixa()
         PromocoesDialog dlg(this);
         dlg.exec();
         atualizarTableview();
+    });
+    menuPromocoes->addAction(QStringLiteral("Desconto para cliente cadastrado (CPF)..."), this, [this]() {
+        if (!exigirGerente(QStringLiteral("O desconto para cliente cadastrado")))
+            return;
+        DescontoCpfDialog dlg(this);
+        dlg.exec();
     });
     menuPromocoes->addAction(QStringLiteral("Promoções de venda (rede social)..."), this, [this]() {
         if (!exigirGerente(QStringLiteral("As promoções de venda (dão desconto no caixa)")))

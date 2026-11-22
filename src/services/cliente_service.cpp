@@ -341,6 +341,29 @@ Cliente_service::validarClienteTexto(const QString &texto)
 
     if(id == -1)
     {
+        // CPF/CNPJ digitado no lugar do nome (com ou sem pontuação)
+        {
+            QString digitos;
+            for (const QChar &ch : txt)
+                if (ch.isDigit())
+                    digitos += ch;
+            if ((digitos.size() == 11 || digitos.size() == 14) && digitos.size() >= txt.size() - 4) {
+                QStringList formas{digitos};
+                if (digitos.size() == 11)
+                    formas << QString("%1.%2.%3-%4").arg(digitos.mid(0, 3), digitos.mid(3, 3), digitos.mid(6, 3), digitos.mid(9, 2));
+                else
+                    formas << QString("%1.%2.%3/%4-%5").arg(digitos.mid(0, 2), digitos.mid(2, 3), digitos.mid(5, 3), digitos.mid(8, 4), digitos.mid(12, 2));
+                for (const QString &f : formas) {
+                    const qlonglong idCpf = cliRepo.getIdFromCPFCNPJ(f);
+                    if (idCpf > 0) {
+                        res.ok = true;
+                        res.clienteId = idCpf;
+                        res.nomeCorrigido = QString("%1 (ID: %2)").arg(cliRepo.getClienteByID(idCpf).nome).arg(idCpf);
+                        return res;
+                    }
+                }
+            }
+        }
         ClienteDTO cli = cliRepo.buscarClientePorNomeAproximado(txt);
 
         if(cli.id == 0){

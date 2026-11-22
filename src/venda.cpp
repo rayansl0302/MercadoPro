@@ -750,8 +750,46 @@ void venda::recarregarPromocoesVenda()
             aplicarPromocaoVenda();
         });
     }
+    cfgFidelidade = DescontoCpf_service::carregar();
+    if (clienteIdentificado() && DescontoCpf_service::vigente(cfgFidelidade, QDate::currentDate())) {
+        auto *check = new QCheckBox(DescontoCpf_service::rotulo(cfgFidelidade), frPromocoesVenda);
+        check->setProperty("fidelidade", true);
+        check->setStyleSheet(QStringLiteral("font: 700 15pt \"Ubuntu\"; color: rgb(29, 56, 74);"));
+        check->setToolTip(QStringLiteral("Desconto para cliente cadastrado, configurado em Vendas > Promoções. "
+                                         "Não altera o estoque nem o preço cadastrado."));
+        frPromocoesVenda->layout()->addWidget(check);
+        checksPromocaoVenda.append(check);
+        connect(check, &QCheckBox::toggled, this, [this, check](bool marcada) {
+            if (marcada) {
+                for (QCheckBox *outra : std::as_const(checksPromocaoVenda)) {
+                    if (outra != check) {
+                        const QSignalBlocker bloqueio(outra);
+                        outra->setChecked(false);
+                    }
+                }
+            }
+            aplicarPromocaoVenda();
+        });
+    }
     frPromocoesVenda->setVisible(!checksPromocaoVenda.isEmpty());
     aplicarPromocaoVenda();
+}
+
+// O cliente da venda é um cadastro de verdade (e não o cliente padrão do balcão).
+bool venda::clienteIdentificado()
+{
+    if (idClienteAtual <= 0 || clientesComId.isEmpty())
+        return false;
+    const auto padrao = cliServ.extrairNomeId(clientesComId.first());
+    return idClienteAtual != padrao.second;
+}
+
+bool venda::fidelidadeMarcada() const
+{
+    for (const QCheckBox *check : checksPromocaoVenda)
+        if (check->isChecked() && check->property("fidelidade").toBool())
+            return true;
+    return false;
 }
 
 QString venda::promocaoVendaMarcada() const
@@ -778,6 +816,12 @@ void venda::aplicarPromocaoVenda()
     }
 
     ui->CheckPorcentagem->setChecked(false);
+    if (fidelidadeMarcada()) {
+        const double desc = DescontoCpf_service::calcular(cfgFidelidade, portugues.toDouble(Total()), QDate::currentDate());
+        ui->Ledit_Desconto->setText(portugues.toString(desc, 'f', 2));
+        descontoTaxa();
+        return;
+    }
     QList<PromocaoVenda_service::Item> itens;
     for (int row = 0; row < modeloSelecionados->rowCount(); ++row) {
         PromocaoVenda_service::Item item;

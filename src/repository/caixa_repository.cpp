@@ -164,6 +164,39 @@ bool Caixa_repository::setTrocoProximo(const QString &terminal, double valor)
     return ins.exec();
 }
 
+bool Caixa_repository::lerConfig(const QString &chave, QString *valor)
+{
+    if (!DatabaseConnection_service::open())
+        return false;
+    QSqlQuery query(db);
+    query.prepare("SELECT valor FROM config_caixa WHERE chave = :c");
+    query.bindValue(":c", chave);
+    if (!query.exec() || !query.next())
+        return false;
+    if (valor)
+        *valor = query.value(0).toString();
+    return true;
+}
+
+bool Caixa_repository::gravarConfig(const QString &chave, const QString &valor)
+{
+    if (!DatabaseConnection_service::open())
+        return false;
+    QSqlQuery up(db);
+    up.prepare("UPDATE config_caixa SET valor = :v WHERE chave = :c");
+    up.bindValue(":v", valor);
+    up.bindValue(":c", chave);
+    if (!up.exec())
+        return false;
+    if (up.numRowsAffected() > 0)
+        return true;
+    QSqlQuery ins(db);
+    ins.prepare("INSERT INTO config_caixa (chave, valor) VALUES (:c, :v)");
+    ins.bindValue(":c", chave);
+    ins.bindValue(":v", valor);
+    return ins.exec();
+}
+
 double Caixa_repository::getDinheiroInformadoUltimoFechamento(const QString &terminal)
 {
     if (!DatabaseConnection_service::open())

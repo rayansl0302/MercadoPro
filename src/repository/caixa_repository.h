@@ -33,6 +33,9 @@ public:
     // dinheiro que ficou na gaveta no último fechamento do terminal (vira o troco sugerido do próximo caixa)
     bool getTrocoProximo(const QString &terminal, double *valor);
     bool setTrocoProximo(const QString &terminal, double valor);
+    // chave/valor genérico da config_caixa (ex.: regras do desconto por CPF)
+    bool lerConfig(const QString &chave, QString *valor);
+    bool gravarConfig(const QString &chave, const QString &valor);
     MovimentacaoCaixaDTO getMovimentacao(qlonglong id);
     bool atualizarMovimentacao(qlonglong id, double valor, const QString &motivo, const QString &forma, QString *erro = nullptr);
     bool deletarRecebimentosPorVenda(qlonglong idVenda, QString *erro = nullptr);

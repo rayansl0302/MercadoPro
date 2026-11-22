@@ -46,6 +46,7 @@ set(TEST_SOURCES
     services/test_maquinacartao.cpp
     services/test_precotaxa.cpp
     services/test_promocaovenda.cpp
+    services/test_descontocpf.cpp
     services/test_pagamentodividido.cpp
     services/test_promocao.cpp
     services/test_backup.cpp
@@ -78,6 +79,7 @@ add_executable(QEstoqueLojaTests
     services/test_maquinacartao.h services/test_maquinacartao.cpp
     services/test_precotaxa.h services/test_precotaxa.cpp
     services/test_promocaovenda.h services/test_promocaovenda.cpp
+    services/test_descontocpf.h services/test_descontocpf.cpp
     services/test_pagamentodividido.h services/test_pagamentodividido.cpp
     services/test_promocao.h services/test_promocao.cpp
     services/test_backup.h services/test_backup.cpp
