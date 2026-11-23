@@ -495,6 +495,37 @@ describe('saídas de estoque para uso próprio', () => {
   });
 });
 
+describe('rastreabilidade das saídas de um produto', () => {
+  it('separa o que saiu em venda (por forma de pagamento) e em uso da loja (por motivo), com quantidade decimal', async () => {
+    const { hoje } = await carregarDados();
+    const L = loja.id;
+    const { cookie } = await sessao();
+    await pool.query(`INSERT INTO espelho.produtos (loja_id, id, descricao, quantidade, preco, codigo_barras, un_comercial) VALUES ($1, 50, 'QUEIJO', '12.250', '40.00', '789', 'KG')`, [L]);
+    await pool.query(
+      `INSERT INTO espelho.produtos_vendidos (loja_id, id, id_produto, id_venda, quantidade, preco_vendido) VALUES
+         ($1, 90, 50, 1, '3', '40.00'), ($1, 91, 50, 2, '1.500', '40.00'), ($1, 92, 50, 3, '0.141', '40.00')`, [L]);
+    await pool.query(
+      `INSERT INTO espelho.saidas_uso_proprio (loja_id, id, id_produto, descricao_produto, quantidade, motivo, custo_unitario, preco_venda, nome_operador, data_hora)
+       VALUES ($1, 1, 50, 'QUEIJO', '0.250', 'Consumo próprio', '30.00', '40.00', 'Maria', $2)`, [L, `${hoje} 09:00:00`]);
+
+    const r = await obter(cookie, '/api/painel/produto-saidas?id=50&dias=30');
+    expect(r.produto).toMatchObject({ id: '50', descricao: 'QUEIJO', quantidade: 12.25 });
+    expect(r.vendas.porForma).toEqual([
+      { forma: 'Pix', quantidade: 3, total: 120, vendas: 1 },
+      { forma: 'Dinheiro', quantidade: 1.5, total: 60, vendas: 1 },
+      { forma: 'Prazo', quantidade: 0.141, total: 5.64, vendas: 1 },
+    ]);
+    expect(r.vendas.quantidade).toBe(4.641);
+    expect(r.usoProprio.porMotivo).toEqual([{ motivo: 'Consumo próprio', quantidade: 0.25, custo: 7.5, registros: 1 }]);
+    expect(r.saidaTotal).toBe(4.891);
+    expect(r.movimentos).toHaveLength(4);
+    expect(r.movimentos.map((m) => m.tipo)).toContain('Uso da loja');
+    // produto que não existe
+    const nao = await app.inject({ method: 'GET', url: '/api/painel/produto-saidas?id=999', headers: { cookie } });
+    expect(nao.statusCode).toBe(404);
+  });
+});
+
 describe('venda no cartão com maquininha', () => {
   it('mostra a máquina e o custo da taxa no detalhe da venda, sem somar a taxa ao valor pago', async () => {
     const { hoje } = await carregarDados();

@@ -547,6 +547,58 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     };
   });
 
+  // rastreabilidade das saídas de um produto: quanto saiu por venda (e em qual forma de pagamento) e por uso da loja
+  // (por motivo), mais os últimos movimentos. dias=0 considera todo o histórico enviado pela loja.
+  app.get('/api/painel/produto-saidas', async (req) => {
+    await comLoja(req);
+    const q = z.object({ id: z.coerce.number().int().positive(), dias: z.coerce.number().int().min(0).max(3650).default(90) }).parse(req.query ?? {});
+    const L = req.loja.id;
+    const dia = await hoje(pool, req.loja.fuso);
+    const p = await pool.query('SELECT id, descricao, codigo_barras, un_comercial, quantidade FROM espelho.produtos WHERE loja_id = $1 AND id = $2', [L, q.id]);
+    if (!p.rowCount) throw new ErroHttp(404, 'Produto não encontrado.');
+    const qtd3 = (v) => Math.round(Number(v ?? 0) * 1000) / 1000;
+    const vendas = await pool.query(
+      `SELECT coalesce(nullif(v.forma_pagamento, ''), '—') AS forma, sum(pv.quantidade) AS qtd,
+              sum(pv.quantidade * pv.preco_vendido) AS total, count(DISTINCT v.id)::int AS n
+       FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
+       WHERE pv.loja_id = $1 AND pv.id_produto = $2 AND ($3::int = 0 OR painel.ts_seguro(v.data_hora)::date > ($4::date - $3::int))
+       GROUP BY 1 ORDER BY 3 DESC`,
+      [L, q.id, q.dias, dia],
+    );
+    const uso = await pool.query(
+      `SELECT coalesce(nullif(motivo, ''), '—') AS motivo, sum(quantidade) AS qtd, sum(quantidade * coalesce(custo_unitario, 0)) AS custo, count(*)::int AS n
+       FROM espelho.saidas_uso_proprio
+       WHERE loja_id = $1 AND id_produto = $2 AND ($3::int = 0 OR painel.ts_seguro(data_hora)::date > ($4::date - $3::int))
+       GROUP BY 1 ORDER BY 3 DESC`,
+      [L, q.id, q.dias, dia],
+    );
+    const recentes = await pool.query(
+      `SELECT * FROM (
+         SELECT painel.ts_seguro(v.data_hora) AS quando, 'Venda' AS tipo, 'Venda #' || v.id || ' · ' || coalesce(nullif(v.forma_pagamento, ''), '—') AS detalhe,
+                pv.quantidade AS qtd, pv.quantidade * pv.preco_vendido AS valor, '' AS operador
+         FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
+         WHERE pv.loja_id = $1 AND pv.id_produto = $2
+         UNION ALL
+         SELECT painel.ts_seguro(data_hora), 'Uso da loja', coalesce(nullif(motivo, ''), '—') || CASE WHEN coalesce(observacao, '') <> '' THEN ' · ' || observacao ELSE '' END,
+                quantidade, quantidade * coalesce(custo_unitario, 0), coalesce(nome_operador, '')
+         FROM espelho.saidas_uso_proprio WHERE loja_id = $1 AND id_produto = $2
+       ) m ORDER BY quando DESC NULLS LAST LIMIT 40`,
+      [L, q.id],
+    );
+    const porForma = vendas.rows.map((x) => ({ forma: x.forma, quantidade: qtd3(x.qtd), total: dinheiro(x.total), vendas: x.n }));
+    const porMotivo = uso.rows.map((x) => ({ motivo: x.motivo, quantidade: qtd3(x.qtd), custo: dinheiro(x.custo), registros: x.n }));
+    const qVendas = qtd3(porForma.reduce((s, x) => s + x.quantidade, 0));
+    const qUso = qtd3(porMotivo.reduce((s, x) => s + x.quantidade, 0));
+    return {
+      produto: { id: p.rows[0].id, descricao: p.rows[0].descricao, codigoBarras: p.rows[0].codigo_barras, unidade: p.rows[0].un_comercial, quantidade: qtd3(p.rows[0].quantidade) },
+      dias: q.dias,
+      vendas: { quantidade: qVendas, total: dinheiro(porForma.reduce((s, x) => s + x.total, 0)), porForma },
+      usoProprio: { quantidade: qUso, custo: dinheiro(porMotivo.reduce((s, x) => s + x.custo, 0)), porMotivo },
+      saidaTotal: qtd3(qVendas + qUso),
+      movimentos: recentes.rows.map((x) => ({ quando: x.quando, tipo: x.tipo, detalhe: x.detalhe, quantidade: qtd3(x.qtd), valor: dinheiro(x.valor), operador: x.operador })),
+    };
+  });
+
   // busca por nome (qualquer parte, sem acento/caixa) ou código de barras; com ?id= devolve os detalhes do produto
   app.get('/api/painel/produtos', async (req) => {
     await comLoja(req);

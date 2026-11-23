@@ -491,8 +491,9 @@ export function Fluxo({ empresa }) {
 // Grade de análise do estoque: ordenar clicando no título, filtrar em cada coluna, atalhos prontos e planilha.
 function GradeEstoque() {
   const r = useDados('/api/painel/estoque-lista', {});
+  const [detalhe, setDetalhe] = useState(null);
   const colunas = [
-    { chave: 'descricao', titulo: 'Produto', tipo: 'texto' },
+    { chave: 'descricao', titulo: 'Produto', tipo: 'texto', render: (l) => <button type="button" className="text-left font-medium text-marca underline decoration-dotted" title="Ver para onde saiu" onClick={() => setDetalhe(l)}>{l.descricao}</button> },
     { chave: 'codigoBarras', titulo: 'Código', tipo: 'texto' },
     { chave: 'unidade', titulo: 'Unidade', tipo: 'opcoes', valor: (l) => (unidadeEhQuilo(l.unidade) ? 'KG' : String(l.unidade ?? '').trim().toUpperCase() || '—') },
     { chave: 'situacao', titulo: 'Situação', tipo: 'opcoes' },
@@ -519,9 +520,73 @@ function GradeEstoque() {
         {(d) => (<>
           <div className="mb-3"><button type="button" onClick={() => baixarListaBalanca(d.produtos).catch((e) => window.alert('Não consegui gerar o PDF: ' + (e?.message ?? e)))} className="rounded-lg bg-marca px-4 py-2 text-sm font-medium text-white">Baixar lista da balança (PDF)</button> <span className="ml-2 text-xs text-slate-500">nome e código de todos os produtos vendidos por kg</span></div>
           <Grade colunas={colunas} linhas={d.produtos} inicial={{ filtros: base, ordem: { chave: 'valor', dir: 'desc' } }} atalhos={atalhos} nomeArquivo="estoque" />
+          {detalhe && <ModalSaidas produto={detalhe} onFechar={() => setDetalhe(null)} />}
         </>)}
       </Estado>
     </Secao>
+  );
+}
+
+// Rastreabilidade: para onde saiu um produto (venda por forma de pagamento, uso da loja por motivo) e os últimos movimentos.
+const PERIODOS_SAIDA = [[30, '30 dias'], [90, '90 dias'], [365, '1 ano'], [0, 'Tudo']];
+function ModalSaidas({ produto, onFechar }) {
+  const [dias, setDias] = useState(90);
+  const r = useDados('/api/painel/produto-saidas', { id: produto.id, dias });
+  const un = (v) => `${v}${produto.unidade ? ' ' + String(produto.unidade).toLowerCase() : ''}`;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={onFechar}>
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">{produto.descricao}</h3>
+            <p className="text-xs text-slate-500">Código {produto.codigoBarras ?? '—'} · em estoque agora: {un(produto.quantidade)}</p>
+          </div>
+          <button type="button" className="rounded border border-slate-300 px-3 py-1 text-sm" onClick={onFechar}>Fechar</button>
+        </div>
+        <div className="mb-3 flex flex-wrap gap-2 text-sm">
+          {PERIODOS_SAIDA.map(([d, nome]) => (
+            <button key={d} type="button" onClick={() => setDias(d)} className={`rounded-full border px-3 py-1 ${dias === d ? 'border-marca bg-marca text-white' : 'border-slate-300 bg-white text-slate-700'}`}>{nome}</button>
+          ))}
+        </div>
+        <Estado r={r}>
+          {(d) => (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <Cartao titulo="Saiu no total" valor={un(d.saidaTotal)} />
+                <Cartao titulo="Em vendas" valor={un(d.vendas.quantidade)} detalhe={moeda(d.vendas.total)} />
+                <Cartao titulo="Uso da loja" valor={un(d.usoProprio.quantidade)} detalhe={`custo ${moeda(d.usoProprio.custo)}`} />
+              </div>
+              <Secao titulo="Vendas por forma de pagamento">
+                <Tabela linhas={d.vendas.porForma} vazio="Sem vendas no período." colunas={[
+                  { titulo: 'Forma', render: (l) => l.forma },
+                  { titulo: 'Vendas', direita: true, render: (l) => l.vendas },
+                  { titulo: 'Quantidade', direita: true, render: (l) => un(l.quantidade) },
+                  { titulo: 'Valor', direita: true, render: (l) => moeda(l.total) },
+                ]} />
+              </Secao>
+              <Secao titulo="Uso da loja por motivo">
+                <Tabela linhas={d.usoProprio.porMotivo} vazio="Sem saídas para uso da loja no período." colunas={[
+                  { titulo: 'Motivo', render: (l) => l.motivo },
+                  { titulo: 'Registros', direita: true, render: (l) => l.registros },
+                  { titulo: 'Quantidade', direita: true, render: (l) => un(l.quantidade) },
+                  { titulo: 'Custo', direita: true, render: (l) => moeda(l.custo) },
+                ]} />
+              </Secao>
+              <Secao titulo="Últimos movimentos">
+                <Tabela linhas={d.movimentos} vazio="Nenhum movimento." colunas={[
+                  { titulo: 'Quando', render: (l) => (l.quando ? dataHoraLoja(l.quando) : '—') },
+                  { titulo: 'Tipo', render: (l) => <Selo texto={l.tipo} tom={l.tipo === 'Venda' ? 'verde' : 'amarelo'} /> },
+                  { titulo: 'Detalhe', render: (l) => <>{l.detalhe}{l.operador ? <span className="text-xs text-slate-500"> · {l.operador}</span> : null}</> },
+                  { titulo: 'Qtd', direita: true, render: (l) => un(l.quantidade) },
+                  { titulo: 'Valor', direita: true, render: (l) => moeda(l.valor) },
+                ]} />
+              </Secao>
+              <p className="text-xs text-slate-500">Mostra só o que a loja registra: vendas e saídas para uso da loja. Entradas (compras, notas) e ajustes de estoque não aparecem aqui, então a conta não precisa fechar com a quantidade atual.</p>
+            </div>
+          )}
+        </Estado>
+      </div>
+    </div>
   );
 }
 
