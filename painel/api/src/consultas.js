@@ -404,7 +404,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
   // ranking de mais vendidos em qualquer período (dias=0: desde sempre), por quantidade ou por valor
   app.get('/api/painel/mais-vendidos', async (req) => {
     await comLoja(req);
-    const q = z.object({ dias: z.coerce.number().int().min(0).max(3650).default(0), limite: z.coerce.number().int().min(1).max(100).default(10), ordem: z.enum(['qtd', 'valor']).default('qtd') }).parse(req.query ?? {});
+    const q = z.object({ dias: z.coerce.number().int().min(0).max(3650).default(0), limite: z.coerce.number().int().min(1).max(100).default(30), ordem: z.enum(['qtd', 'valor']).default('qtd') }).parse(req.query ?? {});
     const dia = await hoje(pool, req.loja.fuso);
     const r = await pool.query(
       `SELECT p.id, p.descricao, sum(pv.quantidade) AS qtd, sum(pv.quantidade * pv.preco_vendido) AS total, min(painel.ts_seguro(v.data_hora)) AS desde

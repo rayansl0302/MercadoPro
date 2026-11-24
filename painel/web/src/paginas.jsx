@@ -591,13 +591,13 @@ function ModalSaidas({ produto, onFechar }) {
 }
 
 const ORDENS_RANK = [['qtd', 'Por quantidade'], ['valor', 'Por valor']];
-function RankingVendidos() {
+export function MaisVendidos() {
   const [dias, setDias] = useState(0);
   const [ordem, setOrdem] = useState('qtd');
-  const r = useDados('/api/painel/mais-vendidos', { dias, ordem, limite: 10 });
+  const r = useDados('/api/painel/mais-vendidos', { dias, ordem, limite: 30 });
   const chip = (ativo) => `rounded-full border px-3 py-1 ${ativo ? 'border-marca bg-marca text-white' : 'border-slate-300 bg-white text-slate-700'}`;
   return (
-    <Secao titulo="Top 10 mais vendidos">
+    <Secao titulo="Top 30 mais vendidos">
       <div className="mb-3 flex flex-wrap gap-2 text-sm">
         {PERIODOS_SAIDA.map(([d, nome]) => <button key={d} type="button" onClick={() => setDias(d)} className={chip(dias === d)}>{d === 0 ? 'Desde o início' : nome}</button>)}
         {ORDENS_RANK.map(([o, nome]) => <button key={o} type="button" onClick={() => setOrdem(o)} className={chip(ordem === o)}>{nome}</button>)}
@@ -628,7 +628,6 @@ export function Estoque() {
             <Cartao titulo="Estoque a custo" valor={moeda(d.resumo.valorACusto)} />
           </div>
           <GradeEstoque />
-          <RankingVendidos />
           <Secao titulo="Mais vendidos (30 dias)">
             <Tabela linhas={d.maisVendidos30Dias} vazio="Sem vendas." colunas={[
               { titulo: 'Produto', render: (l) => l.descricao }, { titulo: 'Qtd', direita: true, render: (l) => l.quantidade }, dinheiroCol('Total', (l) => l.total),
