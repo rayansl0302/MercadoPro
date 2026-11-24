@@ -580,3 +580,16 @@ describe('produto para a etiqueta de balança', () => {
     expect((await app.inject({ method: 'GET', url: '/api/painel/balanca/produto?codigo=1' })).statusCode).toBe(404);
   });
 });
+
+describe('ranking de mais vendidos', () => {
+  it('ordena por quantidade ou valor, em qualquer período', async () => {
+    await carregarDados();
+    const { cookie } = await sessao();
+    const qtd = await obter(cookie, '/api/painel/mais-vendidos?dias=0&limite=10&ordem=qtd');
+    const val = await obter(cookie, '/api/painel/mais-vendidos?dias=30&ordem=valor');
+    expect(Array.isArray(qtd.itens)).toBe(true);
+    expect(qtd.itens.length).toBeLessThanOrEqual(10);
+    for (let i = 1; i < qtd.itens.length; i++) expect(qtd.itens[i - 1].quantidade).toBeGreaterThanOrEqual(qtd.itens[i].quantidade);
+    for (let i = 1; i < val.itens.length; i++) expect(val.itens[i - 1].total).toBeGreaterThanOrEqual(val.itens[i].total);
+  });
+});

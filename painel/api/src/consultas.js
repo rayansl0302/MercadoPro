@@ -401,6 +401,22 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     };
   });
 
+  // ranking de mais vendidos em qualquer período (dias=0: desde sempre), por quantidade ou por valor
+  app.get('/api/painel/mais-vendidos', async (req) => {
+    await comLoja(req);
+    const q = z.object({ dias: z.coerce.number().int().min(0).max(3650).default(0), limite: z.coerce.number().int().min(1).max(100).default(10), ordem: z.enum(['qtd', 'valor']).default('qtd') }).parse(req.query ?? {});
+    const dia = await hoje(pool, req.loja.fuso);
+    const r = await pool.query(
+      `SELECT p.id, p.descricao, sum(pv.quantidade) AS qtd, sum(pv.quantidade * pv.preco_vendido) AS total, min(painel.ts_seguro(v.data_hora)) AS desde
+       FROM espelho.produtos_vendidos pv JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
+       JOIN espelho.produtos p ON p.loja_id = pv.loja_id AND p.id = pv.id_produto
+       WHERE pv.loja_id = $1 AND ($2::int = 0 OR painel.ts_seguro(v.data_hora)::date > ($3::date - $2::int))
+       GROUP BY p.id, p.descricao ORDER BY CASE WHEN $4 = 'qtd' THEN sum(pv.quantidade) ELSE sum(pv.quantidade * pv.preco_vendido) END DESC, p.descricao LIMIT $5`,
+      [req.loja.id, q.dias, dia, q.ordem, q.limite],
+    );
+    return { dias: q.dias, ordem: q.ordem, itens: r.rows.map((x) => ({ id: x.id, descricao: x.descricao, quantidade: Math.round(Number(x.qtd) * 1000) / 1000, total: dinheiro(x.total), primeiraVenda: x.desde })) };
+  });
+
   // ------------------------------------------------------------------ estoque
   app.get('/api/painel/estoque', async (req) => {
     await comLoja(req);
