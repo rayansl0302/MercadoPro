@@ -22,7 +22,7 @@ export function VisaoGeral({ empresa, ir }) {
             <Cartao titulo="Contas vencidas" valor={moeda(d.aPagar.vencidas.valor)} detalhe={`${d.aPagar.vencidas.qtd} contas`} tom={d.aPagar.vencidas.qtd ? 'ruim' : 'normal'} onClick={() => ir('pagar')} />
             <Cartao titulo="Vencem hoje" valor={moeda(d.aPagar.hoje.valor)} detalhe={`${d.aPagar.hoje.qtd} contas`} tom={d.aPagar.hoje.qtd ? 'alerta' : 'normal'} onClick={() => ir('pagar')} />
             <Cartao titulo="Próximos 7 dias" valor={moeda(d.aPagar.proximos7Dias.valor)} detalhe={`${d.aPagar.proximos7Dias.qtd} contas`} onClick={() => ir('pagar')} />
-            <Cartao titulo="Diferença de caixa (mês)" valor={moeda(d.diferencaCaixaMes)} tom={Math.abs(d.diferencaCaixaMes) > 0.004 ? 'alerta' : 'normal'} onClick={() => ir('vendas')} />
+            <Cartao titulo="Diferença de caixa (mês)" valor={moeda(d.diferencaCaixaMes)} detalhe={`${d.diferencaCaixaMesCaixas} caixas fechados no mês`} tom={Math.abs(d.diferencaCaixaMes) > 0.004 ? 'alerta' : 'normal'} onClick={() => ir('vendas')} />
           </div>
           <Secao titulo="Lucro líquido do mês · como foi calculado">
             <Tabela linhas={[
@@ -224,6 +224,7 @@ export function Caixas() {
       <Secao titulo="Abertura e fechamento de caixa">
         <Estado r={r}>
           {(d) => (
+            <>
             <Tabela linhas={d.caixas} vazio="Nenhum caixa no período." colunas={[
               { titulo: 'Caixa', render: (l) => <button type="button" className="text-left font-medium text-marca underline decoration-dotted" title="Ver o detalhe por forma de pagamento" onClick={() => setAberto(l)}>{l.terminal || `#${l.id}`}</button> },
               { titulo: 'Operador', render: (l) => l.operador ?? '—' },
@@ -237,6 +238,8 @@ export function Caixas() {
               { titulo: 'Diferença', direita: true, render: (l) => (l.status === 'ABERTO' ? '—' : <span className={Math.abs(l.diferenca) > 0.004 ? 'font-medium text-amber-700' : ''}>{moeda(l.diferenca)}</span>) },
               { titulo: 'Justificativa', render: (l) => (l.justificativa?.trim() ? <span className="block max-w-xs whitespace-normal text-xs text-slate-700">{l.justificativa}</span> : '—') },
             ]} />
+            <p className="mt-3 text-sm text-slate-700">Total do período: <b>{d.caixas.filter((c) => c.status !== 'ABERTO').length} caixas fechados</b> · diferença somada <b>{moeda(d.caixas.reduce((s, c) => s + (c.status === 'ABERTO' ? 0 : Number(c.diferenca)), 0))}</b>. Escolha "Este mês" para comparar com o card da tela inicial.</p>
+            </>
           )}
         </Estado>
       </Secao>

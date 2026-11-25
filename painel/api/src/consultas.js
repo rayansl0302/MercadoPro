@@ -107,7 +107,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       [L],
     );
     const dif = await pool.query(
-      `SELECT coalesce(sum(f.diferenca), 0) AS total FROM espelho.fechamentos_caixa f
+      `SELECT coalesce(sum(f.diferenca), 0) AS total, count(DISTINCT c.id)::int AS caixas FROM espelho.fechamentos_caixa f
        JOIN espelho.caixas c ON c.loja_id = f.loja_id AND c.id = f.id_caixa
        WHERE f.loja_id = $1 AND painel.ts_seguro(c.fechado_em)::date >= $2::date`,
       [L, inicioMes],
@@ -188,6 +188,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       },
       caixasAbertos: caixas.rows,
       diferencaCaixaMes: dinheiro(dif.rows[0].total),
+      diferencaCaixaMesCaixas: dif.rows[0].caixas,
       produtosSemEstoque: semEstoque.rows[0].n,
     };
   });
