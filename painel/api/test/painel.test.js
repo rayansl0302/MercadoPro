@@ -606,3 +606,18 @@ describe('lucro líquido do mês', () => {
     expect(r.aReceber).toBeDefined();
   });
 });
+
+describe('detalhe do caixa', () => {
+  it('mostra esperado x contado por forma e as sangrias', async () => {
+    await carregarDados();
+    const { cookie } = await sessao();
+    const lista = await obter(cookie, '/api/painel/caixas?de=2000-01-01&ate=2999-01-01');
+    if (lista.caixas.length) {
+      const r = await obter(cookie, `/api/painel/caixa-detalhe?id=${lista.caixas[0].id}`);
+      expect(Array.isArray(r.porForma)).toBe(true);
+      expect(Array.isArray(r.movimentos)).toBe(true);
+    }
+    const nao = await app.inject({ method: 'GET', url: '/api/painel/caixa-detalhe?id=999999', headers: { cookie } });
+    expect(nao.statusCode).toBe(404);
+  });
+});

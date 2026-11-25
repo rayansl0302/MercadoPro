@@ -323,6 +323,36 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
   });
 
   // ------------------------------------------------------------------ caixas
+  // detalhe de um caixa: esperado x contado em cada forma de pagamento, vendas por forma e todas as movimentações
+  app.get('/api/painel/caixa-detalhe', async (req) => {
+    await comLoja(req);
+    const q = z.object({ id: z.coerce.number().int().positive() }).parse(req.query ?? {});
+    const L = req.loja.id;
+    const c = await pool.query(
+      `SELECT c.id, c.terminal, c.status, c.aberto_em, c.fechado_em, c.troco_inicial, c.observacao_fechamento AS justificativa, o.nome AS operador
+       FROM espelho.caixas c LEFT JOIN espelho.operadores o ON o.loja_id = c.loja_id AND o.id = c.id_operador WHERE c.loja_id = $1 AND c.id = $2`, [L, q.id]);
+    if (!c.rowCount) throw new ErroHttp(404, 'Caixa não encontrado.');
+    const fech = await pool.query('SELECT forma_pagamento AS forma, valor_esperado, valor_informado, diferenca FROM espelho.fechamentos_caixa WHERE loja_id = $1 AND id_caixa = $2 ORDER BY id', [L, q.id]);
+    const vend = await pool.query(
+      `SELECT coalesce(nullif(forma_pagamento, ''), '—') AS forma, count(*)::int AS n, sum(valor_final) AS total FROM espelho.vendas2 WHERE loja_id = $1 AND id_caixa = $2 GROUP BY 1`, [L, q.id]);
+    const mov = await pool.query(
+      `SELECT m.id, m.tipo, m.valor, m.forma_pagamento AS forma, m.motivo, m.estornado, painel.ts_seguro(m.data_hora) AS quando, o.nome AS operador
+       FROM espelho.movimentacoes_caixa m LEFT JOIN espelho.operadores o ON o.loja_id = m.loja_id AND o.id = m.id_operador
+       WHERE m.loja_id = $1 AND m.id_caixa = $2 AND m.tipo IN ('SANGRIA', 'SUPRIMENTO', 'RECOLHIMENTO', 'CANCELAMENTO') ORDER BY painel.ts_seguro(m.data_hora), m.id`, [L, q.id]);
+    const porVenda = new Map(vend.rows.map((x) => [x.forma, x]));
+    const formas = [...new Set([...fech.rows.map((x) => x.forma), ...vend.rows.map((x) => x.forma)])];
+    const porForma = formas.map((f) => {
+      const fe = fech.rows.find((x) => x.forma === f);
+      const ve = porVenda.get(f);
+      return { forma: f, vendas: ve ? ve.n : 0, totalVendido: dinheiro(ve?.total), esperado: fe ? dinheiro(fe.valor_esperado) : null, contado: fe ? dinheiro(fe.valor_informado) : null, diferenca: fe ? dinheiro(fe.diferenca) : null };
+    });
+    return {
+      caixa: { ...c.rows[0], troco_inicial: dinheiro(c.rows[0].troco_inicial) },
+      porForma,
+      movimentos: mov.rows.map((x) => ({ id: x.id, tipo: x.tipo, valor: dinheiro(x.valor), forma: x.forma || 'Dinheiro', motivo: x.motivo ?? '', estornado: !!x.estornado, quando: x.quando, operador: x.operador ?? '' })),
+    };
+  });
+
   app.get('/api/painel/caixas', async (req) => {
     await comLoja(req);
     const per = await periodo(pool, req, 14);

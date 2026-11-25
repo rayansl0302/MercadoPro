@@ -170,8 +170,52 @@ export function Operadores({ empresa }) {
 }
 
 // ------------------------------------------------------------------ caixas
+function ModalCaixa({ caixa, onFechar }) {
+  const r = useDados('/api/painel/caixa-detalhe', { id: caixa.id });
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={onFechar}>
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">Caixa {caixa.terminal || `#${caixa.id}`} · {caixa.operador ?? '—'}</h3>
+            <p className="text-xs text-slate-500">{dataHoraLoja(caixa.aberto_em)} até {caixa.status === 'ABERTO' ? 'agora' : dataHoraLoja(caixa.fechado_em)}</p>
+          </div>
+          <button type="button" className="rounded border border-slate-300 px-3 py-1 text-sm" onClick={onFechar}>Fechar</button>
+        </div>
+        <Estado r={r}>
+          {(d) => (
+            <div className="space-y-4">
+              <Secao titulo="Esperado x contado em cada forma de pagamento">
+                <Tabela linhas={d.porForma} vazio="Sem dados." colunas={[
+                  { titulo: 'Forma', render: (l) => l.forma },
+                  { titulo: 'Vendas', direita: true, render: (l) => `${l.vendas} · ${moeda(l.totalVendido)}` },
+                  { titulo: 'Esperado', direita: true, render: (l) => (l.esperado == null ? '—' : moeda(l.esperado)) },
+                  { titulo: 'Contado', direita: true, render: (l) => (l.contado == null ? '—' : moeda(l.contado)) },
+                  { titulo: 'Diferença', direita: true, render: (l) => (l.diferenca == null ? '—' : <span className={Math.abs(l.diferenca) > 0.004 ? 'font-medium text-amber-700' : ''}>{moeda(l.diferenca)}</span>) },
+                ]} />
+                <p className="mt-2 text-xs text-slate-500">Troco inicial: {moeda(d.caixa.troco_inicial)} (soma no esperado em Dinheiro). Diferença = contado − esperado: positivo é sobra, negativo é falta.</p>
+              </Secao>
+              <Secao titulo="Sangrias, suprimentos e outras movimentações">
+                <Tabela linhas={d.movimentos} vazio="Nenhuma movimentação." colunas={[
+                  { titulo: 'Quando', render: (l) => (l.quando ? dataHoraLoja(l.quando) : '—') },
+                  { titulo: 'Tipo', render: (l) => <Selo texto={l.tipo === 'SANGRIA' ? 'Sangria' : l.tipo === 'SUPRIMENTO' ? 'Suprimento' : l.tipo} tom={l.tipo === 'SANGRIA' ? 'amarelo' : 'verde'} /> },
+                  { titulo: 'Forma', render: (l) => l.forma },
+                  { titulo: 'Motivo', render: (l) => <>{l.motivo || '—'}{l.estornado ? <span className="text-xs text-red-700"> · estornada</span> : null}</> },
+                  { titulo: 'Operador', render: (l) => l.operador || '—' },
+                  dinheiroCol('Valor', (l) => l.valor),
+                ]} />
+              </Secao>
+            </div>
+          )}
+        </Estado>
+      </div>
+    </div>
+  );
+}
+
 export function Caixas() {
   const [per, setPer] = useState({ ...periodoInicial() });
+  const [aberto, setAberto] = useState(null);
   const r = useDados('/api/painel/caixas', per);
   const duracao = (min) => (min == null ? '—' : `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`);
   return (
@@ -181,7 +225,7 @@ export function Caixas() {
         <Estado r={r}>
           {(d) => (
             <Tabela linhas={d.caixas} vazio="Nenhum caixa no período." colunas={[
-              { titulo: 'Caixa', render: (l) => l.terminal || `#${l.id}` },
+              { titulo: 'Caixa', render: (l) => <button type="button" className="text-left font-medium text-marca underline decoration-dotted" title="Ver o detalhe por forma de pagamento" onClick={() => setAberto(l)}>{l.terminal || `#${l.id}`}</button> },
               { titulo: 'Operador', render: (l) => l.operador ?? '—' },
               { titulo: 'Abriu', render: (l) => dataHoraLoja(l.aberto_em) },
               { titulo: 'Fechou', render: (l) => (l.status === 'ABERTO' ? <Selo texto="aberto" tom="verde" /> : dataHoraLoja(l.fechado_em)) },
@@ -196,6 +240,7 @@ export function Caixas() {
           )}
         </Estado>
       </Secao>
+      {aberto && <ModalCaixa caixa={aberto} onFechar={() => setAberto(null)} />}
     </div>
   );
 }
