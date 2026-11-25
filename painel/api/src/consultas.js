@@ -116,10 +116,13 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
 
     // lucro líquido do mês: o que entrou menos o que custou (mercadoria vendida, taxa da maquininha, uso da loja,
     // despesas fixas) e a diferença de caixa. O custo da mercadoria usa o custo cadastrado hoje no produto.
-    const mt = (await pool.query('SELECT margem_percentual, despesa_diaria FROM painel.metas WHERE loja_id = $1', [L])).rows[0];
+    const mt = (await pool.query('SELECT margem_percentual, despesa_diaria, diaria_domingo FROM painel.metas WHERE loja_id = $1', [L])).rows[0];
     const margemEst = mt ? Number(mt.margem_percentual) : 30;
     const diaria = mt ? Number(mt.despesa_diaria) : 23.6;
     const diasCorridos = Number(dia.slice(8, 10));
+    const diariaDom = mt ? Number(mt.diaria_domingo) : 100;
+    let domingos = 0;
+    for (let d = 1; d <= diasCorridos; d++) if (new Date(Date.UTC(Number(dia.slice(0, 4)), Number(dia.slice(5, 7)) - 1, d)).getUTCDay() === 0) domingos++;
     const custos = await pool.query(
       `SELECT
          (SELECT coalesce(sum(pv.quantidade * coalesce(nullif(p.preco_fornecedor, 0), pv.preco_vendido * (1 - $5::numeric / 100))), 0) FROM espelho.produtos_vendidos pv
@@ -151,11 +154,14 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       despesaDiaria: dinheiro(diaria),
       despesaDiariaDias: diasCorridos,
       despesaDiariaTotal: dinheiro(diaria * diasCorridos),
+      diariaDomingo: dinheiro(diariaDom),
+      domingos,
+      diariaDomingoTotal: dinheiro(diariaDom * domingos),
       margemEstimada: margemEst,
       diferencaCaixa: dinheiro(dif.rows[0].total),
     };
     lucro.lucroBruto = dinheiro(lucro.receita - lucro.custoMercadoria);
-    lucro.lucroLiquido = dinheiro(lucro.receita - lucro.custoMercadoria - lucro.taxasMaquininha - lucro.usoDaLoja - lucro.despesasFixas - lucro.despesaDiariaTotal + lucro.diferencaCaixa);
+    lucro.lucroLiquido = dinheiro(lucro.receita - lucro.custoMercadoria - lucro.taxasMaquininha - lucro.usoDaLoja - lucro.despesasFixas - lucro.despesaDiariaTotal - lucro.diariaDomingoTotal + lucro.diferencaCaixa);
 
     const p = pagar.rows[0];
     return {
