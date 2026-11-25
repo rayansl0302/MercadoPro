@@ -593,3 +593,16 @@ describe('ranking de mais vendidos', () => {
     for (let i = 1; i < val.itens.length; i++) expect(val.itens[i - 1].total).toBeGreaterThanOrEqual(val.itens[i].total);
   });
 });
+
+describe('lucro líquido do mês', () => {
+  it('fecha a conta: vendas - custos - taxas - uso - fixas + diferença de caixa', async () => {
+    await carregarDados();
+    const { cookie } = await sessao();
+    const r = await obter(cookie, '/api/painel/resumo');
+    const l = r.lucroMes;
+    expect(l.receita).toBe(r.vendasMes.total);
+    const esperado = Math.round((l.receita - l.custoMercadoria - l.taxasMaquininha - l.usoDaLoja - l.despesasFixas + l.diferencaCaixa) * 100) / 100;
+    expect(l.lucroLiquido).toBe(esperado);
+    expect(r.aReceber).toBeDefined();
+  });
+});

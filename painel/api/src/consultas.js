@@ -69,6 +69,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       return { qtd: x.qtd, total: dinheiro(x.total), aPrazo: dinheiro(x.a_prazo), ticketMedio: x.qtd ? dinheiro(x.total / x.qtd) : 0 };
     };
     const inicioMes = `${dia.slice(0, 8)}01`;
+    const vendasMes = await vendas(inicioMes);
 
     const recebidoHoje = await pool.query(
       `SELECT
@@ -113,11 +114,47 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     );
     const semEstoque = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND coalesce(quantidade, 0) <= 0 AND NOT painel.sem_estoque(codigo_barras, (coalesce(sem_controle_estoque, false) OR coalesce(uso_loja, false)), $2, $3)', [L, config.lancheMin, config.lancheMax]);
 
+    // lucro líquido do mês: o que entrou menos o que custou (mercadoria vendida, taxa da maquininha, uso da loja,
+    // despesas fixas) e a diferença de caixa. O custo da mercadoria usa o custo cadastrado hoje no produto.
+    const custos = await pool.query(
+      `SELECT
+         (SELECT coalesce(sum(pv.quantidade * coalesce(p.preco_fornecedor, 0)), 0) FROM espelho.produtos_vendidos pv
+            JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
+            JOIN espelho.produtos p ON p.loja_id = pv.loja_id AND p.id = pv.id_produto
+            WHERE pv.loja_id = $1 ${emp.replace(/id_empresa/g, 'v.id_empresa')} AND painel.ts_seguro(v.data_hora)::date >= $3::date AND painel.ts_seguro(v.data_hora)::date <= $4::date) AS cmv,
+         (SELECT count(DISTINCT pv.id_produto)::int FROM espelho.produtos_vendidos pv
+            JOIN espelho.vendas2 v ON v.loja_id = pv.loja_id AND v.id = pv.id_venda
+            JOIN espelho.produtos p ON p.loja_id = pv.loja_id AND p.id = pv.id_produto
+            WHERE pv.loja_id = $1 ${emp.replace(/id_empresa/g, 'v.id_empresa')} AND painel.ts_seguro(v.data_hora)::date >= $3::date AND painel.ts_seguro(v.data_hora)::date <= $4::date
+              AND coalesce(p.preco_fornecedor, 0) <= 0) AS sem_custo,
+         (SELECT coalesce(sum(valor_final * taxa_maquina / 100.0), 0) FROM espelho.vendas2
+            WHERE loja_id = $1 ${emp} AND forma_pagamento IN ('Crédito', 'Débito') AND taxa_maquina IS NOT NULL
+              AND painel.ts_seguro(data_hora)::date >= $3::date AND painel.ts_seguro(data_hora)::date <= $4::date) AS taxas,
+         (SELECT coalesce(sum(quantidade * coalesce(custo_unitario, 0)), 0) FROM espelho.saidas_uso_proprio
+            WHERE loja_id = $1 AND painel.ts_seguro(data_hora)::date >= $3::date AND painel.ts_seguro(data_hora)::date <= $4::date) AS uso,
+         (SELECT coalesce(sum(valor), 0) FROM painel.despesas_fixas WHERE loja_id = $1) AS fixas`,
+      [L, empresa ?? null, inicioMes, dia],
+    );
+    const cu = custos.rows[0];
+    const receitaMes = vendasMes.total;
+    const lucro = {
+      receita: receitaMes,
+      custoMercadoria: dinheiro(cu.cmv),
+      produtosSemCusto: cu.sem_custo,
+      taxasMaquininha: dinheiro(cu.taxas),
+      usoDaLoja: dinheiro(cu.uso),
+      despesasFixas: dinheiro(cu.fixas),
+      diferencaCaixa: dinheiro(dif.rows[0].total),
+    };
+    lucro.lucroBruto = dinheiro(lucro.receita - lucro.custoMercadoria);
+    lucro.lucroLiquido = dinheiro(lucro.receita - lucro.custoMercadoria - lucro.taxasMaquininha - lucro.usoDaLoja - lucro.despesasFixas + lucro.diferencaCaixa);
+
     const p = pagar.rows[0];
     return {
       hoje: dia,
       vendasHoje: await vendas(dia),
-      vendasMes: await vendas(inicioMes),
+      vendasMes,
+      lucroMes: lucro,
       recebidoHoje: dinheiro(recebidoHoje.rows[0].total),
       aReceber: { total: dinheiro(receber.rows[0].total), clientes: receber.rows[0].clientes },
       aPagar: {

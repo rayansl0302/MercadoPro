@@ -18,12 +18,27 @@ export function VisaoGeral({ empresa, ir }) {
             <Cartao titulo="Vendas hoje" valor={moeda(d.vendasHoje.total)} detalhe={`${d.vendasHoje.qtd} vendas`} onClick={() => ir('vendas')} />
             <Cartao titulo="Vendas no mês" valor={moeda(d.vendasMes.total)} detalhe={`${d.vendasMes.qtd} vendas`} onClick={() => ir('vendas')} />
             <Cartao titulo="Recebido hoje" valor={moeda(d.recebidoHoje)} detalhe="à vista + fiado recebido" tom="bom" />
-            <Cartao titulo="A receber (fiado)" valor={moeda(d.aReceber.total)} detalhe={`${d.aReceber.clientes} clientes`} tom={d.aReceber.total > 0 ? 'alerta' : 'normal'} onClick={() => ir('receber')} />
+            <Cartao titulo="Lucro líquido (mês)" valor={moeda(d.lucroMes.lucroLiquido)} detalhe="depois de custos e despesas" tom={d.lucroMes.lucroLiquido < 0 ? 'ruim' : 'bom'} />
             <Cartao titulo="Contas vencidas" valor={moeda(d.aPagar.vencidas.valor)} detalhe={`${d.aPagar.vencidas.qtd} contas`} tom={d.aPagar.vencidas.qtd ? 'ruim' : 'normal'} onClick={() => ir('pagar')} />
             <Cartao titulo="Vencem hoje" valor={moeda(d.aPagar.hoje.valor)} detalhe={`${d.aPagar.hoje.qtd} contas`} tom={d.aPagar.hoje.qtd ? 'alerta' : 'normal'} onClick={() => ir('pagar')} />
             <Cartao titulo="Próximos 7 dias" valor={moeda(d.aPagar.proximos7Dias.valor)} detalhe={`${d.aPagar.proximos7Dias.qtd} contas`} onClick={() => ir('pagar')} />
             <Cartao titulo="Diferença de caixa (mês)" valor={moeda(d.diferencaCaixaMes)} tom={Math.abs(d.diferencaCaixaMes) > 0.004 ? 'alerta' : 'normal'} onClick={() => ir('vendas')} />
           </div>
+          <Secao titulo="Lucro líquido do mês · como foi calculado">
+            <Tabela linhas={[
+              { n: 'Vendas do mês', v: d.lucroMes.receita },
+              { n: '− Custo das mercadorias vendidas', v: -d.lucroMes.custoMercadoria },
+              { n: '− Taxas da maquininha (crédito/débito)', v: -d.lucroMes.taxasMaquininha },
+              { n: '− Saídas para uso da loja (a custo)', v: -d.lucroMes.usoDaLoja },
+              { n: '− Despesas fixas do mês (aba Metas)', v: -d.lucroMes.despesasFixas },
+              { n: '± Diferença de caixa', v: d.lucroMes.diferencaCaixa },
+              { n: '= Lucro líquido', v: d.lucroMes.lucroLiquido, forte: true },
+            ]} colunas={[
+              { titulo: 'Item', render: (l) => (l.forte ? <b>{l.n}</b> : l.n) },
+              { titulo: 'Valor', direita: true, render: (l) => (l.forte ? <b>{moeda(l.v)}</b> : moeda(l.v)) },
+            ]} />
+            <p className="mt-2 text-xs text-slate-500">O custo usa o preço de custo cadastrado hoje em cada produto{d.lucroMes.produtosSemCusto > 0 ? <> — <b>{d.lucroMes.produtosSemCusto} produto(s) vendido(s) estão sem custo cadastrado</b> e entram com custo zero (o lucro real é menor)</> : null}. As despesas fixas são as cadastradas em Metas, pelo mês inteiro. Contas a pagar de fornecedor não entram para não contar a mercadoria duas vezes.</p>
+          </Secao>
           <Secao titulo="Caixas abertos agora">
             <Tabela vazio="Nenhum caixa aberto." linhas={d.caixasAbertos} colunas={[
               { titulo: 'Caixa', render: (l) => l.terminal || `#${l.id}` },
