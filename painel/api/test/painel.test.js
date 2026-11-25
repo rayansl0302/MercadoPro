@@ -601,7 +601,7 @@ describe('lucro líquido do mês', () => {
     const r = await obter(cookie, '/api/painel/resumo');
     const l = r.lucroMes;
     expect(l.receita).toBe(r.vendasMes.total);
-    const esperado = Math.round((l.receita - l.custoMercadoria - l.taxasMaquininha - l.usoDaLoja - l.despesasFixas - l.despesaDiariaTotal - l.diariaDomingoTotal + l.diferencaCaixa) * 100) / 100;
+    const esperado = Math.round((l.receita - l.custoMercadoria - l.taxasMaquininha - l.usoDaLoja - l.despesasFixas - l.contasPagas - l.sangrias - l.despesaDiariaTotal - l.diariaDomingoTotal + l.diferencaCaixa) * 100) / 100;
     expect(l.lucroLiquido).toBe(esperado);
     expect(r.aReceber).toBeDefined();
   });

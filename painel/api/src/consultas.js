@@ -139,7 +139,13 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
               AND painel.ts_seguro(data_hora)::date >= $3::date AND painel.ts_seguro(data_hora)::date <= $4::date) AS taxas,
          (SELECT coalesce(sum(quantidade * coalesce(nullif(custo_unitario, 0), preco_venda * (1 - $5::numeric / 100), 0)), 0) FROM espelho.saidas_uso_proprio
             WHERE loja_id = $1 AND painel.ts_seguro(data_hora)::date >= $3::date AND painel.ts_seguro(data_hora)::date <= $4::date) AS uso,
-         (SELECT coalesce(sum(valor), 0) FROM painel.despesas_fixas WHERE loja_id = $1) AS fixas`,
+         (SELECT coalesce(sum(valor), 0) FROM painel.despesas_fixas WHERE loja_id = $1) AS fixas,
+         (SELECT coalesce(sum(coalesce(valor_pago, valor)) FILTER (WHERE coalesce(categoria, '') NOT ILIKE 'Fornecedor%'), 0) FROM espelho.contas_pagar
+            WHERE loja_id = $1 ${emp} AND status = 'PAGA' AND painel.ts_seguro(pago_em)::date >= $3::date AND painel.ts_seguro(pago_em)::date <= $4::date) AS contas_pagas,
+         (SELECT coalesce(sum(coalesce(valor_pago, valor)) FILTER (WHERE coalesce(categoria, '') ILIKE 'Fornecedor%'), 0) FROM espelho.contas_pagar
+            WHERE loja_id = $1 ${emp} AND status = 'PAGA' AND painel.ts_seguro(pago_em)::date >= $3::date AND painel.ts_seguro(pago_em)::date <= $4::date) AS pagas_fornecedor,
+         (SELECT coalesce(sum(valor), 0) FROM espelho.movimentacoes_caixa
+            WHERE loja_id = $1 AND tipo = 'SANGRIA' AND NOT coalesce(estornado, false) AND painel.ts_seguro(data_hora)::date >= $3::date AND painel.ts_seguro(data_hora)::date <= $4::date) AS sangrias`,
       [L, empresa ?? null, inicioMes, dia, margemEst],
     );
     const cu = custos.rows[0];
@@ -151,6 +157,9 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       taxasMaquininha: dinheiro(cu.taxas),
       usoDaLoja: dinheiro(cu.uso),
       despesasFixas: dinheiro(cu.fixas),
+      contasPagas: dinheiro(cu.contas_pagas),
+      sangrias: dinheiro(cu.sangrias),
+      pagasFornecedor: dinheiro(cu.pagas_fornecedor),
       despesaDiaria: dinheiro(diaria),
       despesaDiariaDias: diasCorridos,
       despesaDiariaTotal: dinheiro(diaria * diasCorridos),
@@ -161,7 +170,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
       diferencaCaixa: dinheiro(dif.rows[0].total),
     };
     lucro.lucroBruto = dinheiro(lucro.receita - lucro.custoMercadoria);
-    lucro.lucroLiquido = dinheiro(lucro.receita - lucro.custoMercadoria - lucro.taxasMaquininha - lucro.usoDaLoja - lucro.despesasFixas - lucro.despesaDiariaTotal - lucro.diariaDomingoTotal + lucro.diferencaCaixa);
+    lucro.lucroLiquido = dinheiro(lucro.receita - lucro.custoMercadoria - lucro.taxasMaquininha - lucro.usoDaLoja - lucro.despesasFixas - lucro.contasPagas - lucro.sangrias - lucro.despesaDiariaTotal - lucro.diariaDomingoTotal + lucro.diferencaCaixa);
 
     const p = pagar.rows[0];
     return {

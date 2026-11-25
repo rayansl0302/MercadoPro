@@ -31,6 +31,8 @@ export function VisaoGeral({ empresa, ir }) {
               { n: '− Taxas da maquininha (crédito/débito)', v: -d.lucroMes.taxasMaquininha },
               { n: '− Saídas para uso da loja (a custo)', v: -d.lucroMes.usoDaLoja },
               { n: '− Despesas fixas do mês (aba Metas)', v: -d.lucroMes.despesasFixas },
+              { n: '− Contas pagas no mês (aluguel, energia, salários... sem fornecedor)', v: -d.lucroMes.contasPagas },
+              { n: '− Sangrias do mês (retiradas do caixa)', v: -d.lucroMes.sangrias },
               { n: `− Transporte público (${moeda(d.lucroMes.despesaDiaria)} por dia × ${d.lucroMes.despesaDiariaDias} dias)`, v: -d.lucroMes.despesaDiariaTotal },
               { n: `− Diária de domingo (${moeda(d.lucroMes.diariaDomingo)} × ${d.lucroMes.domingos} domingos)`, v: -d.lucroMes.diariaDomingoTotal },
               { n: '± Diferença de caixa', v: d.lucroMes.diferencaCaixa },
@@ -39,7 +41,7 @@ export function VisaoGeral({ empresa, ir }) {
               { titulo: 'Item', render: (l) => (l.forte ? <b>{l.n}</b> : l.n) },
               { titulo: 'Valor', direita: true, render: (l) => (l.forte ? <b>{moeda(l.v)}</b> : moeda(l.v)) },
             ]} />
-            <p className="mt-2 text-xs text-slate-500">O custo usa o preço de custo cadastrado hoje em cada produto{d.lucroMes.produtosSemCusto > 0 ? <>; <b>{d.lucroMes.produtosSemCusto} produto(s) vendido(s) estão sem custo</b> e foram estimados pela margem de {d.lucroMes.margemEstimada}% (aba Metas)</> : null}. O uso da loja também é estimado assim quando não tem custo. O transporte é cobrado todos os dias; a diária só aos domingos. Os dois valores se mudam na aba Metas. As despesas fixas são as cadastradas em Metas, pelo mês inteiro. Contas a pagar de fornecedor não entram para não contar a mercadoria duas vezes.</p>
+            <p className="mt-2 text-xs text-slate-500">O custo usa o preço de custo cadastrado hoje em cada produto{d.lucroMes.produtosSemCusto > 0 ? <>; <b>{d.lucroMes.produtosSemCusto} produto(s) vendido(s) estão sem custo</b> e foram estimados pela margem de {d.lucroMes.margemEstimada}% (aba Metas)</> : null}. O uso da loja também é estimado assim quando não tem custo. O transporte é cobrado todos os dias; a diária só aos domingos. Os dois valores se mudam na aba Metas. As despesas fixas são as cadastradas em Metas, pelo mês inteiro. As contas pagas do mês entram, exceto as da categoria "Fornecedor / mercadoria"{d.lucroMes.pagasFornecedor > 0 ? <> ({moeda(d.lucroMes.pagasFornecedor)} pagos no mês)</> : null}, porque a mercadoria já entra pelo custo das vendidas. Todas as sangrias do mês também são descontadas; se uma sangria foi para pagar uma conta que também está nas contas pagas, ela conta duas vezes. Se uma despesa estiver nas despesas fixas e também nas contas pagas, tire de uma delas para não contar duas vezes.</p>
           </Secao>
           <Secao titulo="Caixas abertos agora">
             <Tabela vazio="Nenhum caixa aberto." linhas={d.caixasAbertos} colunas={[
