@@ -27,6 +27,7 @@ private:
     QLocale portugues;
     Caixa_service caixaServ;
     class QComboBox *cbForma = nullptr;
+    class QCheckBox *cbCofre = nullptr;
 };
 
 #endif // MOVIMENTACAOCAIXA_H

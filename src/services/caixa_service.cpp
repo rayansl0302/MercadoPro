@@ -435,7 +435,10 @@ ResumoCaixaDTO Caixa_service::resumo(qlonglong idCaixa)
             if (v.formaPagamento == forma)
                 esperado += v.total;
         esperado += r.recebimentosPorForma.value(forma, 0.0);
-        esperado += r.suprimentosPorForma.value(forma, 0.0) - r.sangriasPorForma.value(forma, 0.0);
+        // só o dinheiro físico entra e sai da gaveta: sangria/suprimento em Pix ou cartão ficam apenas registrados
+        // (descontá-los do esperado gerava uma "sobra" falsa igual ao valor pago no Pix)
+        if (forma == "Dinheiro")
+            esperado += r.suprimentosPorForma.value(forma, 0.0) - r.sangriasPorForma.value(forma, 0.0);
         if (forma == "Dinheiro")
             esperado += r.caixa.trocoInicial;
         r.esperadoPorForma[forma] = arredondar2(esperado);

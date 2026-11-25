@@ -64,7 +64,7 @@ FechamentoCaixa::FechamentoCaixa(QWidget *parent, qlonglong idCaixaAlvo, bool ob
                  " = " + r(resumoAtual.esperadoPorForma.value("Dinheiro", 0.0)) + ".";
         for (auto it = resumoAtual.sangriasPorForma.constBegin(); it != resumoAtual.sangriasPorForma.constEnd(); ++it)
             if (it.key() != "Dinheiro" && it.value() > 0.004)
-                aviso += "\nSangria em " + it.key() + ": − " + r(it.value()) + " (já descontada do esperado em " + it.key() + ").";
+                aviso += "\nSangria em " + it.key() + ": − " + r(it.value()) + " (só registrada: não altera o esperado em " + it.key() + ").";
     }
     ui->Lbl_Tolerancia->setText(aviso);
     ui->Lbl_Tolerancia->setWordWrap(true);

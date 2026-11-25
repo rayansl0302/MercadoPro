@@ -322,12 +322,12 @@ void TestCaixaService::sangria_desconta_da_forma_escolhida()
 
     ResumoCaixaDTO r = cs.resumo(id);
     QCOMPARE(r.esperadoPorForma.value("Dinheiro"), 80.0);                    // 100 - 20
-    QCOMPARE(r.esperadoPorForma.value("Pix"), 50.0);                         // 80 - 30
+    QCOMPARE(r.esperadoPorForma.value("Pix"), 80.0);                         // sangria em Pix só registra: não altera o esperado
 
     const auto lista = cs.sangriasESuprimentosDoCaixa(id);
     QVERIFY(cs.editarSangriaSuprimento(lista.last().id, 30, "retirada do pix", "era dinheiro", "Dinheiro").ok);
     r = cs.resumo(id);
-    QCOMPARE(r.esperadoPorForma.value("Dinheiro"), 50.0);                    // 100 - 20 - 30
+    QCOMPARE(r.esperadoPorForma.value("Dinheiro"), 50.0);                    // editada para dinheiro: passa a descontar
     QCOMPARE(r.esperadoPorForma.value("Pix"), 80.0);
 }
 
