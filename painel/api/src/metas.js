@@ -51,7 +51,7 @@ export async function lerMetas(pool, loja) {
     totalFixo,
     margemPercentual: margem,
     diasFuncionamento: dias,
-    despesaDiaria: m ? dinheiro(m.despesa_diaria) : 100,
+    despesaDiaria: m ? dinheiro(m.despesa_diaria) : 23.6,
     ...alvo,
     mes: {
       vendido,
@@ -83,7 +83,7 @@ export async function removerDespesa(pool, loja, id) {
 export async function salvarConfig(pool, loja, corpo) {
   const c = config.parse(corpo);
   await pool.query(
-    `INSERT INTO painel.metas (loja_id, margem_percentual, dias_funcionamento, despesa_diaria) VALUES ($1, $2, $3, coalesce($4, 100))
+    `INSERT INTO painel.metas (loja_id, margem_percentual, dias_funcionamento, despesa_diaria) VALUES ($1, $2, $3, coalesce($4, 23.60))
      ON CONFLICT (loja_id) DO UPDATE SET margem_percentual = EXCLUDED.margem_percentual, dias_funcionamento = EXCLUDED.dias_funcionamento,
        despesa_diaria = coalesce($4, painel.metas.despesa_diaria)`,
     [loja.id, c.margemPercentual, c.diasFuncionamento, c.despesaDiaria ?? null],

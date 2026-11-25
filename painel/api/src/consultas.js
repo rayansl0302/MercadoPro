@@ -118,7 +118,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     // despesas fixas) e a diferença de caixa. O custo da mercadoria usa o custo cadastrado hoje no produto.
     const mt = (await pool.query('SELECT margem_percentual, despesa_diaria FROM painel.metas WHERE loja_id = $1', [L])).rows[0];
     const margemEst = mt ? Number(mt.margem_percentual) : 30;
-    const diaria = mt ? Number(mt.despesa_diaria) : 100;
+    const diaria = mt ? Number(mt.despesa_diaria) : 23.6;
     const diasCorridos = Number(dia.slice(8, 10));
     const custos = await pool.query(
       `SELECT

@@ -31,7 +31,7 @@ export function VisaoGeral({ empresa, ir }) {
               { n: '− Taxas da maquininha (crédito/débito)', v: -d.lucroMes.taxasMaquininha },
               { n: '− Saídas para uso da loja (a custo)', v: -d.lucroMes.usoDaLoja },
               { n: '− Despesas fixas do mês (aba Metas)', v: -d.lucroMes.despesasFixas },
-              { n: `− Transporte (${moeda(d.lucroMes.despesaDiaria)} por dia × ${d.lucroMes.despesaDiariaDias} dias)`, v: -d.lucroMes.despesaDiariaTotal },
+              { n: `− Transporte público (${moeda(d.lucroMes.despesaDiaria)} por dia × ${d.lucroMes.despesaDiariaDias} dias)`, v: -d.lucroMes.despesaDiariaTotal },
               { n: '± Diferença de caixa', v: d.lucroMes.diferencaCaixa },
               { n: '= Lucro líquido', v: d.lucroMes.lucroLiquido, forte: true },
             ]} colunas={[
