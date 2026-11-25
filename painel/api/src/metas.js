@@ -19,6 +19,7 @@ const despesa = z.object({
 const config = z.object({
   margemPercentual: z.number().gt(0, 'A margem precisa ser maior que zero').max(100),
   diasFuncionamento: z.number().int().min(1).max(31),
+  despesaDiaria: z.number().min(0).max(99999999).optional(),
 });
 
 async function dia(pool, fuso) {
@@ -28,7 +29,7 @@ async function dia(pool, fuso) {
 export async function lerMetas(pool, loja) {
   const L = loja.id;
   const d = await pool.query('SELECT id, nome, valor FROM painel.despesas_fixas WHERE loja_id = $1 ORDER BY valor DESC, id', [L]);
-  const m = (await pool.query('SELECT margem_percentual, dias_funcionamento FROM painel.metas WHERE loja_id = $1', [L])).rows[0];
+  const m = (await pool.query('SELECT margem_percentual, dias_funcionamento, despesa_diaria FROM painel.metas WHERE loja_id = $1', [L])).rows[0];
   const margem = m ? Number(m.margem_percentual) : 30;
   const dias = m ? m.dias_funcionamento : 30;
   const totalFixo = dinheiro(d.rows.reduce((s, x) => s + Number(x.valor), 0));
@@ -50,6 +51,7 @@ export async function lerMetas(pool, loja) {
     totalFixo,
     margemPercentual: margem,
     diasFuncionamento: dias,
+    despesaDiaria: m ? dinheiro(m.despesa_diaria) : 100,
     ...alvo,
     mes: {
       vendido,
@@ -81,9 +83,10 @@ export async function removerDespesa(pool, loja, id) {
 export async function salvarConfig(pool, loja, corpo) {
   const c = config.parse(corpo);
   await pool.query(
-    `INSERT INTO painel.metas (loja_id, margem_percentual, dias_funcionamento) VALUES ($1, $2, $3)
-     ON CONFLICT (loja_id) DO UPDATE SET margem_percentual = EXCLUDED.margem_percentual, dias_funcionamento = EXCLUDED.dias_funcionamento`,
-    [loja.id, c.margemPercentual, c.diasFuncionamento],
+    `INSERT INTO painel.metas (loja_id, margem_percentual, dias_funcionamento, despesa_diaria) VALUES ($1, $2, $3, coalesce($4, 100))
+     ON CONFLICT (loja_id) DO UPDATE SET margem_percentual = EXCLUDED.margem_percentual, dias_funcionamento = EXCLUDED.dias_funcionamento,
+       despesa_diaria = coalesce($4, painel.metas.despesa_diaria)`,
+    [loja.id, c.margemPercentual, c.diasFuncionamento, c.despesaDiaria ?? null],
   );
   return lerMetas(pool, loja);
 }

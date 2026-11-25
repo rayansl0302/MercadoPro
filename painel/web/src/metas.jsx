@@ -17,6 +17,7 @@ function MetasTela({ d, podeAgir, recarregar }) {
   const [editando, setEditando] = useState(null);
   const [margem, setMargem] = useState(virgula(d.margemPercentual));
   const [dias, setDias] = useState(String(d.diasFuncionamento));
+  const [diaria, setDiaria] = useState(virgula(d.despesaDiaria));
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState(false);
 
@@ -29,7 +30,7 @@ function MetasTela({ d, podeAgir, recarregar }) {
     setNome(''); setValor(''); setEditando(null);
   });
   const remover = (id) => chamar(() => api.post(`/api/painel/metas/despesas/${id}/remover`));
-  const salvarConfig = () => chamar(() => api.post('/api/painel/metas/config', { margemPercentual: lerDinheiro(margem), diasFuncionamento: Number(dias) }));
+  const salvarConfig = () => chamar(() => api.post('/api/painel/metas/config', { margemPercentual: lerDinheiro(margem), diasFuncionamento: Number(dias), despesaDiaria: lerDinheiro(diaria) }));
 
   const m = d.mes;
   const pct = Math.min(100, m.percentualDaMeta);
@@ -85,6 +86,7 @@ function MetasTela({ d, podeAgir, recarregar }) {
           <div className="flex flex-wrap items-end gap-2">
             <label className="w-40 text-xs text-slate-600">Margem de lucro (%)<input className={`${entrada} mt-0.5`} inputMode="decimal" value={margem} onChange={(e) => setMargem(e.target.value)} /></label>
             <label className="w-40 text-xs text-slate-600">Dias que a loja abre no mês<input className={`${entrada} mt-0.5`} inputMode="numeric" value={dias} onChange={(e) => setDias(e.target.value)} /></label>
+            <label className="w-48 text-xs text-slate-600">Transporte por dia (R$, todo dia)<input className={`${entrada} mt-0.5`} inputMode="decimal" value={diaria} onChange={(e) => setDiaria(e.target.value)} /></label>
             <button disabled={ocupado} onClick={salvarConfig} className="rounded bg-marca px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Salvar</button>
           </div>
         ) : <p className="text-sm text-slate-600">Margem {virgula(d.margemPercentual)}% · {d.diasFuncionamento} dias.</p>}
