@@ -621,3 +621,29 @@ describe('detalhe do caixa', () => {
     expect(nao.statusCode).toBe(404);
   });
 });
+
+describe('diferença de caixa sem sangria em Pix/cartão', () => {
+  it('não conta no esperado a sangria feita em Pix (nem no card, nem na lista, nem no detalhe)', async () => {
+    const { hoje } = await carregarDados();
+    const L = loja.id;
+    const { cookie } = await sessao();
+    const antes = await obter(cookie, '/api/painel/resumo');
+    await pool.query(`INSERT INTO espelho.caixas (loja_id, id, terminal, status, aberto_em, fechado_em, troco_inicial) VALUES ($1, 900, 'T9', 'FECHADO', $2, $3, '0.00')`, [L, `${hoje} 06:00:00`, `${hoje} 21:00:00`]);
+    await pool.query(
+      `INSERT INTO espelho.fechamentos_caixa (loja_id, id, id_caixa, forma_pagamento, valor_esperado, valor_informado, diferenca) VALUES
+        ($1, 901, 900, 'Dinheiro', '100.00', '100.00', '0.00'), ($1, 902, 900, 'Pix', '-58.78', '135.77', '194.55')`, [L]);
+    await pool.query(
+      `INSERT INTO espelho.movimentacoes_caixa (loja_id, id, id_caixa, tipo, valor, forma_pagamento, motivo, data_hora) VALUES
+        ($1, 901, 900, 'SANGRIA', '140.27', 'Pix', 'farinha', $2)`, [L, `${hoje} 11:00:00`]);
+    const d = await obter(cookie, '/api/painel/resumo');
+    expect(Math.round((d.diferencaCaixaMes - antes.diferencaCaixaMes) * 100) / 100).toBe(54.28);
+    const det = await obter(cookie, '/api/painel/caixa-detalhe?id=900');
+    const pix = det.porForma.find((f) => f.forma === 'Pix');
+    expect(pix.diferenca).toBe(54.28);
+    expect(pix.esperado).toBe(81.49);
+    const lista = await obter(cookie, '/api/painel/caixas?de=2000-01-01&ate=2999-01-01');
+    const cx = lista.caixas.find((c) => String(c.id) === '900');
+    expect(cx.diferenca).toBe(54.28);
+    expect(cx.diferencaOriginal).toBe(194.55);
+  });
+});

@@ -193,7 +193,7 @@ function ModalCaixa({ caixa, onFechar }) {
                   { titulo: 'Contado', direita: true, render: (l) => (l.contado == null ? '—' : moeda(l.contado)) },
                   { titulo: 'Diferença', direita: true, render: (l) => (l.diferenca == null ? '—' : <span className={Math.abs(l.diferenca) > 0.004 ? 'font-medium text-amber-700' : ''}>{moeda(l.diferenca)}</span>) },
                 ]} />
-                <p className="mt-2 text-xs text-slate-500">Troco inicial: {moeda(d.caixa.troco_inicial)} (soma no esperado em Dinheiro). Diferença = contado − esperado: positivo é sobra, negativo é falta.</p>
+                <p className="mt-2 text-xs text-slate-500">Troco inicial: {moeda(d.caixa.troco_inicial)} (soma no esperado em Dinheiro). Diferença = contado − esperado: positivo é sobra, negativo é falta. Sangria em Pix/cartão não conta no esperado (regra do PDV novo, aplicada também aos caixas antigos).</p>
               </Secao>
               <Secao titulo="Sangrias, suprimentos e outras movimentações">
                 <Tabela linhas={d.movimentos} vazio="Nenhuma movimentação." colunas={[
@@ -238,7 +238,7 @@ export function Caixas() {
               { titulo: 'Diferença', direita: true, render: (l) => (l.status === 'ABERTO' ? '—' : <span className={Math.abs(l.diferenca) > 0.004 ? 'font-medium text-amber-700' : ''}>{moeda(l.diferenca)}</span>) },
               { titulo: 'Justificativa', render: (l) => (l.justificativa?.trim() ? <span className="block max-w-xs whitespace-normal text-xs text-slate-700">{l.justificativa}</span> : '—') },
             ]} />
-            <p className="mt-3 text-sm text-slate-700">Total do período: <b>{d.caixas.filter((c) => c.status !== 'ABERTO').length} caixas fechados</b> · diferença somada <b>{moeda(d.caixas.reduce((s, c) => s + (c.status === 'ABERTO' ? 0 : Number(c.diferenca)), 0))}</b>. Escolha "Este mês" para comparar com o card da tela inicial.</p>
+            <p className="mt-3 text-sm text-slate-700">Total do período: <b>{d.caixas.filter((c) => c.status !== 'ABERTO').length} caixas fechados</b> · diferença somada <b>{moeda(d.caixas.reduce((s, c) => s + (c.status === 'ABERTO' ? 0 : Number(c.diferenca)), 0))}</b>. Escolha "Este mês" para comparar com o card da tela inicial. Sangrias em Pix/cartão não contam no esperado (não mexem no dinheiro da gaveta), inclusive nos caixas antigos.</p>
             </>
           )}
         </Estado>

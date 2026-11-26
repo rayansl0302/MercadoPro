@@ -106,10 +106,17 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
        WHERE c.loja_id = $1 AND c.status = 'ABERTO' ORDER BY c.id`,
       [L],
     );
+    // diferença de caixa = contado − esperado. Sangria/suprimento em Pix ou cartão não mexem no dinheiro da gaveta; os
+    // fechamentos antigos descontavam isso do esperado e geravam sobra falsa, então o valor é corrigido aqui (mesma regra do PDV novo).
     const dif = await pool.query(
-      `SELECT coalesce(sum(f.diferenca), 0) AS total, count(DISTINCT c.id)::int AS caixas FROM espelho.fechamentos_caixa f
-       JOIN espelho.caixas c ON c.loja_id = f.loja_id AND c.id = f.id_caixa
-       WHERE f.loja_id = $1 AND painel.ts_seguro(c.fechado_em)::date >= $2::date`,
+      `SELECT coalesce(sum(x.dif - x.aj), 0) AS total, count(*)::int AS caixas FROM (
+         SELECT (SELECT sum(f.diferenca) FROM espelho.fechamentos_caixa f WHERE f.loja_id = c.loja_id AND f.id_caixa = c.id) AS dif,
+                (SELECT coalesce(sum(CASE WHEN m.tipo = 'SANGRIA' THEN m.valor ELSE -m.valor END), 0) FROM espelho.movimentacoes_caixa m
+                 WHERE m.loja_id = c.loja_id AND m.id_caixa = c.id AND m.tipo IN ('SANGRIA', 'SUPRIMENTO') AND NOT coalesce(m.estornado, false)
+                   AND coalesce(nullif(m.forma_pagamento, ''), 'Dinheiro') <> 'Dinheiro') AS aj
+         FROM espelho.caixas c
+         WHERE c.loja_id = $1 AND painel.ts_seguro(c.fechado_em)::date >= $2::date
+           AND EXISTS (SELECT 1 FROM espelho.fechamentos_caixa f WHERE f.loja_id = c.loja_id AND f.id_caixa = c.id)) x`,
       [L, inicioMes],
     );
     const semEstoque = await pool.query('SELECT count(*)::int AS n FROM espelho.produtos WHERE loja_id = $1 AND coalesce(quantidade, 0) <= 0 AND NOT painel.sem_estoque(codigo_barras, (coalesce(sem_controle_estoque, false) OR coalesce(uso_loja, false)), $2, $3)', [L, config.lancheMin, config.lancheMax]);
@@ -345,7 +352,9 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     const porForma = formas.map((f) => {
       const fe = fech.rows.find((x) => x.forma === f);
       const ve = porVenda.get(f);
-      return { forma: f, vendas: ve ? ve.n : 0, totalVendido: dinheiro(ve?.total), esperado: fe ? dinheiro(fe.valor_esperado) : null, contado: fe ? dinheiro(fe.valor_informado) : null, diferenca: fe ? dinheiro(fe.diferenca) : null };
+      // sangria/suprimento em Pix ou cartão não altera o esperado (corrige fechamentos antigos que descontavam)
+      const aj = f === 'Dinheiro' ? 0 : mov.rows.filter((m) => !m.estornado && (m.forma || 'Dinheiro') === f && (m.tipo === 'SANGRIA' || m.tipo === 'SUPRIMENTO')).reduce((t, m) => t + (m.tipo === 'SANGRIA' ? 1 : -1) * Number(m.valor), 0);
+      return { forma: f, vendas: ve ? ve.n : 0, totalVendido: dinheiro(ve?.total), esperado: fe ? dinheiro(Number(fe.valor_esperado) + aj) : null, contado: fe ? dinheiro(fe.valor_informado) : null, diferenca: fe ? dinheiro(Number(fe.diferenca) - aj) : null, ajuste: dinheiro(aj) };
     });
     return {
       caixa: { ...c.rows[0], troco_inicial: dinheiro(c.rows[0].troco_inicial) },
@@ -365,7 +374,10 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
               (SELECT coalesce(sum(m.valor), 0) FROM espelho.movimentacoes_caixa m WHERE m.loja_id = c.loja_id AND m.id_caixa = c.id AND m.tipo = 'SUPRIMENTO') AS suprimentos,
               (SELECT coalesce(sum(f.valor_esperado), 0) FROM espelho.fechamentos_caixa f WHERE f.loja_id = c.loja_id AND f.id_caixa = c.id) AS esperado,
               (SELECT coalesce(sum(f.valor_informado), 0) FROM espelho.fechamentos_caixa f WHERE f.loja_id = c.loja_id AND f.id_caixa = c.id) AS contado,
-              (SELECT coalesce(sum(f.diferenca), 0) FROM espelho.fechamentos_caixa f WHERE f.loja_id = c.loja_id AND f.id_caixa = c.id) AS diferenca,
+              (SELECT coalesce(sum(f.diferenca), 0) FROM espelho.fechamentos_caixa f WHERE f.loja_id = c.loja_id AND f.id_caixa = c.id) AS diferenca_bruta,
+              (SELECT coalesce(sum(CASE WHEN m.tipo = 'SANGRIA' THEN m.valor ELSE -m.valor END), 0) FROM espelho.movimentacoes_caixa m
+                 WHERE m.loja_id = c.loja_id AND m.id_caixa = c.id AND m.tipo IN ('SANGRIA', 'SUPRIMENTO') AND NOT coalesce(m.estornado, false)
+                   AND coalesce(nullif(m.forma_pagamento, ''), 'Dinheiro') <> 'Dinheiro') AS ajuste_nao_dinheiro,
               round(extract(epoch FROM (coalesce(painel.ts_seguro(c.fechado_em), now() AT TIME ZONE $4) - painel.ts_seguro(c.aberto_em))) / 60)::int AS minutos
        FROM espelho.caixas c LEFT JOIN espelho.operadores o ON o.loja_id = c.loja_id AND o.id = c.id_operador
        WHERE c.loja_id = $1 AND painel.ts_seguro(c.aberto_em)::date BETWEEN $2::date AND $3::date
@@ -375,7 +387,7 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     const num = (x) => dinheiro(x);
     return {
       periodo: per,
-      caixas: r.rows.map((x) => ({ ...x, troco_inicial: num(x.troco_inicial), vendas: num(x.vendas), sangrias: num(x.sangrias), suprimentos: num(x.suprimentos), esperado: num(x.esperado), contado: num(x.contado), diferenca: num(x.diferenca) })),
+      caixas: r.rows.map((x) => ({ ...x, troco_inicial: num(x.troco_inicial), vendas: num(x.vendas), sangrias: num(x.sangrias), suprimentos: num(x.suprimentos), esperado: num(Number(x.esperado) + Number(x.ajuste_nao_dinheiro)), contado: num(x.contado), diferenca: num(Number(x.diferenca_bruta) - Number(x.ajuste_nao_dinheiro)), diferencaOriginal: num(x.diferenca_bruta), ajusteNaoDinheiro: num(x.ajuste_nao_dinheiro) })),
     };
   });
 
