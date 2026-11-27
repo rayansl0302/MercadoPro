@@ -2458,6 +2458,53 @@ SchemaMigration_service::Resultado SchemaMigration_service::update() {
             qDebug() << "Migracao para versao 32 concluida.";
             break;
         }
+        case 32:
+        {
+            // versao 33: pedido de entrega. entrega_item guarda a tabela de preços de entrega (com a faixa de
+            // quantidade) e entrega_venda marca quais vendas foram de entrega. Fica fora de vendas2 para não
+            // mexer no contrato de sincronização da nuvem.
+            if (!db.transaction()) {
+                qDebug() << "Error: unable to start transaction";
+                return {false, SchemaErro::ErroMigracao, "Erro ao iniciar migracao 33", dbSchemaVersion};
+            }
+            const QString pk33 = DatabaseConnection_service::isPostgres() ? "SERIAL PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT";
+            const QStringList comandos33 = {
+                "CREATE TABLE IF NOT EXISTS entrega_item ("
+                "  id " + pk33 + ","
+                "  descricao TEXT NOT NULL,"
+                "  unidade TEXT NOT NULL,"
+                "  preco NUMERIC(10,2) NOT NULL,"
+                "  qtd_faixa NUMERIC(10,3) NOT NULL DEFAULT 0,"
+                "  preco_faixa NUMERIC(10,2) NOT NULL DEFAULT 0,"
+                "  id_produto INTEGER NOT NULL DEFAULT 0,"
+                "  ordem INTEGER NOT NULL DEFAULT 0,"
+                "  ativo INTEGER NOT NULL DEFAULT 1)",
+                "CREATE TABLE IF NOT EXISTS entrega_venda ("
+                "  id_venda INTEGER PRIMARY KEY,"
+                "  endereco TEXT,"
+                "  observacao TEXT,"
+                "  criado_em TEXT NOT NULL)"
+            };
+            for (const QString &sql : comandos33) {
+                QSqlQuery query(db);
+                if (!query.exec(sql)) {
+                    qDebug() << "Erro migracao 33:" << query.lastError().text() << "SQL:" << sql;
+                    db.rollback();
+                    return {false, SchemaErro::ErroMigracao, "Erro na migracao 33 (pedido de entrega)", dbSchemaVersion};
+                }
+            }
+            if (!setSchemaVersion(33)) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao gravar versao 33", dbSchemaVersion};
+            }
+            if (!db.commit()) {
+                db.rollback();
+                return {false, SchemaErro::ErroMigracao, "Erro ao confirmar migracao 33", dbSchemaVersion};
+            }
+            dbSchemaVersion = 33;
+            qDebug() << "Migracao para versao 33 concluida.";
+            break;
+        }
 
         }
     }

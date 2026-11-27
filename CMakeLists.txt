@@ -135,6 +135,7 @@ set(QESTOQUE_SOURCES
     src/nuvem/nuvem.qrc
     src/services/contasreceber_service.cpp
     src/services/contaspagar_service.cpp
+    src/services/entrega_service.cpp
 
 
     src/repository/Produto_repository.cpp
@@ -159,6 +160,7 @@ set(QESTOQUE_SOURCES
     src/services/saidausoproprio_service.cpp
     src/repository/relatorios_repository.cpp
     src/repository/contaspagar_repository.cpp
+    src/repository/entrega_repository.cpp
 
     src/util/datautil.cpp
     src/util/ibptutil.cpp
@@ -392,6 +394,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/lercodigosnotadialog.h src/lercodigosnotadialog.cpp
         src/services/contasreceber_service.h src/services/contasreceber_service.cpp
         src/services/contaspagar_service.h src/services/contaspagar_service.cpp
+        src/dto/Entrega_dto.h
+        src/repository/entrega_repository.h src/repository/entrega_repository.cpp
+        src/services/entrega_service.h src/services/entrega_service.cpp
+        src/pedidoentregajanela.h src/pedidoentregajanela.cpp
         src/loginoperador.h src/loginoperador.cpp src/loginoperador.ui
         src/dto/Caixa_dto.h
         src/repository/caixa_repository.h src/repository/caixa_repository.cpp

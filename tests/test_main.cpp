@@ -20,6 +20,7 @@
 #include "services/test_contasreceber_service.h"
 #include "services/test_numeracaonf.h"
 #include "services/test_nuvem.h"
+#include "services/test_entrega.h"
 #include "services/test_lanches.h"
 #include "services/test_saidausoproprio.h"
 #include "services/test_maquinacartao.h"
@@ -71,6 +72,7 @@ int main(int argc, char *argv[])
     rodar(new TestContasReceber);
     rodar(new TestNumeracaoNF);
     rodar(new TestNuvem);
+    rodar(new TestEntrega);
     rodar(new TestLanches);
     rodar(new TestSaidaUsoProprio);
     rodar(new TestMaquinaCartao);

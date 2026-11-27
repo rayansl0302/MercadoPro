@@ -23,6 +23,7 @@
         <file alias="shield-check.svg">icones/shield-check.svg</file>
         <file alias="shopping-cart.svg">icones/shopping-cart.svg</file>
         <file alias="truck.svg">icones/truck.svg</file>
+        <file alias="map-pin.svg">icones/map-pin.svg</file>
         <file alias="user-cog.svg">icones/user-cog.svg</file>
         <file alias="user.svg">icones/user.svg</file>
         <file alias="users.svg">icones/users.svg</file>

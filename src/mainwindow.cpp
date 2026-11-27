@@ -18,6 +18,7 @@
 #include <QDoubleValidator>
 #include "relatorios.h"
 #include "janelaorcamento.h"
+#include "pedidoentregajanela.h"
 #include "venda.h"
 #include <QModelIndex>
 #include <QMenu>
@@ -486,6 +487,15 @@ void MainWindow::on_Btn_Relatorios_clicked()
     relatorios1->show();
 }
 
+void MainWindow::abrirPedidoEntrega()
+{
+    auto *janela = new PedidoEntregaJanela;
+    janela->setAttribute(Qt::WA_DeleteOnClose);
+    janela->setWindowModality(Qt::ApplicationModal);
+    connect(janela, &PedidoEntregaJanela::pedidoLancado, this, &MainWindow::atualizarTableview);
+    janela->show();
+}
+
 void MainWindow::on_Btn_Orcamento_clicked()
 {
     JanelaOrcamento *janelaOrcamento = new JanelaOrcamento;
@@ -654,6 +664,7 @@ void MainWindow::montarMenuInicial()
     m->adicionarBotao("shopping-cart", "Vender (PDV)", "Abre a tela de venda (F5)", [this]() { abrirPdv(); }, true);
     m->adicionarBotao("receipt", "Vendas", "Consultar e gerenciar vendas", [this]() { ui->Btn_Venda->click(); });
     m->adicionarBotao("file-text", "Orçamentos", "Criar e consultar orçamentos", [this]() { ui->Btn_Orcamento->click(); });
+    m->adicionarBotao("map-pin", "Entrega", "Pedido de entrega com preços de entrega", [this]() { abrirPedidoEntrega(); });
     m->adicionarBotao("clipboard-list", "Saída de estoque", "Tirar produto do estoque com motivo (consumo, quebra, vencido...)", [this]() { historicoSaidasUsoProprio(); });
 
     if (gerente) {

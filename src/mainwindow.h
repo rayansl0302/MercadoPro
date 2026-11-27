@@ -50,6 +50,7 @@ public:
     QSqlQueryModel* model = nullptr;
     void atualizarTableview();
     void abrirPdv();
+    void abrirPedidoEntrega();
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     // Exibe a tarja "MODO DESENVOLVIMENTO" no topo: só entra ligado pelo autologin de Debug.
@@ -198,7 +199,7 @@ private:
     void setarIconesJanela();
     //QModelIndex selected_index;
 
-    const int ultimaVersaoSchema = 32;
+    const int ultimaVersaoSchema = 33;
 
     // operador comum só entra em histórico, cadastro de operadores, configurações e
     // relatórios gerenciais depois de informar o PIN do gerente
