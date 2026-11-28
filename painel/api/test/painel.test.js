@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { configTeste, criarAppTeste, criarLoja, criarUsuario, enviarCiclo, limpar, linha, prepararBanco } from './ajuda.js';
 import { codigoTotp, gerarSegredoTotp } from '../src/seguranca.js';
 import { contrato } from '../src/contrato.js';
+import { interpretarQuantidade, lerLinha } from '../src/orcamento.js';
 
 let pool;
 let app;
@@ -645,5 +646,38 @@ describe('diferença de caixa sem sangria em Pix/cartão', () => {
     const cx = lista.caixas.find((c) => String(c.id) === '900');
     expect(cx.diferenca).toBe(54.28);
     expect(cx.diferencaOriginal).toBe(194.55);
+  });
+});
+
+describe('orçamento de entrega', () => {
+  it('lê linhas coladas em vários formatos', () => {
+    expect(lerLinha('Sal.   100')).toMatchObject({ numero: 100, unidade: null, tokens: ['sal'] });
+    expect(lerLinha('250 Paes')).toMatchObject({ numero: 250, tokens: ['pao'] });
+    expect(lerLinha('- Milho 1,5 kg')).toMatchObject({ numero: 1.5, unidade: 'kg', tokens: ['milho'] });
+    expect(lerLinha('2 pacotes de leite')).toMatchObject({ numero: 2, tokens: ['leite'] });
+    expect(lerLinha('   ')).toBeNull();
+    expect(interpretarQuantidade(100, null, 'KG')).toMatchObject({ unidade: 'g', adivinhado: true });
+    expect(interpretarQuantidade(10, null, 'KG')).toMatchObject({ unidade: 'kg', adivinhado: true });
+    expect(interpretarQuantidade(10, null, 'UN')).toMatchObject({ unidade: 'un', adivinhado: false });
+  });
+
+  it('acha o preço de entrega do pão e o preço de venda do estoque', async () => {
+    const L = loja.id;
+    await pool.query(
+      `INSERT INTO espelho.produtos (loja_id, id, descricao, quantidade, preco, un_comercial) VALUES
+         ($1, 71, 'SAL REFINADO', '5', '3.00', 'KG'), ($1, 72, 'LEITE INTEGRAL', '5', '5.00', 'UN'), ($1, 73, 'LEITE CONDENSADO', '5', '8.00', 'UN')`, [L]);
+    const { cookie } = await sessao();
+    const r = await app.inject({ method: 'POST', url: '/api/painel/orcamento/interpretar', headers: { ...H, cookie }, payload: { texto: 'Sal 100\nLeite 2\n250 Paes\nxyzabc 3' } });
+    expect(r.statusCode, r.body).toBe(200);
+    const [sal, leite, pao, nada] = r.json().linhas;
+    expect(sal.candidatos[0]).toMatchObject({ origem: 'estoque', descricao: 'SAL REFINADO', preco: 3 });
+    expect(sal).toMatchObject({ quantidade: 100, unidadeQtd: 'g', adivinhado: true });
+    expect(leite.candidatos.length).toBe(2);
+    expect(leite.candidatos[leite.escolhido].descricao).toBe('LEITE INTEGRAL');
+    expect(pao.candidatos[pao.escolhido]).toMatchObject({ origem: 'entrega', id: 'e1', preco: 0.4, qtdFaixa: 150, precoFaixa: 0.3 });
+    expect(pao.quantidade).toBe(250);
+    expect(nada.escolhido).toBe(-1);
+    const b = await obter(cookie, '/api/painel/orcamento/buscar?q=leite');
+    expect(b.candidatos.length).toBe(2);
   });
 });

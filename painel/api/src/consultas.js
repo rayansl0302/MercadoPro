@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ErroHttp } from './ciclo.js';
 import { taxaDaLoja, comTaxa } from './precotaxa.js';
+import { candidatos as candidatosOrcamento, interpretarLista, lerLinha } from './orcamento.js';
 
 // Consultas do painel (somente leitura, sobre o espelho). A API é o contrato com a tela: se a loja mudar de
 // estrutura, só o espelho e estas consultas se ajustam, a tela não percebe.
@@ -760,6 +761,18 @@ export function registrarRotasConsulta(app, { pool, config, exigirSessao, lojaUn
     );
     const taxa = await taxaDaLoja(pool, L);
     return { produtos: r.rows.map((x) => ({ ...x, quantidade: inteiro(x.quantidade), preco: dinheiro(x.preco), precoVenda: comTaxa(x.preco, taxa) })) };
+  });
+
+  // ------------------------------------------------------------------ orçamento de entrega
+  app.post('/api/painel/orcamento/interpretar', async (req) => {
+    await comLoja(req);
+    const q = z.object({ texto: z.string().max(8000) }).parse(req.body ?? {});
+    return interpretarLista(pool, req.loja.id, q.texto);
+  });
+  app.get('/api/painel/orcamento/buscar', async (req) => {
+    await comLoja(req);
+    const q = z.object({ q: z.string().trim().min(2).max(60) }).parse(req.query ?? {});
+    return { candidatos: await candidatosOrcamento(pool, req.loja.id, lerLinha(q.q)?.tokens ?? []) };
   });
 
   // ------------------------------------------------------------------ fiscal

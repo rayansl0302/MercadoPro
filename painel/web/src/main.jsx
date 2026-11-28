@@ -7,10 +7,11 @@ import { useDados } from './ui.jsx';
 import { CampoSenha, TrocarSenha, Usuarios } from './conta.jsx';
 import { Balanca } from './balanca.jsx';
 import { Metas } from './metas.jsx';
+import { Orcamento } from './orcamento.jsx';
 
 const MENU = [
   ['geral', 'Início'], ['vendas', 'Vendas'], ['caixas', 'Caixas'], ['pagar', 'Contas a pagar'], ['metas', 'Metas e despesas fixas'], ['receber', 'A receber'],
-  ['estoque', 'Estoque'], ['maisvendidos', 'Mais vendidos'], ['fiscal', 'Fiscal e segurança'], ['loja', 'Loja e pedidos'],
+  ['estoque', 'Estoque'], ['maisvendidos', 'Mais vendidos'], ['orcamento', 'Orçamento'], ['fiscal', 'Fiscal e segurança'], ['loja', 'Loja e pedidos'],
 ];
 
 
@@ -104,6 +105,7 @@ function App() {
     receber: <Devedores empresa={emp} />,
     estoque: <Estoque />,
     maisvendidos: <MaisVendidos />,
+    orcamento: <Orcamento />,
     fiscal: <Agrupada abas={[['f', 'Notas fiscais', <Fiscal />], ['s', 'Segurança', <Seguranca />]]} />,
     usuarios: <Usuarios eu={usuario} avisar={setAviso} />,
     loja: <Agrupada abas={[['p', 'Pedidos enviados', <Pedidos podeAgir={podeAgir} />], ['s', 'Sincronização', <Sincronizacao />]]} />,
